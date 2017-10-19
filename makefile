@@ -33,11 +33,13 @@ all: $(BIN_NAME)
 	@echo Simple compiler for simple needs
 
 build:
-	@echo We build objects
+	@echo Create build dir if necessary and create object files
+	mkdir -p $(BUILD_DIR)
 	$(CC) -c $(SRCS) -o $(OBJS) -I $(INCLUDES) $(CFLAGS)
 
 $(BIN_NAME): build
-	@echo We create binaries
+	@echo Create bin dir if necessary and create executables in it
+	mkdir -p $(BIN_DIR)
 	$(CC) $(OBJS) -o $(BIN_DIR)/$@
 
 clean:
