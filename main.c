@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <ExternalHeaders.h>
 
 int main() {
     printf("dsadsa , world!\n");
