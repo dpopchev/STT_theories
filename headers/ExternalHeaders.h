@@ -8,4 +8,6 @@
     #include <time.h>
     #include <unistd.h>
 
+    #include <GlobalVars.h>
+
 #endif
