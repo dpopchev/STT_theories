@@ -8,6 +8,8 @@
     #include <time.h>
     #include <unistd.h>
 
-    #include <GlobalVars.h>
+    #include "GlobalVars.h"
+    #include "myStructData.h"
+    #include "NRnrutils.h"
 
 #endif

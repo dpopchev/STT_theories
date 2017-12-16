@@ -2,9 +2,14 @@
 #	https://www.gnu.org/software/make/manual/html_node/index.html#SEC_Contents
 #	https://www.cs.swarthmore.edu/~newhall/unixhelp/howto_makefiles.html
 #	https://stackoverflow.com/questions/9178285/how-can-makefile-use-separate-directories-for-source-code-and-binaries
+#	https://stackoverflow.com/questions/7004702/how-can-i-create-a-makefile-for-c-projects-with-src-obj-and-bin-subdirectories
+#	https://stackoverflow.com/questions/40621451/makefile-automatically-compile-all-c-files-keeping-o-files-in-separate-folde
 
 # define the C compiler
 CC = gcc
+
+# define linker
+LINKER = gcc
 
 # define any compile-time flags
 # used source for here
@@ -17,7 +22,8 @@ CFLAGS_LINKING = -lm
 CFLAGS_DEBUG = -g -std=c11
 
 # define any directories containing header files other than /usr/include
-INCLUDES = ./headers
+INCLUDES_DIR = ./headers
+INCLUDES = $(wildcard $(INCLUDES_DIR)/*.h)
 
 # define the C source dirs and files
 SRC_DIR = ./src
@@ -25,8 +31,9 @@ SRCS = $(wildcard $(SRC_DIR)/*.c)
 
 # define place to put the object files and their names
 # define the objects by replacing the .c of all words in the macro SRCS with the .o suffix
-BUILD_DIR = ./build
-OBJS = $(BUILD_DIR)/$(notdir $(SRCS:.c=.o))
+OBJ_DIR = ./obj
+#OBJS = $(notdir $(SRCS:.c=.o))
+OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 # define the executable file and where to be placed
 BIN_DIR = ./bin
@@ -35,41 +42,59 @@ BIN_VALGRIND = simulate_valgrind
 BIN_GDB = simulate_gdb
 
 # The following part of the makefile is combination of the generic parts of the sources listed above
-.PHONY: all clean $(BIN_NAME) build run valgrind_check gdb_tracking
+#.PHONY: ll clean $(BIN_NAME) run valgrind_check gdb_tracking
 
-all: $(BIN_NAME)
-	@echo Simple compiler for simple needs
+.PHONY: build
+build: $(OBJS)
+	@echo Objects have been created successfully
 
-build:
-	@echo Create build dir if necessary and create object files
-	mkdir -p $(BUILD_DIR)
-	$(CC) -c $(SRCS) -o $(OBJS) -I $(INCLUDES) $(CFLAGS_WARNS) $(CFLAGS_OPTIM)
+$(OBJ_DIR):
+	@echo $@ folder missing, creating it
+	mkdir -p $@
 
-$(BIN_NAME): build
-	@echo Create bin dir if necessary and create executables in it
-	mkdir -p $(BIN_DIR)
-	$(CC) $(OBJS) -o $(BIN_DIR)/$@ $(CFLAGS_LINKING)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS_WARNS) $(CFLAGS_OPTIM) -I$(INCLUDES_DIR) -c $< -o $@
 
-valgrind_check:
-	@echo We will check the memory integrity of the code
-	$(CC) -o $(BIN_DIR)/$(BIN_VALGRIND) $(SRCS) -I $(INCLUDES) $(CFLAGS_DEBUG) $(CFLAGS_LINKING)
+.PHONY: compile
+compile: $(BIN_NAME)
+	@echo Executable $(BIN_NAME) has been created successfully
+
+$(BIN_NAME): build | $(BIN_DIR)
+	@echo Creating executable $(BIN_NAME)
+	$(LINKER) $(OBJS) -o $(BIN_DIR)/$@ $(CFLAGS_LINKING)
+
+$(BIN_DIR):
+	@echo $@ folder missing, creating it
+	mkdir -p $@
+
+.PHONY: run
+run: | $(BIN_NAME)
+	./$(BIN_DIR)/$(BIN_NAME)
+
+.PHONY: valgrind
+valgrind: | $(BIN_DIR)
+	@echo Will check for memory integrity using valgrind
+	$(CC) -o $(BIN_DIR)/$(BIN_VALGRIND) $(SRCS) -I$(INCLUDES_DIR) \
+		$(CFLAGS_DEBUG) $(CFLAGS_LINKING)
 	valgrind -v --log-file="$(BIN_DIR)/qvasd" \
-		--read-var-info=yes --track-origins=yes --leak-check=full --show-leak-kinds=all \
-		--tool=memcheck ./$(BIN_DIR)/$(BIN_VALGRIND)
-	gvim $(BIN_DIR)/qvasd
+		--read-var-info=yes --track-origins=yes --leak-check=full \
+		--show-leak-kinds=all --tool=memcheck \
+		./$(BIN_DIR)/$(BIN_VALGRIND)
+	mousepad $(BIN_DIR)/qvasd
 
-gdb_tracking:
-	@echo We will try to track the code with gdb
-	$(CC) -o $(BIN_DIR)/$(BIN_GDB) $(SRCS) -I $(INCLUDES) $(CFLAGS_DEBUG) $(CFLAGS_LINKING)
+.PHONY: gdb
+gdb: | $(BIN_DIR)
+	@echo Will create gdb compatible executable
+	$(CC) -o $(BIN_DIR)/$(BIN_GDB) $(SRCS) -I$(INCLUDES_DIR) \
+		$(CFLAGS_DEBUG) $(CFLAGS_LINKING)
 	nemiver $(BIN_DIR)/$(BIN_GDB)
 
+.PHONY: clean
 clean:
+	@echo Cleaning content of following directories: $(BIN_DIR), $(OBJ_DIR)
 	rm -f \
 		$(BIN_DIR)/$(BIN_NAME) \
 		$(BIN_DIR)/$(BIN_VALGRIND) \
 		$(BIN_DIR)/$(BIN_GDB) \
 		$(BIN_DIR)/qvasd \
-		$(BUILD_DIR)/*.o
-
-run:
-	./$(BIN_DIR)/$(BIN_NAME)
+		$(OBJ_DIR)/*.o
