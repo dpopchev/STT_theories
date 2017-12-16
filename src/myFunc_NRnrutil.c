@@ -80,10 +80,13 @@ double *dvector(long nl, long nh)
   return v-nl+NR_END;
 }
 
-float **matrix(long nrl, long nrh, long ncl, long nch)
+float **matrix( \
+    unsigned long nrl,  unsigned long  nrh, \
+    unsigned long ncl, unsigned long  nch\
+)
 /* allocate a float matrix with subscript range m[nrl..nrh][ncl..nch] */
 {
-    long i, nrow=nrh-nrl+1,ncol=nch-ncl+1;
+    unsigned long i, nrow=nrh-nrl+1,ncol=nch-ncl+1;
     float **m;
 
     /* allocate pointers to rows */
@@ -152,11 +155,18 @@ int **imatrix(long nrl, long nrh, long ncl, long nch)
   return m;
 }
 
-float **submatrix(float **a, long oldrl, long oldrh, long oldcl, long oldch,
-    long newrl, long newcl)
+float **submatrix( \
+    float **a, \
+    unsigned long oldrl, \
+    unsigned long oldrh, \
+    unsigned long oldcl, \
+    unsigned long oldch,
+    unsigned long newrl, \
+    unsigned long newcl \
+)
 /* point a submatrix [newrl..][newcl..] to a[oldrl..oldrh][oldcl..oldch] */
 {
-    long i,j,nrow=oldrh-oldrl+1,ncol=oldcl-newcl;
+    unsigned long i,j,nrow=oldrh-oldrl+1,ncol=oldcl-newcl;
     float **m;
 
     /* allocate array of pointers to rows */
@@ -172,13 +182,19 @@ float **submatrix(float **a, long oldrl, long oldrh, long oldcl, long oldch,
     return m;
 }
 
-float **convert_matrix(float *a, long nrl, long nrh, long ncl, long nch)
+float **convert_matrix(\
+    float *a, \
+    unsigned long nrl, \
+    unsigned long nrh, \
+    unsigned long ncl, \
+    unsigned long nch \
+)
 /* allocate a float matrix m[nrl..nrh][ncl..nch] that points to the matrix
 declared in the standard C manner as a[nrow][ncol], where nrow=nrh-nrl+1
 and ncol=nch-ncl+1. The routine should be called with the address
 &a[0][0] as the first argument. */
 {
-    long i,j,nrow=nrh-nrl+1,ncol=nch-ncl+1;
+    unsigned long i,j,nrow=nrh-nrl+1,ncol=nch-ncl+1;
     float **m;
 
     /* allocate pointers to rows */
@@ -194,10 +210,17 @@ and ncol=nch-ncl+1. The routine should be called with the address
     return m;
 }
 
-float ***f3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh)
+float ***f3tensor(\
+    unsigned long nrl, \
+    unsigned long nrh, \
+    unsigned long ncl, \
+    unsigned long nch, \
+    unsigned long ndl, \
+    unsigned long ndh \
+)
 /* allocate a float 3tensor with range t[nrl..nrh][ncl..nch][ndl..ndh] */
 {
-    long i,j,nrow=nrh-nrl+1,ncol=nch-ncl+1,ndep=ndh-ndl+1;
+    unsigned long i,j,nrow=nrh-nrl+1,ncol=nch-ncl+1,ndep=ndh-ndl+1;
     float ***t;
 
     /* allocate pointers to pointers to rows */

@@ -14,10 +14,11 @@ LINKER = gcc
 # define any compile-time flags
 # used source for here
 #	https://www.gnu.org/software/gsl/manual/html_node/GCC-warning-options-for-numerical-programs.html
+# 	https://stackoverflow.com/questions/42586080/gcc-linking-object-files-with-warning-optimization-flags
 CFLAGS_WARNS = -std=c11 -pedantic -Wall -W -Wmissing-prototypes -Wstrict-prototypes \
 			   -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
 			   -Wwrite-strings -Wnested-externs -Wextra -Wno-unused
-CFLAGS_OPTIM = -fshort-enums -fno-common -Dinline=
+CFLAGS_OPTIM = -fshort-enums -fno-common -Dinline= -march=native -O2
 CFLAGS_LINKING = -lm
 CFLAGS_DEBUG = -g -std=c11
 
@@ -39,21 +40,19 @@ OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 BIN_DIR = ./bin
 BIN_NAME = simulate
 BIN_VALGRIND = simulate_valgrind
+VALGRIND_TMP_FILE = qvasd
 BIN_GDB = simulate_gdb
-
-# The following part of the makefile is combination of the generic parts of the sources listed above
-#.PHONY: ll clean $(BIN_NAME) run valgrind_check gdb_tracking
 
 .PHONY: build
 build: $(OBJS)
 	@echo Objects have been created successfully
 
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
+	$(CC) $(CFLAGS_WARNS) $(CFLAGS_OPTIM) -I$(INCLUDES_DIR) -c $< -o $@
+
 $(OBJ_DIR):
 	@echo $@ folder missing, creating it
 	mkdir -p $@
-
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS_WARNS) $(CFLAGS_OPTIM) -I$(INCLUDES_DIR) -c $< -o $@
 
 .PHONY: compile
 compile: $(BIN_NAME)
@@ -69,6 +68,7 @@ $(BIN_DIR):
 
 .PHONY: run
 run: | $(BIN_NAME)
+	@echo Executing $(BIN_NAME)
 	./$(BIN_DIR)/$(BIN_NAME)
 
 .PHONY: valgrind
@@ -76,11 +76,11 @@ valgrind: | $(BIN_DIR)
 	@echo Will check for memory integrity using valgrind
 	$(CC) -o $(BIN_DIR)/$(BIN_VALGRIND) $(SRCS) -I$(INCLUDES_DIR) \
 		$(CFLAGS_DEBUG) $(CFLAGS_LINKING)
-	valgrind -v --log-file="$(BIN_DIR)/qvasd" \
+	valgrind -v --log-file="$(BIN_DIR)/$(VALGRIND_TMP_FILE)" \
 		--read-var-info=yes --track-origins=yes --leak-check=full \
 		--show-leak-kinds=all --tool=memcheck \
 		./$(BIN_DIR)/$(BIN_VALGRIND)
-	mousepad $(BIN_DIR)/qvasd
+	mousepad $(BIN_DIR)/$(VALGRIND_TMP_FILE)
 
 .PHONY: gdb
 gdb: | $(BIN_DIR)

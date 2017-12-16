@@ -33,12 +33,38 @@
     extern unsigned char *cvector(long nl, long nh);
     extern unsigned long *lvector(long nl, long nh);
     extern double *dvector(long nl, long nh);
-    extern float **matrix(long nrl, long nrh, long ncl, long nch);
+    extern float **matrix( \
+        unsigned long nrl, \
+        unsigned long nrh, \
+        unsigned long ncl, \
+        unsigned long nch \
+    );
     extern double **dmatrix(long nrl, long nrh, long ncl, long nch);
     extern int **imatrix(long nrl, long nrh, long ncl, long nch);
-    extern float **submatrix(float **a, long oldrl, long oldrh, long oldcl, long oldch, long newrl, long newcl);
-    extern float **convert_matrix(float *a, long nrl, long nrh, long ncl, long nch);
-    extern float ***f3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh);
+    extern float **submatrix( \
+        float **a, \
+        unsigned long oldrl, \
+        unsigned long oldrh, \
+        unsigned long oldcl, \
+        unsigned long oldch, \
+        unsigned long newrl, \
+        unsigned long newcl \
+    );
+    extern float **convert_matrix(\
+        float *a, \
+        unsigned long nrl, \
+        unsigned long nrh, \
+        unsigned long ncl, \
+        unsigned long nch \
+    );
+    extern float ***f3tensor(\
+        unsigned long nrl, \
+        unsigned long nrh, \
+        unsigned long ncl, \
+        unsigned long nch, \
+        unsigned long ndl, \
+        unsigned long ndh \
+    );
     extern void free_vector(float *v, long nl, long nh);
     extern void free_ivector(int *v, long nl, long nh);
     extern void free_cvector(unsigned char *v, long nl, long nh);

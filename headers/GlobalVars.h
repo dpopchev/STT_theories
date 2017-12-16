@@ -10,7 +10,7 @@
         GV_DENSITY_UNITS,   GV_PRESSURE_UNITS,  GV_RADCORD_UNITS, \
         GV_MACHINE_EPSILON, GV_MACHINE_EPSILON_SQRT, \
         GV_MACHINE_EPSILON_CUBROOT;
-//    extern char *ODEsystem_names[];
-//    extern char *ODEsystem_vars[];
+    extern char *ODEsystem_names[];
+    extern char *ODEsystem_vars[];
 
 #endif
