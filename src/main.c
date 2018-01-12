@@ -128,13 +128,15 @@ int main( void ){
     switch(ODE_index){
 
         case 0 :
-            printf(
-                "%s %s ODE_index = %d to init, %s \n", \
-                identation,\
-                function_path,\
-                ODE_index,\
-                ODE_equtions_list[ODE_index] \
-            );
+            if(DEBUGGING){
+                printf(
+                    "%s %s ODE_index = %d to init, %s \n", \
+                    identation,\
+                    function_path,\
+                    ODE_index,\
+                    ODE_equtions_list[ODE_index] \
+                );
+            }
             ode_logistics_init( &ode );
             ode_logistics_integrate( &ode );
 
@@ -157,13 +159,16 @@ int main( void ){
     switch(ODE_index){
 
         case 0 :
-            printf(
-                "%s %s ODE_index = %d to free, %s \n", \
-                identation,\
-                function_path,\
-                ODE_index,\
-                ODE_equtions_list[ODE_index] \
-            );
+            if(DEBUGGING){
+                printf(
+                    "%s %s ODE_index = %d to free, %s \n", \
+                    identation,\
+                    function_path,\
+                    ODE_index,\
+                    ODE_equtions_list[ODE_index] \
+                );
+            }
+
             ode_logistics_free( &ode );
             break;
 

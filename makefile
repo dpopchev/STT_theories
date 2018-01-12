@@ -19,7 +19,7 @@ CFLAGS_WARNS = -std=c11 -pedantic -Wall -W -Wmissing-prototypes -Wstrict-prototy
 			   -Wconversion -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align \
 			   -Wwrite-strings -Wnested-externs -Wextra -Wno-unused
 CFLAGS_OPTIM = -fshort-enums -fno-common -Dinline= -march=native -O2
-CFLAGS_LINKING = -lm
+CFLAGS_LINKING = -lm -no-pie
 CFLAGS_DEBUG = -g -std=c11
 
 # define any directories containing header files other than /usr/include
@@ -69,6 +69,7 @@ $(BIN_DIR):
 .PHONY: run
 run: | $(BIN_NAME)
 	@echo Executing $(BIN_NAME)
+#	./python/live_plot.py | ./$(BIN_DIR)/$(BIN_NAME)
 	./$(BIN_DIR)/$(BIN_NAME)
 
 .PHONY: valgrind
