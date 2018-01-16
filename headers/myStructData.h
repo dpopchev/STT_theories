@@ -5,23 +5,27 @@
     // and the integrator to be used
     typedef struct ODEsystemStruct{
         int \
-            // ODE system number - description and functions
+            // ODE system index
             index, \
             // total number of ODE equations
             eqs_count, \
-            // amount of points we want to save, if any, see below
+            // amount of points we want to record, if any
             points_count, \
             // count OK steps done by the integrator
             nok, \
             // count BAD steps done by the integrator
             nbad, \
-            // scaling method (odeint), see Integrator_odeint.c for more details
+            // scaling method, see Integrator_odeint.c for more details
             // default is 0
             odeint_scaling_method, \
             // method to evaluate the new value for x in rkqs
-            // see odeint.c for more details
+            // see Integrator_odeint.c for more details
             // default is 0
-            rkqs_step_method;
+            rkqs_step_method, \
+            // amount of free parameters for the system
+            free_parmeters_count_all, \
+            // how many values of each parameter we are interested
+            *free_parameters_count_each;
 
         double \
             // the system itself
@@ -39,17 +43,23 @@
             // initial step size for the integrator (odeint)
             h1, \
             // minimum allowed step size, can be zero (odeint)
-            hmin;
+            hmin, \
+            // pointer to include the free parameters of the system
+            *free_parmeters_values, \
+            // all possible values of parameters we are interested per parameter
+            **free_parmeters_values_all;
 
         char \
-            // name with maybe simple description, see GlobalVars.h
+            // name with simple description, see GlobalVars.h
             name_system[512], \
             // list variables index, see GlobalVars.h
-            name_vars[512], \
+            **name_vars, \
             // odeint scaling method used explicit written
             odeint_scaling_method_description[512], \
             // rkqs advancing method in odeint used explicit written
-            rkqs_step_method_description[512];
+            rkqs_step_method_description[512], \
+            // names and some description of the free parameters of the system
+            **free_parmeters_names;
 
         void (*foo)(double, double *, double *);
 
