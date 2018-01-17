@@ -1,6 +1,6 @@
 #include "ExternalHeaders.h"
 
-#define DEBUGGING 1
+#define DEBUGGING_dvector_copy 0
 
 void dvector_copy( double *copy_from, double *copy_to, int size ){
 
@@ -8,7 +8,7 @@ void dvector_copy( double *copy_from, double *copy_to, int size ){
         function_path[] = "General_purpose.c dvector_copy", \
         identation[] = "\n";
 
-    if(DEBUGGING){
+    if(DEBUGGING_dvector_copy){
         printf(\
             "%s %s starting to copy dvector with size %d \n", \
             identation, function_path, size \
@@ -17,7 +17,7 @@ void dvector_copy( double *copy_from, double *copy_to, int size ){
 
     for(int i=1; i <= size; i++){
 
-        if(DEBUGGING){
+        if(DEBUGGING_dvector_copy){
             printf(\
                 "%s %s copy_from[%d] = %.3e copy_to[%d] = %.3e \n", \
                 identation, function_path, \
@@ -32,4 +32,4 @@ void dvector_copy( double *copy_from, double *copy_to, int size ){
     return;
 }
 
-#undef DEBUGGING
+#undef DEBUGGING_dvector_copy
