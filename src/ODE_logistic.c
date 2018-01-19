@@ -516,5 +516,21 @@ void ode_logistics_integrate( ODEsystemStruct **arg ){
 #undef DEBUGGING_ode_logistics_init
 #undef DEBUGGING_ode_logistics_free
 #undef DEBUGGING_ode_logistics_integrate
-
 #undef ODE_VARS_NAME_LENGHT
+#undef MAX_ARR_SIZE
+#undef ODE_EQS_COUNT
+#undef ODE_Y_INIT_VAL_1
+#undef ODE_NAME_INDEP
+#undef ODE_NAME_DEP_1
+#undef ODE_POINTS_COUNT
+#undef ODE_ODE_SCALLING
+#undef ODE_RKQS_SCALLING
+#undef ODE_FREE_PARM_COUNT_ALL
+#undef ODE_FREE_PARM_NAME_1
+#undef ODE_FREE_PARM_COUNT_1
+#undef ODE_FREE_PARM_VALS_1
+#undef ODE_INDEP_INIT
+#undef ODE_INDEP_FINAL
+#undef ODE_INTEGR_EPS
+#undef ODE_INTEGR_H1
+#undef ODE_INTEGR_HMIN

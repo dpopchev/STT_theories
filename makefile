@@ -11,6 +11,12 @@ CC = gcc
 # define linker
 LINKER = gcc
 
+# default text editor
+TEXT_EDITOR = mousepad
+
+# default debugger / debug viewer
+DEBUG_VIEW = nemiver
+
 # define any compile-time flags
 # used source for here
 #	https://www.gnu.org/software/gsl/manual/html_node/GCC-warning-options-for-numerical-programs.html
@@ -69,7 +75,6 @@ $(BIN_DIR):
 .PHONY: run
 run: | $(BIN_NAME)
 	@echo Executing $(BIN_NAME)
-#	./python/live_plot.py | ./$(BIN_DIR)/$(BIN_NAME)
 	./$(BIN_DIR)/$(BIN_NAME)
 
 .PHONY: valgrind
@@ -81,14 +86,14 @@ valgrind: | $(BIN_DIR)
 		--read-var-info=yes --track-origins=yes --leak-check=full \
 		--show-leak-kinds=all --tool=memcheck \
 		./$(BIN_DIR)/$(BIN_VALGRIND)
-	mousepad $(BIN_DIR)/$(VALGRIND_TMP_FILE)
+	$(TEXT_EDITOR) $(BIN_DIR)/$(VALGRIND_TMP_FILE)
 
 .PHONY: gdb
 gdb: | $(BIN_DIR)
 	@echo Will create gdb compatible executable
 	$(CC) -o $(BIN_DIR)/$(BIN_GDB) $(SRCS) -I$(INCLUDES_DIR) \
 		$(CFLAGS_DEBUG) $(CFLAGS_LINKING)
-	nemiver $(BIN_DIR)/$(BIN_GDB)
+	$(DEBUG_VIEW) $(BIN_DIR)/$(BIN_GDB)
 
 .PHONY: clean
 clean:
