@@ -1,11 +1,39 @@
 #include "ExternalHeaders.h"
 
 #define DEBUGGING_ode_logistics_foo 0
-#define DEBUGGING_ode_logistics_init 0
+#define DEBUGGING_ode_logistics_init 1
 #define DEBUGGING_ode_logistics_free 0
 #define DEBUGGING_ode_logistics_integrate 0
 
 #define ODE_VARS_NAME_LENGHT 16
+#define MAX_ARR_SIZE 16
+
+#define ODE_INDEX 0
+#define ODE_DESCRIPTION "ode 0, 1d, logistic equation"
+#define ODE_EQS_COUNT 1
+#define ODE_Y_INIT_1 1
+
+#define ODE_Y_INIT_VAL_1 1
+
+#define ODE_NAME_INDEP "t"
+#define ODE_NAME_DEP_1 "N"
+
+#define ODE_POINTS_COUNT 1e2
+
+#define ODE_ODE_SCALLING 0
+#define ODE_RKQS_SCALLING 0
+
+#define ODE_FREE_PARM_COUNT_ALL 1
+#define ODE_FREE_PARM_NAME_1 "r"
+#define ODE_FREE_PARM_COUNT_1 5
+#define ODE_FREE_PARM_VALS_1 -1, -0.5, 0, 0.5, 1
+
+#define ODE_INDEP_INIT 0
+#define ODE_INDEP_FINAL 10
+
+#define ODE_INTEGR_EPS 1e-12
+#define ODE_INTEGR_H1 1e-30
+#define ODE_INTEGR_HMIN 0
 
 static double *GV_PARAMETERS_VALUES;
 
@@ -25,7 +53,12 @@ void ode_logistics_foo( double x, double *y, double *dydx ){
         // result variable for this iteration
         result = 0.0;
 
-    dydx[1] = r*N*(1-N);
+    result = r*N*(1-N);
+
+// TODO: this should be used in favour of line 454
+    printf("\n%.3e %.3e %.3e", x, y[1],r );
+
+    dydx[1] = result;
 
     return;
 }
@@ -46,7 +79,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     };
 
     // ODE system index
-    (*arg)->index = 0;
+    (*arg)->index = ODE_INDEX;
 
     if(DEBUGGING_ode_logistics_init){
         printf( \
@@ -56,7 +89,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     };
 
     // total number of ODE equations
-    (*arg)->eqs_count = 1;
+    (*arg)->eqs_count = ODE_EQS_COUNT;
     if(!(*arg)->eqs_count){
         printf(\
           "%s %s HOW COULD IT BE ODE SYSTEM WITH SIZE 0!!!!", \
@@ -76,7 +109,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     // the first value is not counted, since dvector starts from 1 !!!
     double y[] = {
         1e10, // THIS VALUE DOES NOT TAKE ANY EFFECT, since dvector starts from index 1
-        10.0 // initial population
+        ODE_Y_INIT_1 // initial population
     };
 
     (*arg)->y = dvector(1, (*arg)->eqs_count);
@@ -94,11 +127,11 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     // variable names per index
     // the 0 index is the name of the independent variable
     const char *ode_names[] = {
-        "t", // time
-        "N" // population
+        ODE_NAME_INDEP, // time
+        ODE_NAME_DEP_1 // population
     };
 
-    (*arg)->name_vars = calloc( (size_t)(*arg)->eqs_count, sizeof(char*));
+    (*arg)->name_vars = calloc( (size_t)(*arg)->eqs_count+1, sizeof(char*));
 
     for(int i=0; i <=(*arg)->eqs_count; i++ ){
         (*arg)->name_vars[i] = calloc( ODE_VARS_NAME_LENGHT, sizeof(char));
@@ -121,7 +154,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     }
 
     // name name, index and simple description
-    strcpy((*arg)->name_system, "ode 0, 1d, logistic equation");
+    strcpy((*arg)->name_system, ODE_DESCRIPTION);
 
     if(DEBUGGING_ode_logistics_init){
         printf(\
@@ -131,7 +164,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     }
 
     // amount of points we want to save and print, if any
-    (*arg)->points_count = 1e2;
+    (*arg)->points_count = ODE_POINTS_COUNT;
     if( (*arg)->points_count){
         (*arg)->points_x = dvector(1, (*arg)->points_count);
         (*arg)->points_y = dmatrix(1, (*arg)->eqs_count, 1, (*arg)->points_count);
@@ -166,7 +199,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
 
     // scaling method (odeint), see Integrator_odeint.c for more details
     // default is 0
-    (*arg)->odeint_scaling_method = 0;
+    (*arg)->odeint_scaling_method = ODE_ODE_SCALLING;
     strcpy(\
         (*arg)->odeint_scaling_method_description, \
         ODEINT_SCALING_METHOD_DESCRIPTION[(*arg)->odeint_scaling_method] \
@@ -183,7 +216,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     // method to evaluate the new value for x in rkqs
     // see odeint.c for more details
     // default is 0
-    (*arg)->rkqs_step_method = 0;
+    (*arg)->rkqs_step_method = ODE_RKQS_SCALLING;
     strcpy(\
         (*arg)->rkqs_step_method_description, \
         RKQS_STEP_METHOD_DESCRIPTION[(*arg)->rkqs_step_method] \
@@ -198,7 +231,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     }
 
     // how many free parameters the system has
-    (*arg)->free_parmeters_count_all = 1;
+    (*arg)->free_parmeters_count_all = ODE_FREE_PARM_COUNT_ALL;
     if(DEBUGGING_ode_logistics_init){
         printf(\
           "%s %s We have %d free parameters in the system \n", \
@@ -208,7 +241,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
 
     const char *free_parameters_names[] = {
         "1e10", // empty since it will not be red
-        "r" // rate of maximum population growth
+        ODE_FREE_PARM_NAME_1 // rate of maximum population growth
     };
 
     (*arg)->free_parmeters_names = \
@@ -247,9 +280,9 @@ void ode_logistics_init( ODEsystemStruct **arg ){
         calloc( (size_t)(*arg)->free_parmeters_count_all+1, sizeof(double*));
 
     // all values for the free parameters
-    double free_parmeters_values_all[][20] = {
+    double free_parmeters_values_all[][MAX_ARR_SIZE] = {
         { 1e10 },  // index starts from 1 so this will not be taken into account
-        { 1e10, -10, -5, 0, 5, 10 }  // value for r, first value does not taken into account
+        { 1e10, ODE_FREE_PARM_VALS_1 }  // value for r, first value does not taken into account
     };
 
     for(int i=1; i <= (*arg)->free_parmeters_count_all; i++){
@@ -267,7 +300,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     // how many values of each parameter we will investigate
     int free_parameters_count_each[] = {
         1e5, // index starts from 1 so this will not be taken into account
-        5 // count all values of parameter 1 we want to check
+        ODE_FREE_PARM_COUNT_1 // count all values of parameter 1 we want to check
     };
 
     for(int i=1; i <= (*arg)->free_parmeters_count_all; i++){
@@ -294,10 +327,10 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     }
 
     // we will integrate starting from this point
-    (*arg)->x_initial = 0;
+    (*arg)->x_initial = ODE_INDEP_INIT;
 
     // until we reach this one
-    (*arg)->x_final = 10;
+    (*arg)->x_final = ODE_INDEP_FINAL;
 
     if(DEBUGGING_ode_logistics_init){
         printf(\
@@ -308,13 +341,13 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     }
 
     // odeint integration accuracy parameter
-    (*arg)->eps = 1e-12;
+    (*arg)->eps = ODE_INTEGR_EPS;
 
     // odeint initial step;
-    (*arg)->h1 = 1e-30;
+    (*arg)->h1 = ODE_INTEGR_H1;
 
     // odeint minimum step (can be zero)
-    (*arg)->hmin = 0;
+    (*arg)->hmin = ODE_INTEGR_HMIN;
 
     if(DEBUGGING_ode_logistics_init){
         printf(
@@ -343,24 +376,40 @@ void ode_logistics_free( ODEsystemStruct **arg ){
         printf("%s %s starting \n", identation, function_path);
     }
 
-    if( (*arg)->eqs_count ){
-        free_dvector( (*arg)->y, 1, (*arg)->eqs_count );
-    }else{
-        free( (*arg)->y );
+    free_dvector((*arg)->y, 1, (*arg)->eqs_count);
+
+    for(int i=0; i <=(*arg)->eqs_count; i++ ){
+        free((*arg)->name_vars[i]);
     }
+
+    free((*arg)->name_vars);
 
     if( (*arg)->points_count ){
         free_dvector( (*arg)->points_x, 1, (*arg)->points_count );
-
-        free_dmatrix( \
-            (*arg)->points_y, \
-            1, (*arg)->eqs_count, \
-            1, (*arg)->points_count \
+        free_dmatrix(
+          (*arg)->points_y, 1, (*arg)->eqs_count,
+          1, (*arg)->points_count
         );
     }else{
         free((*arg)->points_x);
         free((*arg)->points_y);
     }
+
+    for(int i=1; i <=(*arg)->free_parmeters_count_all; i++ ){
+        free((*arg)->free_parmeters_names[i]);
+    }
+
+    free((*arg)->free_parmeters_names);
+
+    free(GV_PARAMETERS_VALUES);
+
+    free((*arg)->free_parameters_count_each );
+
+    for(int i=1; i <= (*arg)->free_parmeters_count_all; i++){
+        free((*arg)->free_parmeters_values_all[i]);
+    }
+
+    free((*arg)->free_parmeters_values_all);
 
     free(*arg);
 
@@ -408,7 +457,7 @@ static void ode_logistics_integrate_info_print( ODEsystemStruct *arg ){
         scaling method: %s \n \
         rkqs step method: %s \n \
         initial step %.3e \n \
-        minimal step %3e \n \
+        minimal step %.3e \n \
         desired accuracy %.3e \n \
         desired points to record %d \n\n",
         \
@@ -446,11 +495,11 @@ void ode_logistics_integrate( ODEsystemStruct **arg ){
         (*arg)->foo \
     );
 
-    if((*arg)->points_count){
-        for(int i=1; i <= (*arg)->points_count; i++){
-            printf("\n %e %e", xp[i], yp[1][i]);
-        }
-    }
+    //if((*arg)->points_count){
+        //for(int i=1; i <= (*arg)->points_count; i++){
+            //printf("\n %e %e", xp[i], yp[1][i]);
+        //}
+    //}
 
     free_dvector(y, 1, (*arg)->eqs_count);
 
