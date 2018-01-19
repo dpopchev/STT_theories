@@ -1,7 +1,7 @@
 #include "ExternalHeaders.h"
 
 #define DEBUGGING_ode_logistics_foo 0
-#define DEBUGGING_ode_logistics_init 1
+#define DEBUGGING_ode_logistics_init 0
 #define DEBUGGING_ode_logistics_free 0
 #define DEBUGGING_ode_logistics_integrate 0
 
@@ -25,9 +25,7 @@ void ode_logistics_foo( double x, double *y, double *dydx ){
         // result variable for this iteration
         result = 0.0;
 
-    result = r*N*(1-N);
-
-    dydx[1] = result;
+    dydx[1] = r*N*(1-N);
 
     return;
 }
@@ -369,6 +367,58 @@ void ode_logistics_free( ODEsystemStruct **arg ){
     return;
 }
 
+static void ode_logistics_integrate_info_print( ODEsystemStruct *arg ){
+
+    printf(
+        "\n System info: \n \
+        index: %d \n \
+        description: %s \n",
+        arg->index,
+        arg->name_system
+    );
+
+    printf(
+        "\n Independent variable info: \n \
+        name: %s \n \
+        initial value: %.3e \n \
+        final value: %.3e \n",
+        arg->name_vars[0], arg->x_initial, arg->x_final
+    );
+
+    printf(
+        "\n Dependent variables info: \n"
+    );
+    for(int i=1; i<=arg->eqs_count; i++){
+        printf(
+            "\t initial value for %s = %.3e \n",
+            arg->name_vars[i], arg->y[i]
+        );
+    }
+
+    printf("\n Free parameters info: \n");
+    for(int i=1; i<=arg->eqs_count; i++){
+        printf("\t value for %s = %.3e \n",
+          arg->free_parmeters_names[i], arg->free_parmeters_values[i]
+        );
+    }
+
+    printf(
+        "\n Integrator info: \n \
+        name: %s \n \
+        scaling method: %s \n \
+        rkqs step method: %s \n \
+        initial step %.3e \n \
+        minimal step %3e \n \
+        desired accuracy %.3e \n \
+        desired points to record %d \n\n",
+        \
+        "odeint",
+        arg->odeint_scaling_method_description,
+        arg->rkqs_step_method_description,
+        arg->h1, arg->hmin, arg->eps, arg->points_count
+    );
+}
+
 void ode_logistics_integrate( ODEsystemStruct **arg ){
 
     const char function_path[] = "ODE_logistic.c ode_logistics_integrate", \
@@ -386,6 +436,8 @@ void ode_logistics_integrate( ODEsystemStruct **arg ){
     kmax = (*arg)->points_count;
     xp = (*arg)->points_x;
     yp = (*arg)->points_y;
+
+    ode_logistics_integrate_info_print(*arg);
 
     odeint(\
         y, (*arg)->eqs_count, (*arg)->x_initial, (*arg)->x_final, \
