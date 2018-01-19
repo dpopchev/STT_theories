@@ -108,10 +108,17 @@ void ode_logistics_init( ODEsystemStruct **arg ){
         strcpy((*arg)->name_vars[i],ode_names[i]);
 
         if(DEBUGGING_ode_logistics_init){
-            printf(\
-              "%s %s y[%d] is %s (index 0 is the independent variable) \n", \
-              identation,function_path, i, (*arg)->name_vars[i] \
-            );
+            i ? \
+                printf(\
+                  "%s %s the dependent [%d] variable is %s \n", \
+                  identation,function_path, i,(*arg)->name_vars[i] \
+                ) \
+                : \
+                printf(\
+                  "%s %s the independent variable is %s \n", \
+                  identation,function_path, (*arg)->name_vars[i] \
+                ) \
+            ;
         }
     }
 
@@ -248,7 +255,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     };
 
     for(int i=1; i <= (*arg)->free_parmeters_count_all; i++){
-        (*arg)->free_parmeters_values[i] = free_parmeters_values_all[i][0];
+        (*arg)->free_parmeters_values[i] = free_parmeters_values_all[i][1];
 
         if(DEBUGGING_ode_logistics_init){
             printf(\
