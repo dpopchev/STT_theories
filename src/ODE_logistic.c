@@ -1,36 +1,47 @@
 #include "ExternalHeaders.h"
 
 #define DEBUGGING_ode_logistics_foo 0
-#define DEBUGGING_ode_logistics_init 1
+#define DEBUGGING_ode_logistics_init 0
 #define DEBUGGING_ode_logistics_free 0
 #define DEBUGGING_ode_logistics_integrate 0
 
+// General variables
 #define ODE_VARS_NAME_LENGHT 16
 #define MAX_ARR_SIZE 16
 
+// ODE system general info
 #define ODE_INDEX 0
 #define ODE_DESCRIPTION "ode 0, 1d, logistic equation"
-#define ODE_EQS_COUNT 1
-#define ODE_Y_INIT_1 1
 
+// ODE count of equations and initial variable per equation
+#define ODE_EQS_COUNT 1
 #define ODE_Y_INIT_VAL_1 1
 
+// ODE names/symbols for independent and for each dependent variable
 #define ODE_NAME_INDEP "t"
 #define ODE_NAME_DEP_1 "N"
 
+// odeint mount of points we want to print if any
 #define ODE_POINTS_COUNT 1e2
 
+// odeint will use those scaling and rkqs step size methods
 #define ODE_ODE_SCALLING 0
 #define ODE_RKQS_SCALLING 0
 
+// amount of ode free parameters, name/symbol for each one
 #define ODE_FREE_PARM_COUNT_ALL 1
 #define ODE_FREE_PARM_NAME_1 "r"
+
+// if we will search for more values for some parameters, then how many
+// and what will be the values be
 #define ODE_FREE_PARM_COUNT_1 5
 #define ODE_FREE_PARM_VALS_1 -1, -0.5, 0, 0.5, 1
 
+// the interval for the independent variable
 #define ODE_INDEP_INIT 0
 #define ODE_INDEP_FINAL 10
 
+// odeint mandatory parameters for accuracy, initial step and min step size
 #define ODE_INTEGR_EPS 1e-12
 #define ODE_INTEGR_H1 1e-30
 #define ODE_INTEGR_HMIN 0
@@ -109,7 +120,7 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     // the first value is not counted, since dvector starts from 1 !!!
     double y[] = {
         1e10, // THIS VALUE DOES NOT TAKE ANY EFFECT, since dvector starts from index 1
-        ODE_Y_INIT_1 // initial population
+        ODE_Y_INIT_VAL_1 // initial population
     };
 
     (*arg)->y = dvector(1, (*arg)->eqs_count);
