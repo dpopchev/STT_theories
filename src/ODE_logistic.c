@@ -64,12 +64,7 @@ void ode_logistics_foo( double x, double *y, double *dydx ){
         // result variable for this iteration
         result = 0.0;
 
-    result = r*N*(1-N);
-
-// TODO: this should be used in favour of line 454
-    printf("\n%.3e %.3e %.3e", x, y[1],r );
-
-    dydx[1] = result;
+    dydx[1] = r*N*(1-N);
 
     return;
 }
@@ -506,11 +501,11 @@ void ode_logistics_integrate( ODEsystemStruct **arg ){
         (*arg)->foo \
     );
 
-    //if((*arg)->points_count){
-        //for(int i=1; i <= (*arg)->points_count; i++){
-            //printf("\n %e %e", xp[i], yp[1][i]);
-        //}
-    //}
+    if((*arg)->points_count){
+        for(int i=1; i <= (*arg)->points_count; i++){
+            printf("\n %e %e", xp[i], yp[1][i]);
+        }
+    }
 
     free_dvector(y, 1, (*arg)->eqs_count);
 
