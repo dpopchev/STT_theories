@@ -13,10 +13,14 @@
 
     extern void dvector_copy( double *from, double *to, int size );
 
-    extern void ode_logistics_foo( double x, double *y, double *dydx );
     extern void ode_logistics_init( ODEsystemStruct **arg );
     extern void ode_logistics_free( ODEsystemStruct **arg );
-    extern void ode_logistics_integrate( ODEsystemStruct **arg );
+    extern void ode_logistics_compute_parameters( ODEsystemStruct **arg );
+
+    extern FILE* open_file_to_WRITE_ResultFile( ODEsystemStruct *arg );
+    extern FILE* open_file_to_APPEND_ResultFile( ODEsystemStruct *arg );
+    extern FILE* open_file_to_WRITE_LivePlot( ODEsystemStruct *arg );
+    extern FILE* open_file_to_APPEND_LivePlot( ODEsystemStruct *arg );
 
     // odeint vars and touches
     // they are included inside ODEsystemStruct

@@ -138,7 +138,7 @@ int main( void ){
                 );
             }
             ode_logistics_init( &ode );
-            ode_logistics_integrate( &ode );
+            ode_logistics_compute_parameters( &ode );
 
             break;
 

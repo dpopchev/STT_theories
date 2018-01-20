@@ -11,7 +11,7 @@
 
 // ODE system general info
 #define ODE_INDEX 0
-#define ODE_DESCRIPTION "ode 0, 1d, logistic equation"
+#define ODE_DESCRIPTION "LogisticEq"
 
 // ODE count of equations and initial variable per equation
 #define ODE_EQS_COUNT 1
@@ -48,7 +48,7 @@
 
 static double *GV_PARAMETERS_VALUES;
 
-void ode_logistics_foo( double x, double *y, double *dydx ){
+static void ode_logistics_foo( double x, double *y, double *dydx ){
 
     const char \
         function_path[] = "All_ODE.c ode_logistics_init", \
@@ -382,7 +382,7 @@ void ode_logistics_free( ODEsystemStruct **arg ){
         printf("%s %s starting \n", identation, function_path);
     }
 
-    free_dvector((*arg)->y, 1, (*arg)->eqs_count);
+    free((*arg)->y);
 
     for(int i=0; i <=(*arg)->eqs_count; i++ ){
         free((*arg)->name_vars[i]);
@@ -391,11 +391,14 @@ void ode_logistics_free( ODEsystemStruct **arg ){
     free((*arg)->name_vars);
 
     if( (*arg)->points_count ){
-        free_dvector( (*arg)->points_x, 1, (*arg)->points_count );
+
+        free( (*arg)->points_x);
+
         free_dmatrix(
           (*arg)->points_y, 1, (*arg)->eqs_count,
           1, (*arg)->points_count
         );
+
     }else{
         free((*arg)->points_x);
         free((*arg)->points_y);
@@ -422,12 +425,12 @@ void ode_logistics_free( ODEsystemStruct **arg ){
     return;
 }
 
-static void ode_logistics_integrate_info_print( ODEsystemStruct *arg ){
+static void ode_logistics_integrate_info_print_stdout( ODEsystemStruct *arg ){
 
     printf(
         "\n System info: \n \
         index: %d \n \
-        description: %s \n",
+        name: %s \n",
         arg->index,
         arg->name_system
     );
@@ -452,13 +455,16 @@ static void ode_logistics_integrate_info_print( ODEsystemStruct *arg ){
 
     printf("\n Free parameters info: \n");
     for(int i=1; i<=arg->eqs_count; i++){
-        printf("\t value for %s = %.3e \n",
-          arg->free_parmeters_names[i], arg->free_parmeters_values[i]
-        );
+
+        printf("\t value for %s = ", arg->free_parmeters_names[i] );
+
+        for(int l=1; l<=arg->free_parameters_count_each[i]; l++){
+            printf(" %.3e ", arg->free_parmeters_values_all[i][l] );
+        }
     }
 
     printf(
-        "\n Integrator info: \n \
+        "\n\n Integrator info: \n \
         name: %s \n \
         scaling method: %s \n \
         rkqs step method: %s \n \
@@ -472,9 +478,77 @@ static void ode_logistics_integrate_info_print( ODEsystemStruct *arg ){
         arg->rkqs_step_method_description,
         arg->h1, arg->hmin, arg->eps, arg->points_count
     );
+
+    return;
 }
 
-void ode_logistics_integrate( ODEsystemStruct **arg ){
+static void ode_logistics_integrate_info_print_ResultFile( ODEsystemStruct *arg ){
+
+    FILE *fp = open_file_to_WRITE_ResultFile(arg);
+
+    fprintf(
+        fp,
+        "\n System info: \n \
+        index: %d \n \
+        name: %s \n",
+        arg->index,
+        arg->name_system
+    );
+
+    fprintf(
+        fp,
+        "\n Independent variable info: \n \
+        name: %s \n \
+        initial value: %.3e \n \
+        final value: %.3e \n",
+        arg->name_vars[0], arg->x_initial, arg->x_final
+    );
+
+    fprintf(
+        fp,
+        "\n Dependent variables info: \n"
+    );
+    for(int i=1; i<=arg->eqs_count; i++){
+        fprintf(
+            fp,
+            "\t initial value for %s = %.3e \n",
+            arg->name_vars[i], arg->y[i]
+        );
+    }
+
+    fprintf( fp,"\n Free parameters info: \n");
+    for(int i=1; i<=arg->eqs_count; i++){
+
+        fprintf( fp,"\t value for %s = ", arg->free_parmeters_names[i] );
+
+        for(int l=1; l<=arg->free_parameters_count_each[i]; l++){
+            fprintf( fp," %.3e ", arg->free_parmeters_values_all[i][l] );
+        }
+    }
+
+    fprintf(
+        fp,
+        "\n\n Integrator info: \n \
+        name: %s \n \
+        scaling method: %s \n \
+        rkqs step method: %s \n \
+        initial step %.3e \n \
+        minimal step %.3e \n \
+        desired accuracy %.3e \n \
+        desired points to record %d \n\n",
+        \
+        "odeint",
+        arg->odeint_scaling_method_description,
+        arg->rkqs_step_method_description,
+        arg->h1, arg->hmin, arg->eps, arg->points_count
+    );
+
+    fclose(fp);
+
+    return;
+}
+
+static void ode_logistics_integrate( ODEsystemStruct **arg ){
 
     const char function_path[] = "ODE_logistic.c ode_logistics_integrate", \
                identation[] = "\n";
@@ -489,26 +563,116 @@ void ode_logistics_integrate( ODEsystemStruct **arg ){
     dvector_copy((*arg)->y, y, (*arg)->eqs_count);
 
     kmax = (*arg)->points_count;
-    xp = (*arg)->points_x;
-    yp = (*arg)->points_y;
 
-    ode_logistics_integrate_info_print(*arg);
+    if(kmax){
 
-    odeint(\
-        y, (*arg)->eqs_count, (*arg)->x_initial, (*arg)->x_final, \
-        (*arg)->eps, (*arg)->h1, (*arg)->hmin, \
-        &(*arg)->nok, &(*arg)->nbad, \
-        (*arg)->foo \
+        xp = (*arg)->points_x;
+        yp = (*arg)->points_y;
+
+        for(int i=1; i <= (*arg)->points_count; i++){
+            xp[i] = 0;
+            for(int l=1; l <= (*arg)->eqs_count; l++){
+                yp[l][i] = 0;
+            }
+        }
+    }else{
+        xp = NULL;
+        yp = NULL;
+    }
+
+    //ode_logistics_integrate_info_print(*arg);
+
+    odeint(
+      y, (*arg)->eqs_count, (*arg)->x_initial, (*arg)->x_final,
+      (*arg)->eps, (*arg)->h1, (*arg)->hmin,
+      &(*arg)->nok, &(*arg)->nbad,
+      (*arg)->foo
     );
 
-    if((*arg)->points_count){
-        for(int i=1; i <= (*arg)->points_count; i++){
-            printf("\n %e %e", xp[i], yp[1][i]);
-        }
-    }
+    //if((*arg)->points_count){
+        //for(int i=1; i <= (*arg)->points_count; i++){
+            //printf("\n %e %e", xp[i], yp[1][i]);
+        //}
+    //}
+
+    dvector_copy(y, (*arg)->y, (*arg)->eqs_count);
 
     free_dvector(y, 1, (*arg)->eqs_count);
 
+    return;
+}
+
+static void ode_logistics_LivePlot_open(ODEsystemStruct *arg ){
+
+    FILE *fp = open_file_to_WRITE_LivePlot(arg);
+
+    fclose(fp);
+
+    return;
+}
+
+static void ode_logistics_LivePlot_append(ODEsystemStruct *arg ){
+
+    FILE *fp = open_file_to_APPEND_LivePlot(arg);
+
+    fprintf(fp,"# ");
+
+    for(int i=1; i <= arg->free_parmeters_count_all; i++){
+        fprintf(
+            fp,
+            "%s = %.3e",
+            arg->free_parmeters_names[i],
+            arg->free_parmeters_values[i]
+        );
+    }
+
+    if(arg->points_count){
+        for(int i=1; i <= arg->points_count && xp[i]; i++){
+            fprintf(fp,"\n%e, %e", xp[i], yp[1][i]);
+        }
+    }
+
+    fprintf(fp,"\n");
+
+    fclose(fp);
+
+    return;
+}
+
+void ode_logistics_compute_parameters( ODEsystemStruct **arg ){
+
+    double *tmp_y;
+
+    tmp_y = dvector(1, (*arg)->eqs_count);
+    dvector_copy((*arg)->y, tmp_y ,(*arg)->eqs_count);
+
+    ode_logistics_LivePlot_open(*arg);
+
+    for(
+      int parm_r = 1;
+      parm_r <= (*arg)->free_parameters_count_each[1];
+      parm_r++
+    ){
+        (*arg)->free_parmeters_values[1] = \
+          (*arg)->free_parmeters_values_all[1][parm_r];
+
+        dvector_copy(tmp_y,(*arg)->y ,(*arg)->eqs_count);
+
+        //ode_logistics_integrate_info_print_stdout(*arg);
+        ode_logistics_integrate_info_print_ResultFile(*arg);
+
+        ode_logistics_integrate(arg);
+
+        ode_logistics_LivePlot_append(*arg);
+
+        //printf("\n\n End results: \n");
+        //for( int i=1; i <= (*arg)->eqs_count; i++){
+            //printf("\t %s = %.3e \n", (*arg)->name_vars[i], (*arg)->y[i]);
+        //}
+        //printf("\n\n\n\n\n");
+    }
+
+    free(tmp_y);
     return;
 }
 

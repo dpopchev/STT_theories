@@ -3,10 +3,10 @@
 # Based on
 #   https://pythonprogramming.net/live-graphs-matplotlib-tutorial/
 
-def animate(i):
+file_path = "/home/dimitar/projects/STT_theories/results/"
+file_name = "LogisticEq_live_plot"
 
-    file_path = "../../results/"
-    file_name = "live_plot_data"
+def animate(i):
 
     with open(file_path + file_name,'r') as f:
         graph_data = f.read()
@@ -44,6 +44,8 @@ def animate(i):
     ax.legend(loc="best")
 
 if __name__ == "__main__":
+
+    from sys import argv
 
     from matplotlib import pyplot as plt
     from matplotlib import animation as animation
