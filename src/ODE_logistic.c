@@ -46,6 +46,11 @@
 #define ODE_INTEGR_H1 1e-30
 #define ODE_INTEGR_HMIN 0
 
+#define Y_INDEX_CHANGE 1
+#define INITIAL_Y_START 0
+#define INITIAL_Y_END 1
+#define INITIAL_Y_STEP 0.05
+
 static double *GV_PARAMETERS_VALUES;
 
 static void ode_logistics_foo( double x, double *y, double *dydx ){
@@ -127,6 +132,34 @@ void ode_logistics_init( ODEsystemStruct **arg ){
               "%s %s y[%d] = %.3e \n", \
               identation,function_path, i, (*arg)->y[i] \
             );
+        }
+    }
+
+    // index for the y whos initial value will be changed
+    // if any, if not just 0
+    (*arg)->index_of_y_to_change = Y_INDEX_CHANGE;
+
+    if((*arg)->index_of_y_to_change){
+        (*arg)->initial_y_start = INITIAL_Y_START;
+        (*arg)->initial_y_end = INITIAL_Y_END;
+        (*arg)->initial_y_current = (*arg)->initial_y_start;
+        (*arg)->initial_y_step = INITIAL_Y_STEP;
+
+        if(DEBUGGING_ode_logistics_init){
+
+            printf(
+              "%s %s We will change initial value of y[%d] from %.3e to %.3e \n",
+              identation,function_path, (*arg)->index_of_y_to_change,
+              (*arg)->initial_y_start, (*arg)->initial_y_end
+            );
+        }
+    }else{
+        (*arg)->initial_y_start = 0;
+        (*arg)->initial_y_end = 0;
+        (*arg)->initial_y_current = 0;
+
+        if(DEBUGGING_ode_logistics_init){
+            printf("%s %s We will NOT change \n",identation,function_path);
         }
     }
 
@@ -453,6 +486,16 @@ static void ode_logistics_integrate_info_print_stdout( ODEsystemStruct *arg ){
         );
     }
 
+    if(arg->index_of_y_to_change){
+        printf(
+          "\t Will change %s from %.3e to %.3e with step %.3e \n",
+          arg->name_vars[arg->index_of_y_to_change],
+          arg->initial_y_start,
+          arg->initial_y_end,
+          arg->initial_y_step
+        );
+    }
+
     printf("\n Free parameters info: \n");
     for(int i=1; i<=arg->eqs_count; i++){
 
@@ -521,6 +564,17 @@ static void ode_logistics_integrate_info_print_ResultFile( ODEsystemStruct *arg 
         );
     }
 
+    if(arg->index_of_y_to_change){
+        fprintf(
+          fp,
+          "\t Will change %s from %.3e to %.3e with step %.3e \n",
+          arg->name_vars[arg->index_of_y_to_change],
+          arg->initial_y_start,
+          arg->initial_y_end,
+          arg->initial_y_step
+        );
+    }
+
     fprintf( fp,"\n Free parameters info: \n");
     for(int i=1; i<=arg->eqs_count; i++){
 
@@ -557,7 +611,7 @@ static void ode_logistics_integrate_info_print_ResultFile( ODEsystemStruct *arg 
         arg->h1, arg->hmin, arg->eps, arg->points_count
     );
 
-    fprintf(fp, "\n\n N_init N_final");
+    fprintf(fp, "\n\nN_init, N_final");
 
     fclose(fp);
 
@@ -636,9 +690,8 @@ static void ode_logistics_LivePlot_append(ODEsystemStruct *arg){
     for(int i=1; i <= arg->free_parmeters_count_all; i++){
         fprintf(
             fp,
-            "%s = %.3e",
-            arg->free_parmeters_names[i],
-            arg->free_parmeters_values[i]
+            "y_c = %.3e",
+            arg->initial_y_current
         );
     }
 
@@ -655,11 +708,15 @@ static void ode_logistics_LivePlot_append(ODEsystemStruct *arg){
     return;
 }
 
-static void ode_logistics_ResultFile_append(ODEsystemStruct *arg, double y_c){
+static void ode_logistics_ResultFile_append(ODEsystemStruct *arg){
 
-    FILE *fp = open_file_to_WRITE_ResultFile(arg);
+    FILE *fp = open_file_to_APPEND_ResultFile(arg);
 
-    fprintf(fp,"\n%e, %e", y_c, arg->y[1]);
+    fprintf(
+      fp,
+      "\n%e, %e",
+      arg->initial_y_current, arg->y[arg->index_of_y_to_change]
+    );
 
     fclose(fp);
 
@@ -667,8 +724,6 @@ static void ode_logistics_ResultFile_append(ODEsystemStruct *arg, double y_c){
 }
 
 static void ode_logistics_change_central_value(ODEsystemStruct **arg){
-
-    int index_y_to_change = 1;
 
     double max_val = 1, min_val = 0, current = min_val, step = 0.05, *tmp_y;
 
@@ -679,21 +734,32 @@ static void ode_logistics_change_central_value(ODEsystemStruct **arg){
 
     ode_logistics_LivePlot_open(*arg);
 
-    while( current  <= max_val ){
+    (*arg)->initial_y_current = (*arg)->initial_y_start;
+
+    int iterate = 1;
+    while( iterate ){
 
         dvector_copy(tmp_y,(*arg)->y ,(*arg)->eqs_count);
 
-        (*arg)->y[index_y_to_change] = current;
+        (*arg)->y[(*arg)->index_of_y_to_change] = (*arg)->initial_y_current;
 
         ode_logistics_integrate(arg);
 
-        printf("\n N_init = %.3e, N_fin = %.3e ", current, (*arg)->y[index_y_to_change]);
+        printf(
+          "\n N_init = %.3e, N_fin = %.3e",
+          (*arg)->initial_y_current, (*arg)->y[(*arg)->index_of_y_to_change]
+        );
 
         ode_logistics_LivePlot_append(*arg);
 
-        ode_logistics_ResultFile_append(*arg, current);
+        ode_logistics_ResultFile_append(*arg);
 
-        current += step;
+        if( (*arg)->initial_y_current <= (*arg)->initial_y_end ){
+            (*arg)->initial_y_current += (*arg)->initial_y_step;
+            iterate = 1;
+        }else{
+            iterate = 0;
+        }
     }
 
     free(tmp_y);
@@ -725,7 +791,9 @@ void ode_logistics_compute_parameters( ODEsystemStruct **arg ){
         //ode_logistics_integrate(arg);
         ode_logistics_change_central_value(arg);
 
-        sleep(5);
+        int time_interval = 30;
+        printf("\n\n TIME TO SLEEP FOR RESULT CHECK for %d s \n\n",time_interval );
+        sleep(time_interval);
     }
 
     free(tmp_y);
@@ -754,3 +822,7 @@ void ode_logistics_compute_parameters( ODEsystemStruct **arg ){
 #undef ODE_INTEGR_EPS
 #undef ODE_INTEGR_H1
 #undef ODE_INTEGR_HMIN
+#undef Y_INDEX_CHANGE
+#undef INITIAL_Y_START
+#undef INITIAL_Y_END
+#undef INITIAL_Y_STEP

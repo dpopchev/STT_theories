@@ -25,7 +25,9 @@
             // amount of free parameters for the system
             free_parmeters_count_all, \
             // how many values of each parameter we are interested
-            *free_parameters_count_each;
+            *free_parameters_count_each, \
+            // index for the y whos initial value will be changed
+            index_of_y_to_change;
 
         double \
             // the system itself
@@ -47,7 +49,10 @@
             // pointer to include the free parameters of the system
             *free_parmeters_values, \
             // all possible values of parameters we are interested per parameter
-            **free_parmeters_values_all;
+            **free_parmeters_values_all, \
+            // interval in which we will change the initial value of y
+            // with index index_of_y_to_change
+            initial_y_start, initial_y_end, initial_y_current, initial_y_step;
 
         char \
             // name with simple description, see GlobalVars.h
