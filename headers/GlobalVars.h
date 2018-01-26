@@ -34,4 +34,10 @@
     extern void odeint_info_print_stdout(void);
     extern void odeint_info_print_ResultFile(FILE *fp);
 
+    extern void newt(
+        double x[], int n, int *check, void (*vecfunc)(int, double [], double [])
+    );
+    extern void newt_info_print_stdout(void);
+    extern void newt_info_print_ResultFile(FILE *fp);
+
 #endif
