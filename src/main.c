@@ -13,7 +13,7 @@ double \
     GV_G = 6.67384e-11, \
     // speed of light in m*s^-1
     GV_C = 299792458, \
-    // FIXME: What is GV_MBAR constant?
+    // Barionic mass for ESOII to calculate something of the sun about bounding energy
     GV_MBAR = 1.66e-24, \
     // Nice pi number
     GV_PI = 3.14159265358979323846, \
@@ -137,6 +137,7 @@ int main( void ){
                     ODE_equtions_list[ODE_index] \
                 );
             }
+
             ode_logistics_init( &ode );
             ode_logistics_compute_parameters( &ode );
 

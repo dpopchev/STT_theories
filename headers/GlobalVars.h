@@ -24,14 +24,14 @@
 
     // odeint vars and touches
     // they are included inside ODEsystemStruct
-    extern int ODEINT_SCALING_METHOD, RKQS_STEP_METHOD, kmax, kount;
+    extern int kmax, kount;
     extern double *xp, **yp, dxsav;
-    extern const char *ODEINT_SCALING_METHOD_DESCRIPTION[];
-    extern const char *RKQS_STEP_METHOD_DESCRIPTION[];
-    extern void odeint(\
-        double ystart[], int nvar, double x1, double x2, double eps, double h1, \
-        double hmin, int *nok, int *nbad, \
-        void (*derivs)(double, double [], double []) \
+    extern void odeint(
+        double ystart[], int nvar, double x1, double x2, int *nok, int *nbad,
+        void (*derivs)(double, double [], double [])
     );
+
+    extern void odeint_info_print_stdout(void);
+    extern void odeint_info_print_ResultFile(FILE *fp);
 
 #endif

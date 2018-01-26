@@ -1,7 +1,9 @@
 #include "ExternalHeaders.h"
 
 // odeint defines
-//
+#define EPS 1e-12
+#define H1 1e-30
+#define HMIN 0.0
 #define MAXSTP 10000
 #define TINY 1.0e-30
 
@@ -14,8 +16,13 @@
 // odeint determines the step size by monitoring
 // local truncation error by scaling several scaling techniques are available
 // thus choose one of the below
-int ODEINT_SCALING_METHOD;
-const char *ODEINT_SCALING_METHOD_DESCRIPTION[] = \
+#define ODEINT_SCALING_METHOD 0
+
+// rkqs is advancing with small steps
+// choose the method to evaluate the new value for x
+#define RKQS_STEP_METHOD 0
+
+static const char *ODEINT_SCALING_METHOD_DESCRIPTION[] = \
     { \
         "[0], \
          the default, \
@@ -38,10 +45,7 @@ const char *ODEINT_SCALING_METHOD_DESCRIPTION[] = \
          yscal[i]=FMAX(fabs(y[i])+fabs(dydx[i]*h)+TINY, 1e-11);" \
     };
 
-// rkqs is advancing with small steps
-// choose the method to evaluate the new value for x
-int RKQS_STEP_METHOD;
-const char *RKQS_STEP_METHOD_DESCRIPTION[] = \
+static const char *RKQS_STEP_METHOD_DESCRIPTION[] = \
     { \
         "[0], \
          the default method, \
@@ -53,6 +57,57 @@ const char *RKQS_STEP_METHOD_DESCRIPTION[] = \
          hh -= *x; \
          xnew = (*x) + hh;"\
     };
+
+void odeint_info_print_stdout(void){
+
+    printf(
+        "\n\n Integrator info: \n \
+        name: %s \n \
+        scaling method: %s \n \
+        rkqs step method: %s \n \
+        initial step %.3e \n \
+        minimal step %.3e \n \
+        desired accuracy %.3e \n \
+        safety parameter is %.3e \n \
+        pgrow parameter is %.3e \n \
+        pshrink parameter is %.3e \n \
+        errcon parameter is %.3e \n \
+        maxstp parameter is %d \n \
+        tiny parameter is %.3e \n\n",
+        "odeint",
+        ODEINT_SCALING_METHOD_DESCRIPTION[ODEINT_SCALING_METHOD],
+        RKQS_STEP_METHOD_DESCRIPTION[RKQS_STEP_METHOD],
+        H1, HMIN, EPS, SAFETY, PGROW, PSHRNK, ERRCON, MAXSTP, TINY
+    );
+
+    return;
+}
+
+void odeint_info_print_ResultFile(FILE *fp){
+
+    fprintf(
+        fp,
+        "\n\n Integrator info: \n \
+        name: %s \n \
+        scaling method: %s \n \
+        rkqs step method: %s \n \
+        initial step %.3e \n \
+        minimal step %.3e \n \
+        desired accuracy %.3e \n \
+        safety parameter is %.3e \n \
+        pgrow parameter is %.3e \n \
+        pshrink parameter is %.3e \n \
+        errcon parameter is %.3e \n \
+        maxstp parameter is %d \n \
+        tiny parameter is %.3e \n\n",
+        "odeint",
+        ODEINT_SCALING_METHOD_DESCRIPTION[ODEINT_SCALING_METHOD],
+        RKQS_STEP_METHOD_DESCRIPTION[RKQS_STEP_METHOD],
+        H1, HMIN, EPS, SAFETY, PGROW, PSHRNK, ERRCON, MAXSTP, TINY
+    );
+
+    return;
+}
 
 // odeint global variables
 int kmax,kount;
@@ -163,13 +218,12 @@ static void rkqs(\
 }
 
 // odeint code
-void odeint(\
-    double ystart[], int nvar, double x1, double x2, double eps, double h1, \
-    double hmin, int *nok, int *nbad, \
-    void (*derivs)(double, double [], double []) \
+void odeint(
+    double ystart[], int nvar, double x1, double x2, int *nok, int *nbad,
+    void (*derivs)(double, double [], double [])
 ){
     int nstp,i;
-    double xsav = 0, x,hnext,hdid,h;
+    double xsav = 0, x,hnext,hdid,h,eps=EPS, h1=H1, hmin=HMIN;
     double *yscal,*y,*dydx;
 
     yscal=dvector(1,nvar);
@@ -235,11 +289,14 @@ void odeint(\
     nrerror("Too many steps in routine odeint");
 }
 
+#undef EPS
+#undef H1
+#undef HMIN
+#undef MAXSTP
+#undef TINY
 #undef SAFETY
 #undef PGROW
 #undef PSHRNK
 #undef ERRCON
 #undef ODEINT_SCALING_METHOD
 #undef RKQS_STEP_METHOD
-#undef MAXSTP
-#undef TINY

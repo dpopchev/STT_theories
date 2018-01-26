@@ -1,6 +1,7 @@
 #include "ExternalHeaders.h"
 
 #define DEBUGGING_dvector_copy 0
+#define DEBUGGING_OPEN_WRITE_RESULT 0
 
 #define PARAM_VAL_CHAR_LENG 16
 
@@ -38,6 +39,10 @@ FILE* open_file_to_WRITE_ResultFile( ODEsystemStruct *arg ){
 
     char full_file_path[128]="/home/dimitar/projects/STT_theories/results/";
     char **parm_val;
+
+    if(DEBUGGING_OPEN_WRITE_RESULT){
+        printf("\n General_purpose.c open_file_to_WRITE_ResultFile \n");
+    }
 
     strcat( full_file_path, arg->name_system );
 

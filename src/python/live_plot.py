@@ -65,8 +65,8 @@ def animate_result(i):
     with open(file_to_use,'r') as f:
         graph_data = f.read()
 
-    only_test_const = 30
-    graph_data = graph_data.split("\n")[30:]
+    only_test_const = 35
+    graph_data = graph_data.split("\n")[only_test_const:]
 
     plot_x, plot_y = [], []
 

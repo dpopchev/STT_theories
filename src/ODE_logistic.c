@@ -24,10 +24,6 @@
 // odeint mount of points we want to print if any
 #define ODE_POINTS_COUNT 1e2
 
-// odeint will use those scaling and rkqs step size methods
-#define ODE_ODE_SCALLING 0
-#define ODE_RKQS_SCALLING 0
-
 // amount of ode free parameters, name/symbol for each one
 #define ODE_FREE_PARM_COUNT_ALL 1
 #define ODE_FREE_PARM_NAME_1 "r"
@@ -41,11 +37,8 @@
 #define ODE_INDEP_INIT 0
 #define ODE_INDEP_FINAL 10
 
-// odeint mandatory parameters for accuracy, initial step and min step size
-#define ODE_INTEGR_EPS 1e-12
-#define ODE_INTEGR_H1 1e-30
-#define ODE_INTEGR_HMIN 0
-
+// if we are to change vary any of the initial values of the ODE
+// index, start and end value, also the step to achieve it
 #define Y_INDEX_CHANGE 1
 #define INITIAL_Y_START 0
 #define INITIAL_Y_END 1
@@ -205,8 +198,19 @@ void ode_logistics_init( ODEsystemStruct **arg ){
     // amount of points we want to save and print, if any
     (*arg)->points_count = ODE_POINTS_COUNT;
     if( (*arg)->points_count){
+
+        kmax = (*arg)->points_count;
+
         (*arg)->points_x = dvector(1, (*arg)->points_count);
         (*arg)->points_y = dmatrix(1, (*arg)->eqs_count, 1, (*arg)->points_count);
+
+        xp = (*arg)->points_x;
+        yp = (*arg)->points_y;
+    }else{
+
+        xp = NULL;
+        yp = NULL;
+
     }
 
     if(DEBUGGING_ode_logistics_init){
@@ -233,39 +237,6 @@ void ode_logistics_init( ODEsystemStruct **arg ){
         printf(\
           "%s %s We have %d BAD points \n", \
           identation,function_path, (*arg)->nok \
-        );
-    }
-
-    // scaling method (odeint), see Integrator_odeint.c for more details
-    // default is 0
-    (*arg)->odeint_scaling_method = ODE_ODE_SCALLING;
-    strcpy(\
-        (*arg)->odeint_scaling_method_description, \
-        ODEINT_SCALING_METHOD_DESCRIPTION[(*arg)->odeint_scaling_method] \
-    );
-
-    if(DEBUGGING_ode_logistics_init){
-        printf(\
-          "%s %s We choose %d scalling method for ode int: %s \n", \
-          identation,function_path, \
-          (*arg)->odeint_scaling_method, (*arg)->odeint_scaling_method_description \
-        );
-    }
-
-    // method to evaluate the new value for x in rkqs
-    // see odeint.c for more details
-    // default is 0
-    (*arg)->rkqs_step_method = ODE_RKQS_SCALLING;
-    strcpy(\
-        (*arg)->rkqs_step_method_description, \
-        RKQS_STEP_METHOD_DESCRIPTION[(*arg)->rkqs_step_method] \
-    );
-
-    if(DEBUGGING_ode_logistics_init){
-        printf(\
-          "%s %s We choose %d scalling method for rqs: %s \n", \
-          identation,function_path, \
-          (*arg)->rkqs_step_method, (*arg)->rkqs_step_method_description \
         );
     }
 
@@ -376,23 +347,6 @@ void ode_logistics_init( ODEsystemStruct **arg ){
           "%s %s Independent variable %s initial %.3e and final %.3e value \n", \
           identation,function_path, (*arg)->name_vars[0], \
           (*arg)->x_initial, (*arg)->x_final \
-        );
-    }
-
-    // odeint integration accuracy parameter
-    (*arg)->eps = ODE_INTEGR_EPS;
-
-    // odeint initial step;
-    (*arg)->h1 = ODE_INTEGR_H1;
-
-    // odeint minimum step (can be zero)
-    (*arg)->hmin = ODE_INTEGR_HMIN;
-
-    if(DEBUGGING_ode_logistics_init){
-        printf(
-          "%s %s Ode integrator epsilon = %.3e, initial step = %.3e, min step = %.3e \n",
-          identation,function_path,
-          (*arg)->eps, (*arg)->h1, (*arg)->hmin
         );
     }
 
@@ -511,21 +465,11 @@ static void ode_logistics_integrate_info_print_stdout( ODEsystemStruct *arg ){
         }
     }
 
-    printf(
-        "\n\n Integrator info: \n \
-        name: %s \n \
-        scaling method: %s \n \
-        rkqs step method: %s \n \
-        initial step %.3e \n \
-        minimal step %.3e \n \
-        desired accuracy %.3e \n \
-        desired points to record %d \n\n",
-        \
-        "odeint",
-        arg->odeint_scaling_method_description,
-        arg->rkqs_step_method_description,
-        arg->h1, arg->hmin, arg->eps, arg->points_count
-    );
+    if(arg->points_count){
+        printf("\n Integrator will record at most %d points \n", arg->points_count);
+    }
+
+    odeint_info_print_stdout();
 
     return;
 }
@@ -594,22 +538,11 @@ static void ode_logistics_integrate_info_print_ResultFile( ODEsystemStruct *arg 
         }
     }
 
-    fprintf(
-        fp,
-        "\n\n Integrator info: \n \
-        name: %s \n \
-        scaling method: %s \n \
-        rkqs step method: %s \n \
-        initial step %.3e \n \
-        minimal step %.3e \n \
-        desired accuracy %.3e \n \
-        desired points to record %d \n\n",
-        \
-        "odeint",
-        arg->odeint_scaling_method_description,
-        arg->rkqs_step_method_description,
-        arg->h1, arg->hmin, arg->eps, arg->points_count
-    );
+    if(arg->points_count){
+        printf("\n Integrator will record at most %d points \n", arg->points_count);
+    }
+
+    odeint_info_print_ResultFile(fp);
 
     fprintf(fp, "\n\nN_init, N_final");
 
@@ -632,13 +565,7 @@ static void ode_logistics_integrate( ODEsystemStruct **arg ){
     y = dvector(1, (*arg)->eqs_count);
     dvector_copy((*arg)->y, y, (*arg)->eqs_count);
 
-    kmax = (*arg)->points_count;
-
     if(kmax){
-
-        xp = (*arg)->points_x;
-        yp = (*arg)->points_y;
-
         for(int i=1; i <= (*arg)->points_count; i++){
             xp[i] = 0;
             for(int l=1; l <= (*arg)->eqs_count; l++){
@@ -654,7 +581,6 @@ static void ode_logistics_integrate( ODEsystemStruct **arg ){
 
     odeint(
       y, (*arg)->eqs_count, (*arg)->x_initial, (*arg)->x_final,
-      (*arg)->eps, (*arg)->h1, (*arg)->hmin,
       &(*arg)->nok, &(*arg)->nbad,
       (*arg)->foo
     );
@@ -791,8 +717,8 @@ void ode_logistics_compute_parameters( ODEsystemStruct **arg ){
         //ode_logistics_integrate(arg);
         ode_logistics_change_central_value(arg);
 
-        int time_interval = 30;
-        printf("\n\n TIME TO SLEEP FOR RESULT CHECK for %d s \n\n",time_interval );
+        unsigned short time_interval = 30;
+        printf("\n\n TIME TO SLEEP FOR RESULT PLOT CHECK for %d s \n\n",time_interval );
         sleep(time_interval);
     }
 
@@ -806,6 +732,8 @@ void ode_logistics_compute_parameters( ODEsystemStruct **arg ){
 #undef DEBUGGING_ode_logistics_integrate
 #undef ODE_VARS_NAME_LENGHT
 #undef MAX_ARR_SIZE
+#undef ODE_INDEX
+#undef ODE_DESCRIPTION
 #undef ODE_EQS_COUNT
 #undef ODE_Y_INIT_VAL_1
 #undef ODE_NAME_INDEP
@@ -819,9 +747,6 @@ void ode_logistics_compute_parameters( ODEsystemStruct **arg ){
 #undef ODE_FREE_PARM_VALS_1
 #undef ODE_INDEP_INIT
 #undef ODE_INDEP_FINAL
-#undef ODE_INTEGR_EPS
-#undef ODE_INTEGR_H1
-#undef ODE_INTEGR_HMIN
 #undef Y_INDEX_CHANGE
 #undef INITIAL_Y_START
 #undef INITIAL_Y_END
