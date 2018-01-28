@@ -40,4 +40,8 @@
     extern void newt_info_print_stdout(void);
     extern void newt_info_print_ResultFile(FILE *fp);
 
+    extern void shooting_regular_init(ShootingVarsStruct **arg);
+    extern void shooting_regular_free(ShootingVarsStruct **arg);
+    extern void shooting_regular_info_print_stdout(ShootingVarsStruct *arg);
+    extern void shooting_regular_info_print_ResultFile(ShootingVarsStruct *arg, FILE *fp);
 #endif
