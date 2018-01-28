@@ -211,7 +211,8 @@ void newt_info_print_stdout(void){
         lnsrch convergence criterion on Delta x: %.3e \n \
         machine epsilon for numerical Jacobian fdjac: %.3e \n \
         ludcmp tiny parameter is %.3e \n\n",
-        "newt", MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch, EPS_fdjac, TINY
+        "newt", MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
+        EPS_fdjac, TINY
     );
 
     return;
