@@ -12,10 +12,11 @@
         GV_MACHINE_EPSILON_CUBROOT;
 
     extern void dvector_copy( double *from, double *to, int size );
+    extern void dvector_copy_to_index( double *copy_from, double *copy_to, int size, int *indexes);
 
     extern void ode_logistics_init( ODEsystemStruct **arg );
     extern void ode_logistics_free( ODEsystemStruct **arg );
-    extern void ode_logistics_compute_parameters( ODEsystemStruct **arg );
+    extern void ode_logistics_compute_parameters( ODEsystemStruct *arg );
 
     extern FILE* open_file_to_WRITE_ResultFile( ODEsystemStruct *arg );
     extern FILE* open_file_to_APPEND_ResultFile( ODEsystemStruct *arg );
@@ -44,4 +45,6 @@
     extern void shooting_regular_free(ShootingVarsStruct **arg);
     extern void shooting_regular_info_print_stdout(ShootingVarsStruct *arg);
     extern void shooting_regular_info_print_ResultFile(ShootingVarsStruct *arg, FILE *fp);
+    extern void shooting_regular_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_ode);
+
 #endif

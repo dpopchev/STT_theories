@@ -200,18 +200,25 @@ static double NR_fmin(double x[]){
 void newt_info_print_stdout(void){
 
     printf(
-        "\n\n Solver info: \n \
-        name: %s \n \
-        newt max iterations: %d \n \
-        newt convergence criterion on function values: %.3e \n \
-        newt criterion for spurious convergence to minimum: %.3e \n \
-        newt convergence criterion for meaningful corrections to the root: %.3e \n \
-        newt maximum scaled step length allowed in line searches: %.3e \n \
-        lnsrch sufficient decrease in function value: %.3e \n \
-        lnsrch convergence criterion on Delta x: %.3e \n \
-        machine epsilon for numerical Jacobian fdjac: %.3e \n \
-        ludcmp tiny parameter is %.3e \n\n",
-        "newt", MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
+        "\n Solver info: \n"
+        "\n\t General info \n"
+        "\t\t name %s \n"
+        "\n\t %s parameters info \n"
+        "\t\t max iterations %d \n"
+        "\t\t function value convergence criteria %.3e \n"
+        "\t\t spurious convergence to minimum criteria %.3e \n"
+        "\t\t criteria for meaningful corrections to root %.3e \n"
+        "\t\t maximum sclaed step length in line searches %.3e \n"
+        "\n\t lnsrch parameters \n"
+        "\t\t sufficient decrease in function value %.3e \n"
+        "\t\t convergence criterion on Delta x %.3e \n"
+        "\n\t numerical Jacobian fdjac \n"
+        "\t\t differentiation method: forward difference method \n"
+        "\t\t machine epsilon %.3e \n"
+        "\n\t ludcmp parameters \n"
+        "\t\t tiny parameter %.3e \n"
+        , "newt","newt",
+        MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
         EPS_fdjac, TINY
     );
 
@@ -222,20 +229,29 @@ void newt_info_print_ResultFile(FILE *fp){
 
     fprintf(
         fp,
-        "\n\n Solver info: \n \
-        name: %s \n \
-        newt max iterations: %d \n \
-        newt convergence criterion on function values: %.3e \n \
-        newt criterion for spurious convergence to minimum: %.3e \n \
-        newt convergence criterion for meaningful corrections to the root: %.3e \n \
-        newt maximum scaled step length allowed in line searches: %.3e \n \
-        lnsrch sufficient decrease in function value: %.3e \n \
-        lnsrch convergence criterion on Delta x:  %.3e \n \
-        machine epsilon for numerical Jacobian fdjac: %.3e \n \
-        ludcmp tiny parameter is %.3e \n\n",
-        "newt", MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
+        "\n Solver info: \n"
+        "\n\t General info \n"
+        "\t\t name %s \n"
+        "\n\t %s parameters info \n"
+        "\t\t max iterations %d \n"
+        "\t\t function value convergence criteria %.3e \n"
+        "\t\t spurious convergence to minimum criteria %.3e \n"
+        "\t\t criteria for meaningful corrections to root %.3e \n"
+        "\t\t maximum sclaed step length in line searches %.3e \n"
+        "\n\t lnsrch parameters \n"
+        "\t\t sufficient decrease in function value %.3e \n"
+        "\t\t convergence criterion on Delta x %.3e \n"
+        "\n\t numerical Jacobian fdjac \n"
+        "\t\t differentiation method: forward difference method \n"
+        "\t\t machine epsilon %.3e \n"
+        "\n\t ludcmp parameters \n"
+        "\t\t tiny parameter %.3e \n"
+        , "newt","newt",
+        MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
         EPS_fdjac, TINY
     );
+
+    fclose(fp);
 
     return;
 }

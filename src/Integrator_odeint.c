@@ -61,20 +61,24 @@ static const char *RKQS_STEP_METHOD_DESCRIPTION[] = \
 void odeint_info_print_stdout(void){
 
     printf(
-        "\n\n Integrator info: \n \
-        name: %s \n \
-        scaling method: %s \n \
-        rkqs step method: %s \n \
-        initial step %.3e \n \
-        minimal step %.3e \n \
-        desired accuracy %.3e \n \
-        safety parameter is %.3e \n \
-        pgrow parameter is %.3e \n \
-        pshrink parameter is %.3e \n \
-        errcon parameter is %.3e \n \
-        maxstp parameter is %d \n \
-        tiny parameter is %.3e \n\n",
-        "odeint",
+        "\n Integrator info: \n"
+        "\n\t General info: \n"
+        "\t\t name: %s \n"
+        "\n\t Scaling method: \n"
+        "\t\t %s \n"
+        "\n\t RKQS step method: \n"
+        "\t\t %s \n"
+        "\n\t Parameters: \n"
+        "\t\t initial step %.3e \n"
+        "\t\t minimal step %.3e \n"
+        "\t\t desired accuracy %.3e \n"
+        "\t\t safety parameter is %.3e \n"
+        "\t\t pgrow parameter is %.3e \n"
+        "\t\t pshrink parameter is %.3e \n"
+        "\t\t errcon parameter is %.3e \n"
+        "\t\t maxstp parameter is %d \n"
+        "\t\t tiny parameter is %.3e \n"
+        ,"odeint",
         ODEINT_SCALING_METHOD_DESCRIPTION[ODEINT_SCALING_METHOD],
         RKQS_STEP_METHOD_DESCRIPTION[RKQS_STEP_METHOD],
         H1, HMIN, EPS, SAFETY, PGROW, PSHRNK, ERRCON, MAXSTP, TINY
@@ -87,24 +91,30 @@ void odeint_info_print_ResultFile(FILE *fp){
 
     fprintf(
         fp,
-        "\n\n Integrator info: \n \
-        name: %s \n \
-        scaling method: %s \n \
-        rkqs step method: %s \n \
-        initial step %.3e \n \
-        minimal step %.3e \n \
-        desired accuracy %.3e \n \
-        safety parameter is %.3e \n \
-        pgrow parameter is %.3e \n \
-        pshrink parameter is %.3e \n \
-        errcon parameter is %.3e \n \
-        maxstp parameter is %d \n \
-        tiny parameter is %.3e \n\n",
-        "odeint",
+        "\n Integrator info: \n"
+        "\n\t General info: \n"
+        "\t\t name: %s \n"
+        "\n\t Scaling method: \n"
+        "\t\t %s \n"
+        "\n\t RKQS step method: \n"
+        "\t\t %s \n"
+        "\n\t Parameters: \n"
+        "\t\t initial step %.3e \n"
+        "\t\t minimal step %.3e \n"
+        "\t\t desired accuracy %.3e \n"
+        "\t\t safety parameter is %.3e \n"
+        "\t\t pgrow parameter is %.3e \n"
+        "\t\t pshrink parameter is %.3e \n"
+        "\t\t errcon parameter is %.3e \n"
+        "\t\t maxstp parameter is %d \n"
+        "\t\t tiny parameter is %.3e \n"
+        ,"odeint",
         ODEINT_SCALING_METHOD_DESCRIPTION[ODEINT_SCALING_METHOD],
         RKQS_STEP_METHOD_DESCRIPTION[RKQS_STEP_METHOD],
         H1, HMIN, EPS, SAFETY, PGROW, PSHRNK, ERRCON, MAXSTP, TINY
     );
+
+    fclose(fp);
 
     return;
 }
@@ -200,10 +210,10 @@ static void rkqs(\
                 break; }
             default:
                 printf(\
-                    "\n rkqs step method %d UNKNOWN", \
+                    "\n rkqs step method %d UNKNOWN, line 213", \
                     RKQS_STEP_METHOD\
                 );
-                    exit(123);
+                    exit(213);
                     break;
         }
         xnew=(*x)+h;
@@ -256,10 +266,10 @@ void odeint(
                     break;
                 default:
                     printf(\
-                        "\n odeint.c odeint scaling method %d UNKNOWN", \
+                        "\n odeint.c odeint scaling method %d UNKNOWN, line 269", \
                         ODEINT_SCALING_METHOD\
                     );
-                    exit(123);
+                    exit(269);
                     break;
             }
         }

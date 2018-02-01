@@ -1,6 +1,7 @@
 #include "ExternalHeaders.h"
 
 #define DEBUGGING_dvector_copy 0
+#define DEBUGGING_dvector_copy_to_index 0
 #define DEBUGGING_OPEN_WRITE_RESULT 0
 
 #define PARAM_VAL_CHAR_LENG 16
@@ -30,6 +31,36 @@ void dvector_copy( double *copy_from, double *copy_to, int size ){
         }
 
         copy_to[i] = copy_from[i];
+    }
+
+    return;
+}
+
+void dvector_copy_to_index( double *copy_from, double *copy_to, int size, int *indexes){
+
+    const char \
+        function_path[] = "General_purpose.c dvector_copy_to_index", \
+        identation[] = "\n";
+
+    if(DEBUGGING_dvector_copy_to_index){
+        printf(\
+            "%s %s starting to copy dvector with size %d \n", \
+            identation, function_path, size \
+        );
+    }
+
+    for(int i=1; i <= size; i++){
+
+        if(DEBUGGING_dvector_copy){
+            printf(
+                "%s %s copy_from[%d] = %.3e copy_to[%d] = %.3e \n",
+                identation, function_path,
+                indexes[i], copy_from[indexes[i]],
+                indexes[i], copy_to[indexes[i]]
+            );
+        }
+
+        copy_to[indexes[i]] = copy_from[indexes[i]];
     }
 
     return;
@@ -65,12 +96,12 @@ FILE* open_file_to_WRITE_ResultFile( ODEsystemStruct *arg ){
     if( fp == NULL ){
         printf(
           "\n\n ERROR open_file_to_write_ResultFile oppenning file:\n\n \
-          %s ERROR \n\n",
+          %s ERROR, line 104\n\n",
           full_file_path
         );
         perror("Error");
 
-        exit(123);
+        exit(104);
     }else{
         return fp;
     }
@@ -102,12 +133,12 @@ FILE* open_file_to_APPEND_ResultFile( ODEsystemStruct *arg ){
     if( fp == NULL ){
         printf(
           "\n\n ERROR open_file_to_write_ResultFile oppenning file:\n\n \
-          %s ERROR \n\n",
+          %s ERROR line 141 \n\n",
           full_file_path
         );
         perror("Error");
 
-        exit(123);
+        exit(141);
     }else{
         return fp;
     }
@@ -139,12 +170,12 @@ FILE* open_file_to_WRITE_LivePlot( ODEsystemStruct *arg ){
     if( fp == NULL ){
         printf(
           "\n\n ERROR open_file_to_write_ResultFile oppenning file:\n\n \
-          %s ERROR \n\n",
+          %s ERROR line 178\n\n",
           full_file_path
         );
         perror("Error");
 
-        exit(123);
+        exit(178);
     }else{
         return fp;
     }
@@ -176,17 +207,18 @@ FILE* open_file_to_APPEND_LivePlot( ODEsystemStruct *arg ){
     if( fp == NULL ){
         printf(
           "\n\n ERROR open_file_to_write_ResultFile oppenning file:\n\n \
-          %s ERROR \n\n",
+          %s ERROR line 215 \n\n",
           full_file_path
         );
         perror("Error");
 
-        exit(123);
+        exit(215);
     }else{
         return fp;
     }
-
 }
 
 #undef PARAM_VAL_CHAR_LENG
 #undef DEBUGGING_dvector_copy
+#undef DEBUGGING_OPEN_WRITE_RESULT
+#undef DEBUGGING_dvector_copy_to_index

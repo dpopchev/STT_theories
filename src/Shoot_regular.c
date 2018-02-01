@@ -1,6 +1,6 @@
 #include "ExternalHeaders.h"
 
-#define DEBUGGING_shooting_regular_init 0
+#define DEBUGGING_shooting_regular_init 1
 
 // how many values of the ODE are given on the left side of the interval
 #define KNOWN_LEFT_N 0
@@ -25,8 +25,8 @@
 void shooting_regular_init(ShootingVarsStruct **arg){
 
     const char \
-        function_path[] = "Shoot_regular.c shooting_regular_init \n", \
-        identation[] = "\n";
+        function_path[] = "Shoot_regular.c shooting_regular_init ", \
+        identation[] = "\n\t";
 
     if(DEBUGGING_shooting_regular_init){
         printf("%s %s starting \n", identation, function_path);
@@ -58,11 +58,10 @@ void shooting_regular_init(ShootingVarsStruct **arg){
 
                 printf(
                     "%s %s known left [%d] = %.3e \n",
-                    function_path, identation,
+                    identation, function_path,
                     (*arg)->known_left_indexes[i], (*arg)->known_left_values[i]
                 );
             }
-
         }
     }else{
 
@@ -72,7 +71,7 @@ void shooting_regular_init(ShootingVarsStruct **arg){
         if(DEBUGGING_shooting_regular_init){
             printf(
               "%s %s non known indexes on left side of interval \n",
-              function_path, identation
+              identation, function_path
             );
         }
     }
@@ -94,7 +93,7 @@ void shooting_regular_init(ShootingVarsStruct **arg){
 
         (*arg)->UNknown_left_values = dvector(1,(*arg)->UNknown_left_n);
 
-        for(int i=1; i<= (*arg)->known_left_n; i++){
+        for(int i=1; i<= (*arg)->UNknown_left_n; i++){
 
             (*arg)->UNknown_left_indexes[i] = UNknown_left_indexes[i];
             (*arg)->UNknown_left_values[i] = UNknown_left_values[i];
@@ -102,8 +101,8 @@ void shooting_regular_init(ShootingVarsStruct **arg){
             if(DEBUGGING_shooting_regular_init){
 
                 printf(
-                    "%s %s UNknown left [%d] = %.3e \n",
-                    function_path, identation,
+                    "%s %s (init guess) UNknown left [%d] = %.3e \n",
+                    identation, function_path,
                     (*arg)->UNknown_left_indexes[i], (*arg)->UNknown_left_values[i]
                 );
             }
@@ -115,10 +114,9 @@ void shooting_regular_init(ShootingVarsStruct **arg){
         if(DEBUGGING_shooting_regular_init){
             printf(
               "%s %s non UNknown indexes on left side of interval \n",
-              function_path, identation
+              identation, function_path
             );
         }
-
     }
 
     (*arg)->known_right_n = KNOWN_RIGHT_N;
@@ -126,14 +124,14 @@ void shooting_regular_init(ShootingVarsStruct **arg){
 
         int known_right_indexes[] = {
             1e5, // first index is not taken into account
-            KNOWN_LEFT_INDEXES
+            KNOWN_RIGHT_INDEXES
         };
 
         (*arg)->known_right_indexes = ivector(1,(*arg)->known_right_n);
 
         double known_right_values[] = {
             1e5, // first index is not taken into account
-            KNOWN_LEFT_VALUES
+            KNOWN_RIGHT_VALUES
         };
 
         (*arg)->known_right_values = dvector(1,(*arg)->known_right_n);
@@ -146,8 +144,8 @@ void shooting_regular_init(ShootingVarsStruct **arg){
             if(DEBUGGING_shooting_regular_init){
 
                 printf(
-                    "%s %s known left [%d] = %.3e \n",
-                    function_path, identation,
+                    "%s %s known right [%d] = %.3e \n",
+                    identation, function_path,
                     (*arg)->known_right_indexes[i], (*arg)->known_right_values[i]
                 );
             }
@@ -161,7 +159,7 @@ void shooting_regular_init(ShootingVarsStruct **arg){
         if(DEBUGGING_shooting_regular_init){
             printf(
               "%s %s non known indexes on right side of interval \n",
-              function_path, identation
+              identation, function_path
             );
         }
     }
@@ -191,8 +189,8 @@ void shooting_regular_init(ShootingVarsStruct **arg){
             if(DEBUGGING_shooting_regular_init){
 
                 printf(
-                    "%s %s UNknown right [%d] = %.3e \n",
-                    function_path, identation,
+                    "%s %s (init guesses) UNknown right [%d] = %.3e \n",
+                    identation, function_path,
                     (*arg)->UNknown_right_indexes[i], (*arg)->UNknown_right_values[i]
                 );
             }
@@ -204,14 +202,45 @@ void shooting_regular_init(ShootingVarsStruct **arg){
 
         if(DEBUGGING_shooting_regular_init){
             printf(
-              "%s %s non UNknown indexes on right side of interval \n",
-              function_path, identation
+              "%s %s non (init guesses) UNknown indexes on right side of interval \n",
+              identation, function_path
             );
         }
     }
 
-    (*arg)->descriptancy = dvector(1, (*arg)->known_left_n);
-    (*arg)->left_achieved = dvector(1, (*arg)->known_left_n);
+    (*arg)->newt_n = (*arg)->UNknown_left_n;
+    (*arg)->newt_v = dvector(1, (*arg)->newt_n);
+    (*arg)->newt_f = dvector(1, (*arg)->newt_n);
+
+    if((*arg)->newt_n){
+
+        for(int i=1; i<= (*arg)->newt_n; i++){
+
+            (*arg)->newt_v[i] = (*arg)->UNknown_left_indexes[i];
+
+            if(DEBUGGING_shooting_regular_init){
+
+                printf(
+                    "%s %s newt_v[%d] = %.3e \t newt_f[%d] = %.3e \n",
+                    identation, function_path,
+                    i, (*arg)->newt_v[i],
+                    i, (*arg)->newt_f[i]
+                );
+            }
+        }
+    }else{
+        printf(
+            "%s %s Here we should have something different, line 237 \n",
+            identation, function_path
+        );
+
+        exit(237);
+    }
+
+    (*arg)->descriptancy = dvector(1, (*arg)->newt_n);
+    (*arg)->left_achieved = dvector(1, (*arg)->newt_n);
+
+    return;
 }
 
 void shooting_regular_free(ShootingVarsStruct **arg){
@@ -266,9 +295,7 @@ void shooting_regular_info_print_stdout(ShootingVarsStruct *arg){
     return;
 }
 
-void shooting_regular_info_print_ResultFile(
-  ShootingVarsStruct *arg, FILE *fp
-){
+void shooting_regular_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp ){
 
     fprintf(
         fp,
@@ -303,3 +330,78 @@ void shooting_regular_info_print_ResultFile(
     return;
 }
 
+void shooting_regular_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_ode){
+
+    if(
+      arg_shoot->known_left_n + arg_shoot->UNknown_left_n != arg_ode->eqs_count
+    ){
+        printf(
+          "\n Shoot_regular.c %d + %d != %d line 344 \n",
+          arg_shoot->known_left_n, arg_shoot->UNknown_left_n,
+          arg_ode->eqs_count
+        );
+
+        exit(344);
+    }else if(
+      arg_shoot->known_right_n + arg_shoot->UNknown_right_n != arg_ode->eqs_count
+    ){
+        printf(
+          "\n Shoot_regular.c %d + %d != %d line 354 \n",
+          arg_shoot->known_right_n, arg_shoot->UNknown_right_n,
+          arg_ode->eqs_count
+        );
+
+        exit(354);
+    }else if(
+      arg_shoot->known_left_n + arg_shoot->known_right_n != arg_ode->eqs_count
+    ){
+        printf(
+          "\n Shoot_regular.c %d + %d != %d line 364 \n",
+          arg_shoot->known_left_n, arg_shoot->known_right_n,
+          arg_ode->eqs_count
+        );
+
+        exit(364);
+    }else if(
+      arg_shoot->UNknown_left_n + arg_shoot->UNknown_right_n != arg_ode->eqs_count
+    ){
+        printf(
+          "\n Shoot_regular.c %d + %d != %d line 374 \n",
+          arg_shoot->UNknown_left_n, arg_shoot->UNknown_right_n,
+          arg_ode->eqs_count
+        );
+
+        exit(374);
+
+    }else if( arg_shoot->known_left_n != arg_shoot->UNknown_right_n ){
+        printf(
+          "\n Shoot_regular.c known_left %d != %d UNknown_right line 382 \n",
+          arg_shoot->known_left_n, arg_shoot->UNknown_right_n
+        );
+
+        exit(382);
+    }else if( arg_shoot->UNknown_left_n != arg_shoot->known_right_n ){
+        printf(
+          "\n Shoot_regular.c UNknown_left %d != %d known_right line 389 \n",
+          arg_shoot->UNknown_left_n, arg_shoot->known_right_n
+        );
+
+        exit(389);
+    }
+
+    return;
+}
+
+#undef DEBUGGING_shooting_regular_init
+#undef KNOWN_LEFT_N
+#undef KNOWN_LEFT_INDEXES
+#undef KNOWN_LEFT_VALUES
+#undef UNKNOWN_LEFT_N
+#undef UNKNOWN_LEFT_INDEXES
+#undef UNKNOWN_LEFT_VALUES
+#undef KNOWN_RIGHT_N
+#undef KNOWN_RIGHT_INDEXES
+#undef KNOWN_RIGHT_VALUES
+#undef UNKNOWN_RIGHT_N
+#undef UNKNOWN_RIGHT_INDEXES
+#undef UNKNOWN_RIGHT_VALUES

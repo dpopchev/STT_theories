@@ -139,18 +139,18 @@ int main( void ){
             }
 
             ode_logistics_init( &ode );
-            ode_logistics_compute_parameters( &ode );
+            ode_logistics_compute_parameters( ode );
 
             break;
 
         default :
             printf(
-                "%s %s ODE_index = %d UNKNOWN, exiting.. \n", \
+                "%s %s ODE_index = %d UNKNOWN, exiting.., line 153 \n", \
                 identation,\
                 function_path,\
                 ODE_index \
             );
-            exit(123);
+            exit(153);
     }
 
     if(DEBUGGING){
@@ -175,12 +175,12 @@ int main( void ){
 
         default :
             printf(
-                "%s %s ODE_index = %d UNKNOWN, exiting.. \n", \
+                "%s %s ODE_index = %d UNKNOWN, exiting.. , line 183\n", \
                 identation,\
                 function_path,\
                 ODE_index \
             );
-            exit(123);
+            exit(183);
     }
 
     return 0;

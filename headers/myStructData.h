@@ -88,7 +88,9 @@
             // indexes whos right side values are unknown
             *UNknown_right_indexes, \
             // amount of unknown left side values
-            UNknown_right_n;
+            UNknown_right_n, \
+            // for newt shoot function
+            newt_n;
 
         double \
             // values of the left side who are known
@@ -104,7 +106,9 @@
             // achieved values left
             *left_achieved, \
             // achieved values right
-            *right_achieved;
+            *right_achieved, \
+            // newt shoot function needs those
+            *newt_v, *newt_f;
 
     } ShootingVarsStruct;
 
