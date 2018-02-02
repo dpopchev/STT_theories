@@ -1,6 +1,6 @@
 #include "ExternalHeaders.h"
 
-#define DEBUGGING_shooting_regular_init 1
+#define DEBUGGING_shooting_regular_init 0
 
 // how many values of the ODE are given on the left side of the interval
 #define KNOWN_LEFT_N 0
@@ -264,34 +264,65 @@ void shooting_regular_free(ShootingVarsStruct **arg){
 void shooting_regular_info_print_stdout(ShootingVarsStruct *arg){
 
     printf(
-        "\n\n Shooting info: \n \
-        name: %s \n\n \
-        known left side %d: ",
-        "shooting regular", arg->known_left_n
+        "\n\n Shooting info: \n"
+        "\n\t General info: \n"
+        "\t\t name %s \n",
+        "shooting regular"
+    );
+
+    printf(
+        "\n\t Known left side\n"
+        "\t\t count %d -> ",
+        arg->known_left_n
     );
 
     for(int i=1; i <= arg->known_left_n; i++){
-        printf("[%d] = %.3e ", arg->known_left_indexes[i], arg->known_left_values[i]);
+        printf(
+            "[%d] = %.3e ",
+            arg->known_left_indexes[i], arg->known_left_values[i]
+        );
     }
 
-    printf("\n\t UNknown left side %d: ", arg->UNknown_left_n);
+    printf(
+        "\n\n\t UNknown left side (init guess) \n"
+        "\t\t count %d -> ",
+        arg->UNknown_left_n
+    );
 
     for(int i=1; i <= arg->UNknown_left_n; i++){
-        printf("[%d] = %.3e ", arg->UNknown_left_indexes[i], arg->UNknown_left_values[i]);
+        printf(
+            "[%d] = %.3e ",
+            arg->UNknown_left_indexes[i], arg->UNknown_left_values[i]
+        );
     }
 
-    printf("\n\t known right side %d: ", arg->known_right_n);
+    printf(
+        "\n\n\t Known right side \n"
+        "\t\t count %d -> ",
+        arg->known_right_n
+    );
 
     for(int i=1; i <= arg->known_right_n; i++){
-        printf("[%d] = %.3e ", arg->known_right_indexes[i], arg->known_right_values[i]);
+        printf(
+            "[%d] = %.3e ",
+            arg->known_right_indexes[i], arg->known_right_values[i]
+        );
     }
 
-    printf("\n\t UNknown right side %d: ", arg->UNknown_right_n);
+    printf(
+        "\n\n\t UNknown right side (init guess) \n"
+        "\t\t count %d -> ",
+        arg->UNknown_right_n
+    );
 
     for(int i=1; i <= arg->UNknown_right_n; i++){
-        printf("[%d] = %.3e ", arg->UNknown_right_indexes[i], arg->UNknown_right_values[i]);
+        printf(
+            "[%d] = %.3e ",
+            arg->UNknown_right_indexes[i], arg->UNknown_right_values[i]
+        );
     }
 
+    printf("\n");
     return;
 }
 
@@ -299,34 +330,75 @@ void shooting_regular_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp )
 
     fprintf(
         fp,
-        "\n\n Shooting info: \n \
-        name: %s \n\n \
-        known left side %d: ",
-        "shooting regular", arg->known_left_n
+        "\n\n Shooting info: \n"
+        "\n\t General info: \n"
+        "\t\t name %s \n",
+        "shooting regular"
+    );
+
+    fprintf(
+        fp,
+        "\n\t Known left side\n"
+        "\t\t count %d -> ",
+        arg->known_left_n
     );
 
     for(int i=1; i <= arg->known_left_n; i++){
-        fprintf(fp,"[%d] = %.3e ", arg->known_left_indexes[i], arg->known_left_values[i]);
+        fprintf(
+            fp,
+            "[%d] = %.3e ",
+            arg->known_left_indexes[i], arg->known_left_values[i]
+        );
     }
 
-    fprintf(fp,"\n\t UNknown left side %d: ", arg->UNknown_left_n);
+    fprintf(
+        fp,
+        "\n\n\t UNknown left side (init guess) \n"
+        "\t\t count %d -> ",
+        arg->UNknown_left_n
+    );
 
     for(int i=1; i <= arg->UNknown_left_n; i++){
-        fprintf(fp,"[%d] = %.3e ", arg->UNknown_left_indexes[i], arg->UNknown_left_values[i]);
+        fprintf(
+            fp,
+            "[%d] = %.3e ",
+            arg->UNknown_left_indexes[i], arg->UNknown_left_values[i]
+        );
     }
 
-    fprintf(fp,"\n\t known right side %d: ", arg->known_right_n);
+    fprintf(
+        fp,
+        "\n\n\t known right side \n"
+        "\t\t count %d -> ",
+        arg->known_right_n
+    );
 
     for(int i=1; i <= arg->known_right_n; i++){
-        fprintf(fp,"[%d] = %.3e ", arg->known_right_indexes[i], arg->known_right_values[i]);
+        fprintf(
+            fp,
+            "[%d] = %.3e ",
+            arg->known_right_indexes[i], arg->known_right_values[i]
+        );
     }
 
-    fprintf(fp,"\n\t UNknown right side %d: ", arg->UNknown_right_n);
+    fprintf(
+        fp,
+        "\n\n\t UNknown right side (init guess) \n"
+        "\t\t count %d -> ",
+        arg->UNknown_right_n
+    );
 
     for(int i=1; i <= arg->UNknown_right_n; i++){
-        fprintf(fp,"[%d] = %.3e ", arg->UNknown_right_indexes[i], arg->UNknown_right_values[i]);
+        fprintf(
+            fp,
+            "[%d] = %.3e ",
+            arg->UNknown_right_indexes[i], arg->UNknown_right_values[i]
+        );
     }
 
+    fprintf(fp,"\n");
+
+    fclose(fp);
     return;
 }
 

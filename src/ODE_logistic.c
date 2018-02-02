@@ -669,7 +669,9 @@ static void ode_logistics_shooting_regular(void){
 
 }
 
-static void ode_logistics_change_central_value(ODEsystemStruct *arg){
+static void ode_logistics_change_central_value(
+    ODEsystemStruct *arg, ShootingVarsStruct *shoot_regular_vars
+){
 
     const char \
         function_path[] = "ODE_logistic.c ode_logistics_change_central_value: ", \
@@ -678,12 +680,6 @@ static void ode_logistics_change_central_value(ODEsystemStruct *arg){
     if(DEBUGGING_ode_logistics_init){
         printf("%s %s starting \n", identation, function_path);
     }
-
-//TODO shooting parameters debug and run; do not forget line 726 and 708
-    ShootingVarsStruct *shoot_regular_vars;
-    shoot_regular_vars = calloc(1,sizeof(ShootingVarsStruct));
-    shooting_regular_init(&shoot_regular_vars);
-    shooting_regular_check(shoot_regular_vars, arg);
 
     double max_val = 1, min_val = 0, current = min_val, step = 0.05, *tmp_y;
 
@@ -704,6 +700,9 @@ static void ode_logistics_change_central_value(ODEsystemStruct *arg){
         }
         dvector_copy(tmp_y,arg->y ,arg->eqs_count);
 
+        // TODO remove the below line
+        arg->initial_y_current = 0.8;
+
         arg->y[arg->index_of_y_to_change] = arg->initial_y_current;
 
         if(DEBUGGING_ode_logistics_init){
@@ -715,26 +714,12 @@ static void ode_logistics_change_central_value(ODEsystemStruct *arg){
             );
         }
 
-        //TODO see totdo on line 674
-        //dvector_copy_to_index(
-            //shoot_regular_vars->UNknown_left_values,
-            //arg->y,
-            //shoot_regular_vars->UNknown_left_n,
-            //shoot_regular_vars->UNknown_left_indexes
-        //);
-
-        ode_logistics_info_print_stdout(arg);
-        ode_logistics_info_print_ResultFile(arg, open_file_to_APPEND_ResultFile(arg));
-
-        odeint_info_print_stdout();
-        odeint_info_print_ResultFile(open_file_to_APPEND_ResultFile(arg));
-
-        newt_info_print_stdout();
-        newt_info_print_ResultFile(open_file_to_APPEND_ResultFile(arg));
-
-        //TODO see totdo on line 674
-        //shooting_regular_info_print_stdout(shoot_regular_vars);
-        //shooting_regular_info_print_ResultFile(shoot_regular_vars,open_file_to_APPEND_ResultFile(arg));
+        dvector_copy_to_index(
+            shoot_regular_vars->UNknown_left_values,
+            arg->y,
+            shoot_regular_vars->UNknown_left_n,
+            shoot_regular_vars->UNknown_left_indexes
+        );
 
         ode_logistics_integrate(arg);
 
@@ -746,16 +731,18 @@ static void ode_logistics_change_central_value(ODEsystemStruct *arg){
         ode_logistics_LivePlot_append(arg);
         ode_logistics_ResultFile_append(arg);
 
-        exit(749);
         if( arg->initial_y_current <= arg->initial_y_end ){
             arg->initial_y_current += arg->initial_y_step;
             iterate = 1;
         }else{
             iterate = 0;
         }
+        sleep(5);
     }
 
     free(tmp_y);
+
+    return;
 }
 
 void ode_logistics_compute_parameters( ODEsystemStruct *arg ){
@@ -795,16 +782,27 @@ void ode_logistics_compute_parameters( ODEsystemStruct *arg ){
 
         dvector_copy(tmp_y,arg->y ,arg->eqs_count);
 
-        //ode_logistics_info_print_stdout(*arg);
-        //ode_logistics_info_print_ResultFile(arg);
-        //ode_logistics_LivePlot_open(arg);
-
-        //ode_logistics_integrate(arg);
+        ShootingVarsStruct *shoot_regular_vars;
+        shoot_regular_vars = calloc(1,sizeof(ShootingVarsStruct));
+        shooting_regular_init(&shoot_regular_vars);
+        shooting_regular_check(shoot_regular_vars, arg);
 
         ode_logistics_LivePlot_open(arg);
         ode_logistics_ResultFile_open(arg);
 
-        ode_logistics_change_central_value(arg);
+        ode_logistics_info_print_stdout(arg);
+        ode_logistics_info_print_ResultFile(arg, open_file_to_APPEND_ResultFile(arg));
+
+        odeint_info_print_stdout();
+        odeint_info_print_ResultFile(open_file_to_APPEND_ResultFile(arg));
+
+        newt_info_print_stdout();
+        newt_info_print_ResultFile(open_file_to_APPEND_ResultFile(arg));
+
+        shooting_regular_info_print_stdout(shoot_regular_vars);
+        shooting_regular_info_print_ResultFile(shoot_regular_vars,open_file_to_APPEND_ResultFile(arg));
+
+        ode_logistics_change_central_value(arg, shoot_regular_vars);
 
         unsigned short time_interval = 30;
         printf("\n\n TIME TO SLEEP FOR RESULT PLOT CHECK for %d s \n\n",time_interval);
