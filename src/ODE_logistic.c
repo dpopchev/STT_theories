@@ -47,6 +47,7 @@
 #define INITIAL_Y_STEP 0.05
 
 static double *GV_PARAMETERS_VALUES;
+static ODEsystemStruct *GV_SHOOTING_ODE;
 
 static void ode_logistics_foo( double x, double *y, double *dydx ){
 
@@ -622,7 +623,7 @@ static void ode_logistics_ResultFile_append(ODEsystemStruct *arg){
     return;
 }
 
-static void ode_logistics_integrate( ODEsystemStruct *arg ){
+void ode_logistics_integrate( ODEsystemStruct *arg ){
 
     const char function_path[] = "ODE_logistic.c ode_logistics_integrate", \
                identation[] = "\n";
@@ -663,10 +664,11 @@ static void ode_logistics_integrate( ODEsystemStruct *arg ){
     return;
 }
 
-static void ode_logistics_shooting_regular(void){
+void ode_logistics_shooting_regular(int n, double v, double f){
+
+
 
     return;
-
 }
 
 static void ode_logistics_change_central_value(
@@ -700,9 +702,6 @@ static void ode_logistics_change_central_value(
         }
         dvector_copy(tmp_y,arg->y ,arg->eqs_count);
 
-        // TODO remove the below line
-        arg->initial_y_current = 0.8;
-
         arg->y[arg->index_of_y_to_change] = arg->initial_y_current;
 
         if(DEBUGGING_ode_logistics_init){
@@ -714,12 +713,12 @@ static void ode_logistics_change_central_value(
             );
         }
 
-        dvector_copy_to_index(
-            shoot_regular_vars->UNknown_left_values,
-            arg->y,
-            shoot_regular_vars->UNknown_left_n,
-            shoot_regular_vars->UNknown_left_indexes
-        );
+        //dvector_copy_to_index(
+            //shoot_regular_vars->UNknown_left_values,
+            //arg->y,
+            //shoot_regular_vars->UNknown_left_n,
+            //shoot_regular_vars->UNknown_left_indexes
+        //);
 
         ode_logistics_integrate(arg);
 

@@ -149,7 +149,6 @@ void shooting_regular_init(ShootingVarsStruct **arg){
                     (*arg)->known_right_indexes[i], (*arg)->known_right_values[i]
                 );
             }
-
         }
     }else{
 
