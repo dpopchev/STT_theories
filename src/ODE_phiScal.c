@@ -81,8 +81,8 @@ static void ode_phiScal_foo(double x, double *y, double *dydx){
         step4_A = pow(A,4);
 
     //TODO no EOSeq yet
-    EOSeq(EOSdata,p);
-    double rho = EOSdata->current
+    //EOSeq(EOSdata,p);
+    double rho = 0;
 
     double \
       PhiMetr_dr = \
@@ -110,7 +110,7 @@ static void ode_phiScal_foo(double x, double *y, double *dydx){
           4 * GV_PI * step4_A* rho
           + 1.0/2 * 1/exp_2LambdaMetr * pow(Q,2)
           + 1.0/4 * Vhat
-        )
+        );
 
     dydx[1] = phiScal_dr;
     dydx[2] = Q_dr;
@@ -367,8 +367,8 @@ void ode_phiScal_init( ODEsystemStruct **arg ){
     // how many values of each parameter we will investigate
     int free_parameters_count_each[] = {
         1e5, // index starts from 1 so this will not be taken into account
-        ODE_FREE_PARM_COUNT_1 // count all values of parameter 1 we want to check
-        ODE_FREE_PARM_COUNT_2 // count all values of parameter 1 we want to check
+        ODE_FREE_PARM_COUNT_1,// count all values of parameter 1 we want to check
+        ODE_FREE_PARM_COUNT_2, // count all values of parameter 1 we want to check
         ODE_FREE_PARM_COUNT_3 // count all values of parameter 1 we want to check
     };
 
@@ -409,7 +409,7 @@ void ode_phiScal_init( ODEsystemStruct **arg ){
         );
     }
 
-    (*arg)->foo = &ode_logistics_foo;
+    (*arg)->foo = &ode_phiScal_foo;
 
     if(DEBUGGING_ode_phiScal_init){
         printf("%s %s ending \n", identation, function_path);
@@ -418,13 +418,226 @@ void ode_phiScal_init( ODEsystemStruct **arg ){
     return;
 }
 
-void ode_logistics_free( ODEsystemStruct **arg ){
+static void ode_phiScal_info_print_stdout( ODEsystemStruct *arg ){
+
+    printf(
+        "\n\n System info: \n\n"
+        "\t General info: \n"
+        "\t\t index: %d \n"
+        "\t\t name: %s \n",
+        arg->index,
+        arg->name_system
+    );
+
+    printf(
+        "\n\t Independent variable info: \n"
+        "\t\t name: %s \n"
+        "\t\t initial value: %.3e \n"
+        "\t\t final value: %.3e \n",
+        arg->name_vars[0], arg->x_initial, arg->x_final
+    );
+
+    printf(
+        "\n\t Dependent variables info: \n"
+    );
+    for(int i=1; i<=arg->eqs_count; i++){
+        printf(
+            "\t\t initial value for %s = %.3e \n",
+            arg->name_vars[i], arg->y[i]
+        );
+    }
+
+    if(arg->index_of_y_to_change){
+        printf(
+          "\n\t\t Initial value for %s "
+          "will change from %.3e to %.3e with step %.3e \n",
+          arg->name_vars[arg->index_of_y_to_change],
+          arg->initial_y_start,
+          arg->initial_y_end,
+          arg->initial_y_step
+        );
+    }
+
+    printf("\n\t Free parameters info: \n");
+    for(int i=1; i<=arg->free_parmeters_count_all; i++){
+
+        printf(
+            "\t\t current value for %s = %.3e \n",
+            arg->free_parmeters_names[i], arg->free_parmeters_values[i]
+        );
+
+        printf("\t\t rest values for %s = ", arg->free_parmeters_names[i] );
+
+        for(int l=1; l<=arg->free_parameters_count_each[i]; l++){
+            printf(" %.3e ", arg->free_parmeters_values_all[i][l] );
+        }
+
+        printf("\n");
+    }
+
+    if(arg->points_count){
+        printf("\n\t\t Integrator will record at most %d points \n", arg->points_count);
+    }
+
+    return;
+}
+
+static void ode_phiScal_info_print_ResultFile( ODEsystemStruct *arg, FILE *fp ){
+
+    fprintf(
+        fp,
+        "\n\n System info: \n\n"
+        "\t General info: \n"
+        "\t\t index: %d \n"
+        "\t\t name: %s \n",
+        arg->index,
+        arg->name_system
+    );
+
+    fprintf(
+        fp,
+        "\n\t Independent variable info: \n"
+        "\t\t name: %s \n"
+        "\t\t initial value: %.3e \n"
+        "\t\t final value: %.3e \n",
+        arg->name_vars[0], arg->x_initial, arg->x_final
+    );
+
+    fprintf(
+        fp,
+        "\n\t Dependent variables info: \n"
+    );
+    for(int i=1; i<=arg->eqs_count; i++){
+        fprintf(
+            fp,
+            "\t\t initial value for %s = %.3e \n",
+            arg->name_vars[i], arg->y[i]
+        );
+    }
+
+    if(arg->index_of_y_to_change){
+        fprintf(
+          fp,
+          "\n\t\t Initial value for %s "
+          "will change from %.3e to %.3e with step %.3e \n",
+          arg->name_vars[arg->index_of_y_to_change],
+          arg->initial_y_start,
+          arg->initial_y_end,
+          arg->initial_y_step
+        );
+    }
+
+    fprintf( fp,"\n\t Free parameters info: \n");
+    for(int i=1; i<=arg->free_parmeters_count_all; i++){
+
+        fprintf(
+            fp,
+            "\t\t current value for %s = %.3e \n",
+            arg->free_parmeters_names[i], arg->free_parmeters_values[i]
+        );
+
+        fprintf(
+            fp,"\t\t rest values for %s = ", arg->free_parmeters_names[i]
+        );
+
+        for(int l=1; l<=arg->free_parameters_count_each[i]; l++){
+            fprintf(
+                fp," %.3e ", arg->free_parmeters_values_all[i][l]
+            );
+        }
+
+        fprintf(
+            fp,
+            "\n"
+        );
+    }
+
+    if(arg->points_count){
+        fprintf(
+            fp,
+            "\n\t\t Integrator will record at most %d points \n",
+            arg->points_count
+        );
+    }
+
+    fclose(fp);
+
+    return;
+}
+
+static void ode_phiScal_LivePlot_open(ODEsystemStruct *arg){
+
+    FILE *fp = open_file_to_WRITE_LivePlot(arg);
+
+    fclose(fp);
+
+    return;
+}
+
+static void ode_phiScal_ResultFile_open(ODEsystemStruct *arg){
+
+    FILE *fp = open_file_to_WRITE_ResultFile(arg);
+
+    fclose(fp);
+
+    return;
+}
+
+static void ode_phiScal_LivePlot_append(ODEsystemStruct *arg){
+
+    FILE *fp = open_file_to_APPEND_LivePlot(arg);
+
+    fprintf(fp,"# ");
+
+    for(int i=1; i <= arg->free_parmeters_count_all; i++){
+        fprintf(
+            fp,
+            "y_c = %.3e",
+            arg->initial_y_current
+        );
+    }
+
+    if(arg->points_count){
+        for(int i=1; i <= arg->points_count && xp[i]; i++){
+            fprintf(fp,"\n%e, %e", xp[i], yp[1][i]);
+        }
+    }
+
+    fprintf(fp,"\n");
+
+    fclose(fp);
+
+    return;
+}
+
+static void ode_phiScal_ResultFile_append(ODEsystemStruct *arg){
+
+    FILE *fp = open_file_to_APPEND_ResultFile(arg);
+
+    fprintf(
+      fp,
+      "\n%e, %e",
+      arg->initial_y_current, arg->y[arg->index_of_y_to_change]
+    );
+
+    fclose(fp);
+
+    return;
+}
+
+void ode_phiScal_free( ODEsystemStruct **arg ){
+
+    ode_phiScal_LivePlot_open(*arg);
+    ode_phiScal_ResultFile_open(*arg);
+
+    ode_phiScal_info_print_stdout(*arg);
+    ode_phiScal_info_print_ResultFile(*arg, open_file_to_APPEND_ResultFile(*arg));
 
     const char \
         function_path[] = "ODE_logistic.c ode_logistics_free", \
         identation[] = "\n\t";
 
-    if(DEBUGGING_ode_logistics_free){
+    if(DEBUGGING_ode_phiScal_free){
         printf("%s %s starting \n", identation, function_path);
     }
 
@@ -471,3 +684,34 @@ void ode_logistics_free( ODEsystemStruct **arg ){
     return;
 }
 
+#undef DEBUGGING_ode_phiScal_foo
+#undef DEBUGGING_ode_phiScal_init
+#undef DEBUGGING_ode_phiScal_free
+#undef DEBUGGING_ode_phiScal_integrate
+#undef ODE_VARS_NAME_LENGHT
+#undef MAX_ARR_SIZE
+#undef ODE_INDEX
+#undef ODE_DESCRIPTION
+#undef ODE_EQS_COUNT
+#undef ODE_Y_INIT_VAL
+#undef ODE_NAME_INDEP
+#undef ODE_NAME_DEP
+#undef ODE_POINTS_COUNT
+#undef ODE_ODE_SCALLING
+#undef ODE_RKQS_SCALLING
+#undef ODE_FREE_PARM_COUNT_ALL
+#undef ODE_FREE_PARM_NAME
+#undef ODE_FREE_PARM_COUNT_1
+#undef ODE_FREE_PARM_VALS_1
+#undef ODE_FREE_PARM_COUNT_2
+#undef ODE_FREE_PARM_VALS_2
+#undef ODE_FREE_PARM_COUNT_3
+#undef ODE_FREE_PARM_VALS_3
+#undef ODE_INDEP_INIT
+#undef ODE_INDEP_FINAL
+#undef Y_INDEX_CHANGE
+#undef INITIAL_Y_START
+#undef INITIAL_Y_END
+#undef INITIAL_Y_STEP
+#undef DEBUGGING_ode_phiScal_compute_parameters
+#undef DEBUGGING_ode_phiScal_change_central_value

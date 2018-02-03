@@ -457,7 +457,7 @@ static void ode_logistics_info_print_stdout( ODEsystemStruct *arg ){
     }
 
     printf("\n\t Free parameters info: \n");
-    for(int i=1; i<=arg->eqs_count; i++){
+    for(int i=1; i<=arg->free_parmeters_count_all; i++){
 
         printf(
             "\t\t current value for %s = %.3e \n",
@@ -526,7 +526,7 @@ static void ode_logistics_info_print_ResultFile( ODEsystemStruct *arg, FILE *fp 
     }
 
     fprintf( fp,"\n\t Free parameters info: \n");
-    for(int i=1; i<=arg->eqs_count; i++){
+    for(int i=1; i<=arg->free_parmeters_count_all; i++){
 
         fprintf(
             fp,
@@ -623,7 +623,7 @@ static void ode_logistics_ResultFile_append(ODEsystemStruct *arg){
     return;
 }
 
-void ode_logistics_integrate( ODEsystemStruct *arg ){
+static void ode_logistics_integrate( ODEsystemStruct *arg ){
 
     const char function_path[] = "ODE_logistic.c ode_logistics_integrate", \
                identation[] = "\n";
@@ -664,7 +664,7 @@ void ode_logistics_integrate( ODEsystemStruct *arg ){
     return;
 }
 
-void ode_logistics_shooting_regular(int n, double v, double f){
+static void ode_logistics_shooting_regular(int n, double v, double f){
 
 
 

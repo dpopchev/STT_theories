@@ -48,6 +48,6 @@
     extern void shooting_regular_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_ode);
 
     extern void ode_phiScal_init( ODEsystemStruct **arg );
-    extern void ode_logistics_free( ODEsystemStruct **arg );
+    extern void ode_phiScal_free( ODEsystemStruct **arg );
 
 #endif

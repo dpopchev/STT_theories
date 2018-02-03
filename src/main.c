@@ -138,8 +138,7 @@ int main( void ){
                 );
             }
 
-            ode_logistics_init( &ode );
-            ode_logistics_compute_parameters( ode );
+            ode_phiScal_init( &ode );
 
             break;
 
@@ -170,7 +169,7 @@ int main( void ){
                 );
             }
 
-            ode_logistics_free( &ode );
+            ode_phiScal_free( &ode );
             break;
 
         default :
