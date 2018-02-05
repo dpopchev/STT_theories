@@ -3,7 +3,7 @@
 #define DEBUGGING_ode_phiScal_foo 0
 #define DEBUGGING_ode_phiScal_init 0
 #define DEBUGGING_ode_phiScal_free 0
-#define DEBUGGING_ode_phiScal_integrate 0
+#define DEBUGGING_ode_phiScal_integrate 1
 #define DEBUGGING_ode_phiScal_compute_parameters 0
 #define DEBUGGING_ode_phiScal_change_central_value 0
 
@@ -627,12 +627,6 @@ static void ode_phiScal_ResultFile_append(ODEsystemStruct *arg){
 
 void ode_phiScal_free( ODEsystemStruct **arg ){
 
-    ode_phiScal_LivePlot_open(*arg);
-    ode_phiScal_ResultFile_open(*arg);
-
-    ode_phiScal_info_print_stdout(*arg);
-    ode_phiScal_info_print_ResultFile(*arg, open_file_to_APPEND_ResultFile(*arg));
-
     const char \
         function_path[] = "ODE_logistic.c ode_logistics_free", \
         identation[] = "\n\t";
@@ -681,6 +675,235 @@ void ode_phiScal_free( ODEsystemStruct **arg ){
 
     free(*arg);
 
+    return;
+}
+
+static void ode_phiScal_integrate( ODEsystemStruct *arg ){
+
+    const char function_path[] = "ODE_phiScal.c ode_phiScal_integrate", \
+               identation[] = "\n";
+
+    if(DEBUGGING_ode_phiScal_integrate){
+        printf("%s %s starting \n", identation, function_path);
+    }
+
+    if(kmax){
+        for(int i=1; i <= arg->points_count; i++){
+            xp[i] = 0;
+            for(int l=1; l <= arg->eqs_count; l++){
+                yp[l][i] = 0;
+            }
+        }
+    }else{
+        xp = NULL;
+        yp = NULL;
+    }
+
+    arg->nok = arg->nbad = 0;
+
+    if(DEBUGGING_ode_phiScal_integrate){
+        printf("\n");
+        for(int i=1; i<=arg->eqs_count;i++){
+            printf(" %s_init = %.3e ", arg->name_vars[i], arg->y[i]);
+        }
+    }
+
+    odeint(
+      arg->y, arg->eqs_count,
+      arg->x_initial, arg->x_final,
+      &arg->nok, &arg->nbad,
+      arg->foo
+    );
+
+    if(DEBUGGING_ode_phiScal_integrate){
+        printf("\n");
+        for(int i=1; i<=arg->eqs_count;i++){
+            printf(" %s_init = %.3e ", arg->name_vars[i], arg->y[i]);
+        }
+    }
+
+    return;
+}
+
+static void ode_phiScal_change_central_value(
+    ODEsystemStruct *arg, ShootingVarsStruct *shoot_regular_vars
+){
+    const char \
+        function_path[] = "ODE_phiScal.c ode_phiScal_change_central_value: ", \
+        identation[] = "\n\t";
+
+    if(DEBUGGING_ode_phiScal_change_central_value){
+        printf("%s %s starting \n", identation, function_path);
+    }
+
+    double max_val = 1, min_val = 0, current = min_val, step = 0.05, *tmp_y;
+
+    tmp_y = dvector(1, arg->eqs_count);
+
+    if(DEBUGGING_ode_phiScal_change_central_value){
+        printf("%s %s dvector_copy \n", identation, function_path);
+    }
+    dvector_copy(arg->y, tmp_y ,arg->eqs_count);
+
+    arg->initial_y_current = arg->initial_y_start;
+
+    printf(
+        "\n beta = %.3e"
+        "\t m = %.3e"
+        "\t lambda = %.3e",
+        arg->free_parmeters_values[1],
+        arg->free_parmeters_values[2],
+        arg->free_parmeters_values[3]
+    );
+
+    int iterate = 1;
+    while( iterate ){
+
+        if(DEBUGGING_ode_phiScal_change_central_value){
+            printf("%s %s dvector_copy \n", identation, function_path);
+        }
+
+        dvector_copy(tmp_y,arg->y ,arg->eqs_count);
+
+        arg->y[arg->index_of_y_to_change] = arg->initial_y_current;
+
+        if(DEBUGGING_ode_phiScal_change_central_value){
+            printf(
+              "%s %s [%d] %s_init = %.3e  \n",
+              identation, function_path, arg->index_of_y_to_change,
+              arg->name_vars[arg->index_of_y_to_change],
+              arg->y[arg->index_of_y_to_change]
+            );
+        }
+
+        ode_phiScal_integrate(arg);
+
+        printf(
+          "\n p_c = %.3e; \t phi_c = %.3e -> phi_inf = %.3e",
+          arg->initial_y_current,
+          shoot_regular_vars->newt_v[1],
+          arg->y[1]
+        );
+
+        if( arg->initial_y_current <= arg->initial_y_end ){
+            arg->initial_y_current += arg->initial_y_step;
+            iterate = 1;
+        }else{
+            iterate = 0;
+        }
+
+        unsigned short time_interval = 1;
+        printf(
+          "\n\t\t\t small time sleep %d s\n",
+          time_interval
+        );
+        sleep(time_interval);
+    }
+
+    free(tmp_y);
+
+    return;
+}
+
+void ode_phiScal_compute_parameters( ODEsystemStruct *arg ){
+
+    const char \
+        function_path[] = "ODE_phiScal.c ode_phiScal_compute_parameters: ", \
+        identation[] = "\n\t";
+
+    if(DEBUGGING_ode_phiScal_compute_parameters){
+        printf("%s %s starting \n", identation, function_path);
+    }
+
+    double *tmp_y;
+
+    tmp_y = dvector(1, arg->eqs_count);
+
+    if(DEBUGGING_ode_phiScal_compute_parameters){
+        printf("%s %s dvector_copy %d \n", identation, function_path, arg->eqs_count);
+    }
+    dvector_copy(arg->y, tmp_y ,arg->eqs_count);
+
+    for(
+      int parm_beta = 1;
+      parm_beta <= arg->free_parameters_count_each[1];
+      parm_beta++
+    ){
+        for(
+          int parm_m = 1;
+          parm_m <= arg->free_parameters_count_each[2];
+          parm_m++
+        ){
+            for(
+              int parm_lambda = 1;
+              parm_lambda <= arg->free_parameters_count_each[3];
+              parm_lambda++
+            ){
+                arg->free_parmeters_values[1] = \
+                  arg->free_parmeters_values_all[1][parm_beta];
+                arg->free_parmeters_values[2] = \
+                  arg->free_parmeters_values_all[2][parm_m];
+                arg->free_parmeters_values[3] = \
+                  arg->free_parmeters_values_all[3][parm_lambda];
+
+                if(DEBUGGING_ode_phiScal_compute_parameters){
+                    printf(
+                      "%s %s dvector_copy; \n"
+                      "\t %s = %.3e \n"
+                      "\t %s = %.3e \n"
+                      "\t %s = %.3e \n",
+                      identation, function_path,
+                      arg->free_parmeters_names[1],
+                      arg->free_parmeters_values[1],
+                      arg->free_parmeters_names[2],
+                      arg->free_parmeters_values[2],
+                      arg->free_parmeters_names[3],
+                      arg->free_parmeters_values[3]
+                    );
+                }
+
+                dvector_copy(tmp_y,arg->y ,arg->eqs_count);
+
+                ShootingVarsStruct *shoot_regular_vars;
+                shoot_regular_vars = calloc(1,sizeof(ShootingVarsStruct));
+                shooting_regular_init(&shoot_regular_vars);
+                shooting_regular_check(shoot_regular_vars, arg);
+
+                ode_phiScal_LivePlot_open(arg);
+                ode_phiScal_ResultFile_open(arg);
+
+                ode_phiScal_info_print_stdout(arg);
+                ode_phiScal_info_print_ResultFile(
+                  arg,
+                  open_file_to_APPEND_ResultFile(arg)
+                );
+
+                odeint_info_print_stdout();
+                odeint_info_print_ResultFile(
+                  open_file_to_APPEND_ResultFile(arg)
+                );
+
+                newt_info_print_stdout();
+                newt_info_print_ResultFile(open_file_to_APPEND_ResultFile(arg));
+
+                shooting_regular_info_print_stdout(shoot_regular_vars);
+                shooting_regular_info_print_ResultFile(
+                  shoot_regular_vars,open_file_to_APPEND_ResultFile(arg)
+                );
+
+                ode_phiScal_change_central_value(arg, shoot_regular_vars);
+
+                unsigned short time_interval = 10;
+                printf(
+                  "\n\n TIME TO SLEEP FOR RESULT PLOT CHECK for %d s \n\n",
+                  time_interval
+                );
+                sleep(time_interval);
+            }
+        }
+    }
+
+    free(tmp_y);
     return;
 }
 

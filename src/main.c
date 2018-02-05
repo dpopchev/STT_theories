@@ -139,6 +139,7 @@ int main( void ){
             }
 
             ode_phiScal_init( &ode );
+            ode_phiScal_compute_parameters(ode);
 
             break;
 

@@ -49,5 +49,6 @@
 
     extern void ode_phiScal_init( ODEsystemStruct **arg );
     extern void ode_phiScal_free( ODEsystemStruct **arg );
+    extern void ode_phiScal_compute_parameters( ODEsystemStruct *arg );
 
 #endif

@@ -3,24 +3,26 @@
 #define DEBUGGING_shooting_regular_init 0
 
 // how many values of the ODE are given on the left side of the interval
-#define KNOWN_LEFT_N 0
-#define KNOWN_LEFT_INDEXES 0
-#define KNOWN_LEFT_VALUES 0
+#define KNOWN_LEFT_N 2
+#define KNOWN_LEFT_INDEXES 2,4
+#define KNOWN_LEFT_VALUES 0,0
 
 // how many values of the ODE are unknown and their corresponding guessed values
 #define UNKNOWN_LEFT_N 1
 #define UNKNOWN_LEFT_INDEXES 1
-#define UNKNOWN_LEFT_VALUES 0.8
+#define UNKNOWN_LEFT_VALUES -1e-2
 
 // how many values of the ODE are given on the right side of the interval
 #define KNOWN_RIGHT_N 1
 #define KNOWN_RIGHT_INDEXES 1
-#define KNOWN_RIGHT_VALUES 1
+#define KNOWN_RIGHT_VALUES 0
 
 // how many values of the ODE are unknown and right corresponding guessed values
-#define UNKNOWN_RIGHT_N 0
-#define UNKNOWN_RIGHT_INDEXES 0
-#define UNKNOWN_RIGHT_VALUES 0
+#define UNKNOWN_RIGHT_N 2
+#define UNKNOWN_RIGHT_INDEXES 2,4
+#define UNKNOWN_RIGHT_VALUES 0,0
+
+#define SHOOT_FREE_N 2
 
 void shooting_regular_init(ShootingVarsStruct **arg){
 
@@ -255,6 +257,8 @@ void shooting_regular_free(ShootingVarsStruct **arg){
     free((*arg)->descriptancy);
     free((*arg)->left_achieved);
     free((*arg)->right_achieved);
+    free((*arg)->newt_v);
+    free((*arg)->newt_f);
     free((*arg));
 
     return;
@@ -277,7 +281,7 @@ void shooting_regular_info_print_stdout(ShootingVarsStruct *arg){
 
     for(int i=1; i <= arg->known_left_n; i++){
         printf(
-            "[%d] = %.3e ",
+            "\n\t\t\t [%d] = %.3e ",
             arg->known_left_indexes[i], arg->known_left_values[i]
         );
     }
@@ -290,7 +294,7 @@ void shooting_regular_info_print_stdout(ShootingVarsStruct *arg){
 
     for(int i=1; i <= arg->UNknown_left_n; i++){
         printf(
-            "[%d] = %.3e ",
+            "\n\t\t\t [%d] = %.3e ",
             arg->UNknown_left_indexes[i], arg->UNknown_left_values[i]
         );
     }
@@ -303,7 +307,7 @@ void shooting_regular_info_print_stdout(ShootingVarsStruct *arg){
 
     for(int i=1; i <= arg->known_right_n; i++){
         printf(
-            "[%d] = %.3e ",
+            "\n\t\t\t [%d] = %.3e ",
             arg->known_right_indexes[i], arg->known_right_values[i]
         );
     }
@@ -316,7 +320,7 @@ void shooting_regular_info_print_stdout(ShootingVarsStruct *arg){
 
     for(int i=1; i <= arg->UNknown_right_n; i++){
         printf(
-            "[%d] = %.3e ",
+            "\n\t\t\t [%d] = %.3e ",
             arg->UNknown_right_indexes[i], arg->UNknown_right_values[i]
         );
     }
@@ -345,7 +349,7 @@ void shooting_regular_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp )
     for(int i=1; i <= arg->known_left_n; i++){
         fprintf(
             fp,
-            "[%d] = %.3e ",
+            "\n\t\t\t [%d] = %.3e ",
             arg->known_left_indexes[i], arg->known_left_values[i]
         );
     }
@@ -360,7 +364,7 @@ void shooting_regular_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp )
     for(int i=1; i <= arg->UNknown_left_n; i++){
         fprintf(
             fp,
-            "[%d] = %.3e ",
+            "\n\t\t\t [%d] = %.3e ",
             arg->UNknown_left_indexes[i], arg->UNknown_left_values[i]
         );
     }
@@ -375,7 +379,7 @@ void shooting_regular_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp )
     for(int i=1; i <= arg->known_right_n; i++){
         fprintf(
             fp,
-            "[%d] = %.3e ",
+            "\n\t\t\t [%d] = %.3e ",
             arg->known_right_indexes[i], arg->known_right_values[i]
         );
     }
@@ -390,7 +394,7 @@ void shooting_regular_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp )
     for(int i=1; i <= arg->UNknown_right_n; i++){
         fprintf(
             fp,
-            "[%d] = %.3e ",
+            "\n\t\t\t [%d] = %.3e ",
             arg->UNknown_right_indexes[i], arg->UNknown_right_values[i]
         );
     }
@@ -404,7 +408,7 @@ void shooting_regular_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp )
 void shooting_regular_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_ode){
 
     if(
-      arg_shoot->known_left_n + arg_shoot->UNknown_left_n != arg_ode->eqs_count
+      arg_shoot->known_left_n + arg_shoot->UNknown_left_n != arg_ode->eqs_count - SHOOT_FREE_N
     ){
         printf(
           "\n Shoot_regular.c %d + %d != %d line 344 \n",
@@ -414,7 +418,7 @@ void shooting_regular_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_
 
         exit(344);
     }else if(
-      arg_shoot->known_right_n + arg_shoot->UNknown_right_n != arg_ode->eqs_count
+      arg_shoot->known_right_n + arg_shoot->UNknown_right_n != arg_ode->eqs_count - SHOOT_FREE_N
     ){
         printf(
           "\n Shoot_regular.c %d + %d != %d line 354 \n",
@@ -424,7 +428,7 @@ void shooting_regular_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_
 
         exit(354);
     }else if(
-      arg_shoot->known_left_n + arg_shoot->known_right_n != arg_ode->eqs_count
+      arg_shoot->known_left_n + arg_shoot->known_right_n != arg_ode->eqs_count - SHOOT_FREE_N
     ){
         printf(
           "\n Shoot_regular.c %d + %d != %d line 364 \n",
@@ -434,7 +438,7 @@ void shooting_regular_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_
 
         exit(364);
     }else if(
-      arg_shoot->UNknown_left_n + arg_shoot->UNknown_right_n != arg_ode->eqs_count
+      arg_shoot->UNknown_left_n + arg_shoot->UNknown_right_n != arg_ode->eqs_count - SHOOT_FREE_N
     ){
         printf(
           "\n Shoot_regular.c %d + %d != %d line 374 \n",

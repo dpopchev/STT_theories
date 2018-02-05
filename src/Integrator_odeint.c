@@ -3,8 +3,8 @@
 // odeint defines
 #define EPS 1e-12
 #define H1 1e-30
+#define MAXSTP 1e9
 #define HMIN 0.0
-#define MAXSTP 10000
 #define TINY 1.0e-30
 
 // rkqs defines

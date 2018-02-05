@@ -112,4 +112,28 @@
 
     } ShootingVarsStruct;
 
+    typedef struct EOSmodelInfoStruct{
+
+        int \
+          model_num, \
+          SplineTable_count;
+
+        char *model_name;
+
+        double \
+          *SplineTable_presure, \
+          *SplineTable_density, \
+          *SplineTable_D2density_Dpresure2, \
+          *SplineTable_densityBarionic, \
+          *SplineTable_D2densityBarionic_Dpresure2, \
+          *PieceWise_K, \
+          *PieceWise_Gamma, \
+          *PieceWise_a, \
+          *PieceWise_density, \
+          *PieceWise_presure, \
+          *PieceWise_N, current;
+
+    } EOSmodelInfoStruct;
+
+
 #endif
