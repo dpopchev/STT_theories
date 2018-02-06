@@ -267,7 +267,7 @@ void shooting_regular_free(ShootingVarsStruct **arg){
 void shooting_regular_info_print_stdout(ShootingVarsStruct *arg){
 
     printf(
-        "\n\n Shooting info: \n"
+        "\n Shooting info: \n"
         "\n\t General info: \n"
         "\t\t name %s \n",
         "shooting regular"
@@ -333,7 +333,7 @@ void shooting_regular_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp )
 
     fprintf(
         fp,
-        "\n\n Shooting info: \n"
+        "\n Shooting info: \n"
         "\n\t General info: \n"
         "\t\t name %s \n",
         "shooting regular"

@@ -45,7 +45,7 @@
 #define ODE_FREE_PARM_VALS_3 0
 
 // the interval for the independent variable
-#define ODE_INDEP_INIT 0
+#define ODE_INDEP_INIT 1e-30
 #define ODE_INDEP_FINAL 1e2
 
 // if we are to change vary any of the initial values of the ODE
@@ -56,6 +56,7 @@
 #define INITIAL_Y_STEP 1e-5
 
 static double *GV_PARAMETERS_VALUES;
+static EOSmodelInfoStruct *eos;
 
 static void ode_phiScal_foo(double x, double *y, double *dydx){
 
@@ -68,21 +69,28 @@ static void ode_phiScal_foo(double x, double *y, double *dydx){
         Q = y[2], \
         p = y[3], \
         LambdaMetr = y[4], \
-        m = y[5];
-
-    double \
+        m = y[5], \
+        \
         Vhat = 2*pow(m_phiScal,2)*pow(phiScal,2) + lambda_phiScal*pow(phiScal,4), \
         Vhat_dphiScal = 4*pow(m_phiScal,2)*phiScal + 4*lambda_phiScal*pow(phiScal,3), \
         alpha = beta_phiScal*phiScal, \
         A = exp(1.0/2 * beta_phiScal * pow(phiScal,2)), \
-        exp_2LambdaMetr = exp(2*LambdaMetr );
+        exp_2LambdaMetr = exp(2*LambdaMetr ), \
+        \
+        step4_A = pow(A,4), \
+        rho, \
+        tiny = 1e-30;
 
-    double \
-        step4_A = pow(A,4);
+    int \
+        too_small_to_count_pressure_pow = -14;
 
-    //TODO no EOSeq yet
-    //EOSeq(EOSdata,p);
-    double rho = 0;
+    if( p && floor(log10(fabs( p + tiny))) <= too_small_to_count_pressure_pow){
+        p = 0;
+        rho = 0;
+    }else{
+        EOSeq(eos,p);
+        rho = eos->current;
+    }
 
     double \
       PhiMetr_dr = \
@@ -702,7 +710,7 @@ static void ode_phiScal_integrate( ODEsystemStruct *arg ){
     arg->nok = arg->nbad = 0;
 
     if(DEBUGGING_ode_phiScal_integrate){
-        printf("\n");
+        printf("\n\n");
         for(int i=1; i<=arg->eqs_count;i++){
             printf(" %s_init = %.3e ", arg->name_vars[i], arg->y[i]);
         }
@@ -716,12 +724,13 @@ static void ode_phiScal_integrate( ODEsystemStruct *arg ){
     );
 
     if(DEBUGGING_ode_phiScal_integrate){
-        printf("\n");
+        printf("\n\n");
         for(int i=1; i<=arg->eqs_count;i++){
-            printf(" %s_init = %.3e ", arg->name_vars[i], arg->y[i]);
+            printf(" %s_final = %.3e ", arg->name_vars[i], arg->y[i]);
         }
     }
 
+    printf("\n\n");
     return;
 }
 
@@ -863,6 +872,10 @@ void ode_phiScal_compute_parameters( ODEsystemStruct *arg ){
                 }
 
                 dvector_copy(tmp_y,arg->y ,arg->eqs_count);
+
+                eos = calloc(1,sizeof(EOSmodelInfoStruct));
+                eos_init(&eos);
+                arg->eoseq_name = eos->model_name;
 
                 ShootingVarsStruct *shoot_regular_vars;
                 shoot_regular_vars = calloc(1,sizeof(ShootingVarsStruct));

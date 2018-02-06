@@ -51,4 +51,11 @@
     extern void ode_phiScal_free( ODEsystemStruct **arg );
     extern void ode_phiScal_compute_parameters( ODEsystemStruct *arg );
 
+    extern void eos_init(EOSmodelInfoStruct **eos);
+    extern void eos_print_info_stdout(EOSmodelInfoStruct *eos);
+    extern void eos_print_info_ResultFile( EOSmodelInfoStruct *eos, FILE *fp );
+    extern void eos_free(EOSmodelInfoStruct **eos);
+    extern void EOSeq( EOSmodelInfoStruct *eos, double pressure );
+
+    extern double pow10(double);
 #endif

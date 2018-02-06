@@ -76,6 +76,8 @@ FILE* open_file_to_WRITE_ResultFile( ODEsystemStruct *arg ){
     }
 
     strcat( full_file_path, arg->name_system );
+    strcat( full_file_path, "_");
+    strcat( full_file_path, arg->eoseq_name);
 
     parm_val = calloc((size_t)arg->free_parmeters_count_all+1, sizeof(char*));
 
@@ -113,6 +115,8 @@ FILE* open_file_to_APPEND_ResultFile( ODEsystemStruct *arg ){
     char **parm_val;
 
     strcat( full_file_path, arg->name_system );
+    strcat( full_file_path, "_");
+    strcat( full_file_path, arg->eoseq_name);
 
     parm_val = calloc((size_t)arg->free_parmeters_count_all+1, sizeof(char*));
 
@@ -150,6 +154,8 @@ FILE* open_file_to_WRITE_LivePlot( ODEsystemStruct *arg ){
     char **parm_val;
 
     strcat( full_file_path, arg->name_system );
+    strcat( full_file_path, "_");
+    strcat( full_file_path, arg->eoseq_name);
 
     parm_val = calloc((size_t)arg->free_parmeters_count_all+1, sizeof(char*));
 
@@ -187,6 +193,8 @@ FILE* open_file_to_APPEND_LivePlot( ODEsystemStruct *arg ){
     char **parm_val;
 
     strcat( full_file_path, arg->name_system );
+    strcat( full_file_path, "_");
+    strcat( full_file_path, arg->eoseq_name);
 
     parm_val = calloc((size_t)arg->free_parmeters_count_all+1, sizeof(char*));
 

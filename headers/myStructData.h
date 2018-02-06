@@ -64,7 +64,8 @@
             // rkqs advancing method in odeint used explicit written
             //rkqs_step_method_description[512],
             // names and some description of the free parameters of the system
-            **free_parmeters_names;
+            **free_parmeters_names, \
+            *eoseq_name;
 
         void (*foo)(double, double *, double *);
 
@@ -131,7 +132,8 @@
           *PieceWise_a, \
           *PieceWise_density, \
           *PieceWise_presure, \
-          *PieceWise_N, current;
+          *PieceWise_N, \
+          current;
 
     } EOSmodelInfoStruct;
 
