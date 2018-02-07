@@ -3,7 +3,7 @@
 #define DEBUGGING_ode_phiScal_foo 0
 #define DEBUGGING_ode_phiScal_init 0
 #define DEBUGGING_ode_phiScal_free 0
-#define DEBUGGING_ode_phiScal_integrate 1
+#define DEBUGGING_ode_phiScal_integrate 0
 #define DEBUGGING_ode_phiScal_compute_parameters 0
 #define DEBUGGING_ode_phiScal_change_central_value 0
 
@@ -595,19 +595,18 @@ static void ode_phiScal_LivePlot_append(ODEsystemStruct *arg){
 
     FILE *fp = open_file_to_APPEND_LivePlot(arg);
 
-    fprintf(fp,"# ");
+    fprintf(fp,"# p_c = %.3e", arg->initial_y_current);
 
-    for(int i=1; i <= arg->free_parmeters_count_all; i++){
-        fprintf(
-            fp,
-            "y_c = %.3e",
-            arg->initial_y_current
-        );
-    }
-
+    // TODO the points we are excluding are written by hand
     if(arg->points_count){
-        for(int i=1; i <= arg->points_count && xp[i]; i++){
-            fprintf(fp,"\n%e, %e", xp[i], yp[1][i]);
+        for(
+          int i=1;
+          i <= arg->points_count
+          && xp[i]
+          && floor(log10(fabs( yp[3][i] + 1e-30))) > -12;
+          i++
+        ){
+            fprintf(fp,"\n%e %e", xp[i], yp[3][i]);
         }
     }
 
@@ -618,14 +617,17 @@ static void ode_phiScal_LivePlot_append(ODEsystemStruct *arg){
     return;
 }
 
-static void ode_phiScal_ResultFile_append(ODEsystemStruct *arg){
+static void ode_phiScal_ResultFile_append(
+  ODEsystemStruct *arg, ShootingVarsStruct *shoot_regular_vars
+){
 
     FILE *fp = open_file_to_APPEND_ResultFile(arg);
 
     fprintf(
       fp,
-      "\n%e, %e",
-      arg->initial_y_current, arg->y[arg->index_of_y_to_change]
+      "\n%e %e",
+      shoot_regular_vars->UNknown_left_values[1],
+      shoot_regular_vars->newt_v[1]
     );
 
     fclose(fp);
@@ -757,7 +759,7 @@ static void ode_phiScal_change_central_value(
     arg->initial_y_current = arg->initial_y_start;
 
     printf(
-        "\n beta = %.3e"
+        "\n\t beta = %.3e"
         "\t m = %.3e"
         "\t lambda = %.3e",
         arg->free_parmeters_values[1],
@@ -790,9 +792,12 @@ static void ode_phiScal_change_central_value(
         printf(
           "\n p_c = %.3e; \t phi_c = %.3e -> phi_inf = %.3e",
           arg->initial_y_current,
-          shoot_regular_vars->newt_v[1],
-          arg->y[1]
+          shoot_regular_vars->UNknown_left_values[1],
+          shoot_regular_vars->newt_v[1]
         );
+
+        ode_phiScal_LivePlot_append(arg);
+        ode_phiScal_ResultFile_append(arg,shoot_regular_vars);
 
         if( arg->initial_y_current <= arg->initial_y_end ){
             arg->initial_y_current += arg->initial_y_step;

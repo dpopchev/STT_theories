@@ -81,7 +81,7 @@ void odeint_info_print_stdout(void){
         ,"odeint",
         ODEINT_SCALING_METHOD_DESCRIPTION[ODEINT_SCALING_METHOD],
         RKQS_STEP_METHOD_DESCRIPTION[RKQS_STEP_METHOD],
-        H1, HMIN, EPS, SAFETY, PGROW, PSHRNK, ERRCON, MAXSTP, TINY
+        H1, HMIN, EPS, SAFETY, PGROW, PSHRNK, ERRCON, (int)MAXSTP, TINY
     );
 
     return;
@@ -111,7 +111,7 @@ void odeint_info_print_ResultFile(FILE *fp){
         ,"odeint",
         ODEINT_SCALING_METHOD_DESCRIPTION[ODEINT_SCALING_METHOD],
         RKQS_STEP_METHOD_DESCRIPTION[RKQS_STEP_METHOD],
-        H1, HMIN, EPS, SAFETY, PGROW, PSHRNK, ERRCON, MAXSTP, TINY
+        H1, HMIN, EPS, SAFETY, PGROW, PSHRNK, ERRCON, (int)MAXSTP, TINY
     );
 
     fclose(fp);
@@ -120,8 +120,9 @@ void odeint_info_print_ResultFile(FILE *fp){
 }
 
 // odeint global variables
+// TODO place dxsav value in ODEsystemStruct
 int kmax,kount;
-double *xp,**yp,dxsav;
+double *xp,**yp,dxsav=1e-1;
 
 // rkck code
 static void rkck(\

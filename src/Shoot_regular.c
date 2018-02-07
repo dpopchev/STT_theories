@@ -22,6 +22,7 @@
 #define UNKNOWN_RIGHT_INDEXES 2,4
 #define UNKNOWN_RIGHT_VALUES 0,0
 
+// TODO this is not ready for the fitting point
 #define SHOOT_FREE_N 2
 
 void shooting_regular_init(ShootingVarsStruct **arg){

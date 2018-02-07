@@ -4,7 +4,7 @@
 #   https://pythonprogramming.net/live-graphs-matplotlib-tutorial/
 
 file_path = "/home/dimitar/projects/STT_theories/results/"
-file_name_results = "LogisticEq_"
+file_name_results = "STT_phiScal_"
 file_name_live = "live_plot_"
 
 def animate_live(i):
@@ -32,12 +32,12 @@ def animate_live(i):
 
         for single_line in single_set:
             if len(single_line) > 1:
-                x,y = single_line.split(",")
+                x,y = single_line.split(" ")
                 single_set_x.append(float(x))
                 single_set_y.append(float(y))
 
     ax_live.clear()
-    ax_live.set_title(file_to_use.split("_")[-1])
+    ax_live.set_title(file_to_use.split("_")[5:9])
     ax_live.xaxis.set_major_formatter(FormatStrFormatter('%.3e'))
     ax_live.yaxis.set_major_formatter(FormatStrFormatter('%.3e'))
 
@@ -65,19 +65,19 @@ def animate_result(i):
     with open(file_to_use,'r') as f:
         graph_data = f.read()
 
-    only_test_const = 87
+    only_test_const = 100
     graph_data = graph_data.split("\n")[only_test_const:]
 
     plot_x, plot_y = [], []
 
     for single_set_points in graph_data:
         if len(single_set_points) > 1:
-            x,y = single_set_points.split(",")
+            x,y = single_set_points.split(" ")
             plot_x.append(float(x))
             plot_y.append(float(y))
 
     ax_result.clear()
-    ax_result.set_title(file_to_use.split("_")[-1])
+    ax_result.set_title(file_to_use.split("_")[3:7])
     ax_result.xaxis.set_major_formatter(FormatStrFormatter('%.3e'))
     ax_result.yaxis.set_major_formatter(FormatStrFormatter('%.3e'))
 
