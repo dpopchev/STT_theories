@@ -1,30 +1,30 @@
 #include "ExternalHeaders.h"
 
 // newt variable for maximum number of iterations
-#define MAXITS 200
+#define MAXITS 20000
 
 // newt sets convergence criterion on function values
-#define TOLF 1.0e-4
+#define TOLF 1.0e-8
 
 // newt sets the criterion for deciding whether spurious convergence to a minimum
 // of NR_fmin has occured
-#define TOLMIN 1.0e-6
+#define TOLMIN 1.0e-9
 
 // newt is the convergence criterion on \delta x, such that it is not meaningful to
 // make more corrections to the root
-#define TOLX_newt 1.0e-7
+#define TOLX_newt 1.0e-8
 
 // newt maximum scaled step length allowed in the line searches
 #define STPMX 100.0
 
 // lnsrch ensures sufficient decrease in function value
-#define ALF 1.0e-14
+#define ALF 1.0e-10
 
 // lnsrch convergence criterion on \Delta x
 #define TOLX_lnsrch 1.0e-12
 
 // machine epsilon for the numerical Jacobian fdjac
-#define EPS_fdjac 1.0e-4
+#define EPS_fdjac 1.0e-8
 
 // ludcmp smallest number
 #define TINY 1e-30

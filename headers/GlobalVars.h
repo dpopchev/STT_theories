@@ -22,6 +22,8 @@
     extern FILE* open_file_to_APPEND_ResultFile( ODEsystemStruct *arg );
     extern FILE* open_file_to_WRITE_LivePlot( ODEsystemStruct *arg );
     extern FILE* open_file_to_APPEND_LivePlot( ODEsystemStruct *arg );
+    extern FILE* open_file_to_WRITE_LivePlot_solver( ODEsystemStruct *arg );
+    extern FILE* open_file_to_APPEND_LivePlot_solver( ODEsystemStruct *arg );
 
     // odeint vars and touches
     // they are included inside ODEsystemStruct

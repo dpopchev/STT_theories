@@ -75,7 +75,7 @@ $(BIN_DIR):
 .PHONY: run
 run: | $(BIN_NAME)
 	@echo Executing $(BIN_NAME)
-	./src/python/live_plot.py &
+#	./src/python/live_plot.py &
 	./$(BIN_DIR)/$(BIN_NAME)
 
 .PHONY: valgrind

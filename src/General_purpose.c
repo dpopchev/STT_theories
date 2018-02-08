@@ -226,6 +226,84 @@ FILE* open_file_to_APPEND_LivePlot( ODEsystemStruct *arg ){
     }
 }
 
+FILE* open_file_to_WRITE_LivePlot_solver( ODEsystemStruct *arg ){
+
+    char full_file_path[128]="/home/dimitar/projects/STT_theories/results/live_plot_solver_";
+    char **parm_val;
+
+    strcat( full_file_path, arg->name_system );
+    strcat( full_file_path, "_");
+    strcat( full_file_path, arg->eoseq_name);
+
+    parm_val = calloc((size_t)arg->free_parmeters_count_all+1, sizeof(char*));
+
+    for(int i=1; i <= arg->free_parmeters_count_all; i++){
+
+        parm_val[i] = calloc((size_t)PARAM_VAL_CHAR_LENG,sizeof(char));
+        sprintf( parm_val[i], "%.3e", arg->free_parmeters_values[i] );
+        strcat( full_file_path, "_" );
+        strcat( full_file_path, arg->free_parmeters_names[i]);
+        strcat( full_file_path, parm_val[i]);
+
+        free(parm_val[i]);
+    }
+
+    free(parm_val);
+
+    FILE *fp = fopen(full_file_path,"w");
+    if( fp == NULL ){
+        printf(
+          "\n\n ERROR open_file_to_write_ResultFile oppenning file:\n\n \
+          %s ERROR line 178\n\n",
+          full_file_path
+        );
+        perror("Error");
+
+        exit(178);
+    }else{
+        return fp;
+    }
+}
+
+FILE* open_file_to_APPEND_LivePlot_solver( ODEsystemStruct *arg ){
+
+    char full_file_path[128]="/home/dimitar/projects/STT_theories/results/live_plot_solver";
+    char **parm_val;
+
+    strcat( full_file_path, arg->name_system );
+    strcat( full_file_path, "_");
+    strcat( full_file_path, arg->eoseq_name);
+
+    parm_val = calloc((size_t)arg->free_parmeters_count_all+1, sizeof(char*));
+
+    for(int i=1; i <= arg->free_parmeters_count_all; i++){
+
+        parm_val[i] = calloc((size_t)PARAM_VAL_CHAR_LENG,sizeof(char));
+        sprintf( parm_val[i], "%.3e", arg->free_parmeters_values[i] );
+        strcat( full_file_path, "_" );
+        strcat( full_file_path, arg->free_parmeters_names[i]);
+        strcat( full_file_path, parm_val[i]);
+
+        free(parm_val[i]);
+    }
+
+    free(parm_val);
+
+    FILE *fp = fopen(full_file_path,"a");
+    if( fp == NULL ){
+        printf(
+          "\n\n ERROR open_file_to_write_ResultFile oppenning file:\n\n \
+          %s ERROR line 215 \n\n",
+          full_file_path
+        );
+        perror("Error");
+
+        exit(215);
+    }else{
+        return fp;
+    }
+}
+
 #undef PARAM_VAL_CHAR_LENG
 #undef DEBUGGING_dvector_copy
 #undef DEBUGGING_OPEN_WRITE_RESULT

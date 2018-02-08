@@ -32,7 +32,7 @@
 
 // beta
 #define ODE_FREE_PARM_COUNT_1 5
-#define ODE_FREE_PARM_VALS_1 0, -4, -4.5, -6, -8
+#define ODE_FREE_PARM_VALS_1 -10, -8, -6, -4, 0
 
 // m
 #define ODE_FREE_PARM_COUNT_2 1
@@ -736,6 +736,36 @@ static void ode_phiScal_integrate( ODEsystemStruct *arg ){
     return;
 }
 
+static int \
+    guess_left_n, *guess_left_indexes, \
+    guess_right_n, *guess_right_indexes, \
+    solver_try;
+
+static double *want_right_values, *want_left_values;
+
+static ODEsystemStruct *guess_to_integrate;
+
+static void ode_phiScal_shooting_regular(int n, double *v, double *f){
+
+    double *tmp_y;
+
+    tmp_y = dvector(1, guess_to_integrate->eqs_count);
+    dvector_copy(guess_to_integrate->y, tmp_y ,guess_to_integrate->eqs_count);
+
+    dvector_copy_to_index(v, guess_to_integrate->y, guess_left_n, guess_left_indexes);
+
+    ode_phiScal_integrate(guess_to_integrate);
+
+    for(int i=1; i <= guess_left_n; i++){
+        f[i] = guess_to_integrate->y[i] - want_left_values[i];
+    }
+
+    dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
+    free(tmp_y);
+
+    return;
+}
+
 static void ode_phiScal_change_central_value(
     ODEsystemStruct *arg, ShootingVarsStruct *shoot_regular_vars
 ){
@@ -787,13 +817,40 @@ static void ode_phiScal_change_central_value(
             );
         }
 
-        ode_phiScal_integrate(arg);
+        guess_left_n = shoot_regular_vars->UNknown_left_n;
+        guess_left_indexes = shoot_regular_vars->UNknown_left_indexes;
+        want_left_values = shoot_regular_vars->known_right_values;
+
+        guess_right_n = shoot_regular_vars->UNknown_right_n;
+        guess_right_indexes = shoot_regular_vars->UNknown_right_indexes;
+        want_right_values = shoot_regular_vars->known_left_values;
+
+        guess_to_integrate = arg;
+
+        dvector_copy(
+          shoot_regular_vars->UNknown_left_values,
+          shoot_regular_vars->newt_v,
+          shoot_regular_vars->newt_n
+        );
+
+        //ode_phiScal_integrate(arg);
+
+        open_file_to_WRITE_LivePlot_solver(arg);
+
+        int newt_checker;
+        newt(
+          shoot_regular_vars->newt_v,
+          shoot_regular_vars->newt_n,
+          &newt_checker,
+          &ode_phiScal_shooting_regular
+        );
 
         printf(
-          "\n p_c = %.3e; \t phi_c = %.3e -> phi_inf = %.3e",
+          "\n p_c = %.3e; \t phi_c = %.3e -> phi_g = %.3e \t newt_check %d",
           arg->initial_y_current,
           shoot_regular_vars->UNknown_left_values[1],
-          shoot_regular_vars->newt_v[1]
+          shoot_regular_vars->newt_v[1],
+          newt_checker
         );
 
         ode_phiScal_LivePlot_append(arg);
