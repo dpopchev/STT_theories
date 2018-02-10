@@ -267,7 +267,7 @@ FILE* open_file_to_WRITE_LivePlot_solver( ODEsystemStruct *arg ){
 
 FILE* open_file_to_APPEND_LivePlot_solver( ODEsystemStruct *arg ){
 
-    char full_file_path[128]="/home/dimitar/projects/STT_theories/results/live_plot_solver";
+    char full_file_path[128]="/home/dimitar/projects/STT_theories/results/live_plot_solver_";
     char **parm_val;
 
     strcat( full_file_path, arg->name_system );

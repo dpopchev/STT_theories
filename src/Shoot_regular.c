@@ -10,7 +10,7 @@
 // how many values of the ODE are unknown and their corresponding guessed values
 #define UNKNOWN_LEFT_N 1
 #define UNKNOWN_LEFT_INDEXES 1
-#define UNKNOWN_LEFT_VALUES -1e-2
+#define UNKNOWN_LEFT_VALUES -5e-2
 
 // how many values of the ODE are given on the right side of the interval
 #define KNOWN_RIGHT_N 1
@@ -400,7 +400,10 @@ void shooting_regular_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp )
         );
     }
 
-    fprintf(fp,"\n");
+    fprintf(fp,"\n\n");
+
+    //TODO this better not be here
+    fprintf( fp, "# p_c phiScal_c M AR delta_phiScal\n");
 
     fclose(fp);
     return;

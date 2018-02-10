@@ -1,14 +1,14 @@
 #include "ExternalHeaders.h"
 
 // newt variable for maximum number of iterations
-#define MAXITS 20000
+#define MAXITS 1e5
 
 // newt sets convergence criterion on function values
-#define TOLF 1.0e-8
+#define TOLF 1.0e-10
 
 // newt sets the criterion for deciding whether spurious convergence to a minimum
 // of NR_fmin has occured
-#define TOLMIN 1.0e-9
+#define TOLMIN 1.0e-15
 
 // newt is the convergence criterion on \delta x, such that it is not meaningful to
 // make more corrections to the root
@@ -18,10 +18,10 @@
 #define STPMX 100.0
 
 // lnsrch ensures sufficient decrease in function value
-#define ALF 1.0e-10
+#define ALF 1e-10
 
 // lnsrch convergence criterion on \Delta x
-#define TOLX_lnsrch 1.0e-12
+#define TOLX_lnsrch 1.0e-10
 
 // machine epsilon for the numerical Jacobian fdjac
 #define EPS_fdjac 1.0e-8
@@ -218,7 +218,7 @@ void newt_info_print_stdout(void){
         "\n\t ludcmp parameters \n"
         "\t\t tiny parameter %.3e \n"
         , "newt","newt",
-        MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
+        (int)MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
         EPS_fdjac, TINY
     );
 
@@ -247,7 +247,7 @@ void newt_info_print_ResultFile(FILE *fp){
         "\n\t ludcmp parameters \n"
         "\t\t tiny parameter %.3e \n"
         , "newt","newt",
-        MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
+        (int)MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
         EPS_fdjac, TINY
     );
 
