@@ -783,8 +783,8 @@ void ode_logistics_compute_parameters( ODEsystemStruct *arg ){
 
         ShootingVarsStruct *shoot_regular_vars;
         shoot_regular_vars = calloc(1,sizeof(ShootingVarsStruct));
-        shooting_regular_init(&shoot_regular_vars);
-        shooting_regular_check(shoot_regular_vars, arg);
+        shooting_init(&shoot_regular_vars);
+        shooting_check(shoot_regular_vars, arg);
 
         ode_logistics_LivePlot_open(arg);
         ode_logistics_ResultFile_open(arg);
@@ -798,8 +798,8 @@ void ode_logistics_compute_parameters( ODEsystemStruct *arg ){
         newt_info_print_stdout();
         newt_info_print_ResultFile(open_file_to_APPEND_ResultFile(arg));
 
-        shooting_regular_info_print_stdout(shoot_regular_vars);
-        shooting_regular_info_print_ResultFile(shoot_regular_vars,open_file_to_APPEND_ResultFile(arg));
+        shooting_info_print_stdout(shoot_regular_vars);
+        shooting_info_print_ResultFile(shoot_regular_vars,open_file_to_APPEND_ResultFile(arg));
 
         ode_logistics_change_central_value(arg, shoot_regular_vars);
 

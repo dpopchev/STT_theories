@@ -43,11 +43,11 @@
     extern void newt_info_print_stdout(void);
     extern void newt_info_print_ResultFile(FILE *fp);
 
-    extern void shooting_regular_init(ShootingVarsStruct **arg);
-    extern void shooting_regular_free(ShootingVarsStruct **arg);
-    extern void shooting_regular_info_print_stdout(ShootingVarsStruct *arg);
-    extern void shooting_regular_info_print_ResultFile(ShootingVarsStruct *arg, FILE *fp);
-    extern void shooting_regular_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_ode);
+    extern void shooting_init(ShootingVarsStruct **arg);
+    extern void shooting_free(ShootingVarsStruct **arg);
+    extern void shooting_info_print_stdout(ShootingVarsStruct *arg);
+    extern void shooting_info_print_ResultFile(ShootingVarsStruct *arg, FILE *fp);
+    extern void shooting_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_ode);
 
     extern void ode_phiScal_init( ODEsystemStruct **arg );
     extern void ode_phiScal_free( ODEsystemStruct **arg );
@@ -58,6 +58,9 @@
     extern void eos_print_info_ResultFile( EOSmodelInfoStruct *eos, FILE *fp );
     extern void eos_free(EOSmodelInfoStruct **eos);
     extern void EOSeq( EOSmodelInfoStruct *eos, double pressure );
+
+    extern void ode_phiScal_shooting_fitting(int n, double *v, double *f);
+    extern void ode_phiScal_shooting_regular(int n, double *v, double *f);
 
     extern double pow10(double);
 #endif

@@ -1,7 +1,7 @@
 #include "ExternalHeaders.h"
 
-#define DEBUGGING_dvector_copy 0
-#define DEBUGGING_dvector_copy_to_index 0
+#define DEBUGGING_dvector_copy 1
+#define DEBUGGING_dvector_copy_to_index 1
 #define DEBUGGING_OPEN_WRITE_RESULT 0
 
 #define PARAM_VAL_CHAR_LENG 16
@@ -51,16 +51,16 @@ void dvector_copy_to_index( double *copy_from, double *copy_to, int size, int *i
 
     for(int i=1; i <= size; i++){
 
-        if(DEBUGGING_dvector_copy){
+        if(DEBUGGING_dvector_copy_to_index){
             printf(
                 "%s %s copy_from[%d] = %.3e copy_to[%d] = %.3e \n",
                 identation, function_path,
-                indexes[i], copy_from[indexes[i]],
+                i, copy_from[i],
                 indexes[i], copy_to[indexes[i]]
             );
         }
 
-        copy_to[indexes[i]] = copy_from[indexes[i]];
+        copy_to[indexes[i]] = copy_from[i];
     }
 
     return;

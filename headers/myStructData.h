@@ -91,7 +91,10 @@
             // amount of unknown left side values
             UNknown_right_n, \
             // for newt shoot function
-            newt_n;
+            newt_n, \
+            // the amount and indexes we will not be interested in
+            shoot_free_n, \
+            *shoot_free_indexes;
 
         double \
             // values of the left side who are known
