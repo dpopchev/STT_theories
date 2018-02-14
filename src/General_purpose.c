@@ -1,8 +1,8 @@
 #include "ExternalHeaders.h"
 
-#define DEBUGGING_dvector_copy 1
-#define DEBUGGING_dvector_copy_to_index 1
-#define DEBUGGING_dvector_copy_to_index_opps 1
+#define DEBUGGING_dvector_copy 0
+#define DEBUGGING_dvector_copy_to_index 0
+#define DEBUGGING_dvector_copy_to_index_opps 0
 #define DEBUGGING_OPEN_WRITE_RESULT 0
 
 #define PARAM_VAL_CHAR_LENG 16

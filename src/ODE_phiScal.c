@@ -3,7 +3,7 @@
 #define DEBUGGING_ode_phiScal_foo 0
 #define DEBUGGING_ode_phiScal_init 0
 #define DEBUGGING_ode_phiScal_free 0
-#define DEBUGGING_ode_phiScal_integrate 1
+#define DEBUGGING_ode_phiScal_integrate 0
 #define DEBUGGING_ode_phiScal_compute_parameters 0
 #define DEBUGGING_ode_phiScal_change_central_value 0
 
@@ -55,7 +55,7 @@
 #define INITIAL_Y_END 5e-3
 #define INITIAL_Y_STEP 1e-5
 
-static double *GV_PARAMETERS_VALUES, AR, R;
+static double *GV_PARAMETERS_VALUES, AR, R, *rho;
 static EOSmodelInfoStruct *eos;
 
 static void ode_phiScal_foo(double x, double *y, double *dydx){
@@ -682,7 +682,7 @@ static void ode_phiScal_LivePlot_append_solver(ODEsystemStruct *arg){
     if(arg->points_count){
         fprintf(
           fp,
-          "# phiScal_c = %.3e, R = %e, phiScal_inf = %e",
+          "# phiScal_c = %e, R = %e, phiScal_inf = %e",
           arg->points_y[1][1], R, arg->phiScal_inf
         );
 
@@ -856,7 +856,7 @@ static void ode_phiScal_shooting_regular(int n, double *v, double *f){
 
 static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
 
-    printf("\n\n fitting starting \n\n");
+    printf("\n\n %e \n\n", v[1]);
 
     if(n != guess_left_n + guess_right_n){
         printf(
@@ -894,7 +894,6 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
     guess_to_integrate->x_final = shoot_fiting_point;
     guess_to_integrate->phiScal_inf = shoot_fiting_point;
 
-    printf("\n\n\n fitting from left to right \n");
     ode_phiScal_integrate(guess_to_integrate);
 
     ode_phiScal_LivePlot_append_solver(guess_to_integrate);
@@ -927,10 +926,9 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
       guess_left_indexes
     );
 
-    guess_to_integrate->x_initial = shoot_fiting_point;
-    guess_to_integrate->x_final = tmp_x_right;
+    guess_to_integrate->x_initial = tmp_x_right;
+    guess_to_integrate->x_final = shoot_fiting_point;
 
-    printf("\n fitting from right to left \n\n\n");
     ode_phiScal_integrate(guess_to_integrate);
 
     R = AR = 0;
@@ -953,7 +951,6 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
 
     for(int i=1; i <= n; i++){
         f[i] = tmp_f1[i] - tmp_f2[i];
-        printf("\n %d %e %e %e \n",i, tmp_f1[i], tmp_f2[i], f[i] );
     }
 
     dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
@@ -964,8 +961,6 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
     free(tmp_f1);
     free(tmp_f2);
     free(tmp_y);
-
-    printf("\n\n fitting ending \n\n");
 
     return;
 }

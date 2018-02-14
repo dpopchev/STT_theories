@@ -57,7 +57,7 @@ def animate(something):
     ax.set_ylabel(system_names[1])
 
     for single_set_x, single_set_y , single_set_title, R, phiScal_inf \
-      in zip(plot_x[-4:], plot_y[-4:], plot_titles[-4:], plot_R[-4:], plot_phiScal_inf[-4:]):
+      in zip(plot_x, plot_y, plot_titles, plot_R, plot_phiScal_inf):
 
         ax.plot(
           single_set_x, single_set_y[1],

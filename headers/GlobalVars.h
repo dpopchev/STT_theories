@@ -12,7 +12,8 @@
         GV_MACHINE_EPSILON_CUBROOT;
 
     extern void dvector_copy( double *from, double *to, int size );
-    extern void dvector_copy_to_index( double *copy_from, double *copy_to, int size, int *indexes);
+    extern void dvector_copy_to_index( double *src, double *dst, int size, int *indexes);
+    extern void dvector_copy_to_index_opps( double *src, double *dst, int size, int *indexes);
 
     extern void ode_logistics_init( ODEsystemStruct **arg );
     extern void ode_logistics_free( ODEsystemStruct **arg );
