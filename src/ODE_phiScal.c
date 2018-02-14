@@ -680,7 +680,11 @@ static void ode_phiScal_LivePlot_append_solver(ODEsystemStruct *arg){
     FILE *fp = open_file_to_APPEND_LivePlot_solver(arg);
 
     if(arg->points_count){
-        fprintf(fp,"# phiScal_c = %.3e, R = %e", arg->points_y[1][1], R);
+        fprintf(
+          fp,
+          "# phiScal_c = %.3e, R = %e, phiScal_inf = %e",
+          arg->points_y[1][1], R, arg->phiScal_inf
+        );
 
         for(int i=1; i <= arg->points_count && arg->points_x[i]; i++){
             fprintf(fp,"\n%e ", arg->points_x[i]);
@@ -780,11 +784,15 @@ static void ode_phiScal_integrate( ODEsystemStruct *arg ){
     if(DEBUGGING_ode_phiScal_integrate){
         printf("\n\n");
         for(int i=1; i<=arg->eqs_count;i++){
-            printf(" %s_init = %.3e ", arg->name_vars[i], arg->y[i]);
+            printf(" %s_init = %e ", arg->name_vars[i], arg->y[i]);
         }
     }
 
-    R = AR = 0;
+    if(arg->x_final > arg->x_initial){
+        R =  0;
+        AR = 0;
+    }
+
     odeint(
       arg->y, arg->eqs_count,
       arg->x_initial, arg->x_final,
@@ -795,7 +803,7 @@ static void ode_phiScal_integrate( ODEsystemStruct *arg ){
     if(DEBUGGING_ode_phiScal_integrate){
         printf("\n\n");
         for(int i=1; i<=arg->eqs_count;i++){
-            printf(" %s_final = %.3e ", arg->name_vars[i], arg->y[i]);
+            printf(" %s_final = %e ", arg->name_vars[i], arg->y[i]);
         }
     }
 
@@ -812,7 +820,7 @@ static double *known_left_values, *known_right_values, shoot_fiting_point;
 
 static ODEsystemStruct *guess_to_integrate;
 
-void ode_phiScal_shooting_regular(int n, double *v, double *f){
+static void ode_phiScal_shooting_regular(int n, double *v, double *f){
 
     double *tmp_y;
 
@@ -831,6 +839,7 @@ void ode_phiScal_shooting_regular(int n, double *v, double *f){
 
     dvector_copy_to_index(v, guess_to_integrate->y, guess_left_n, guess_left_indexes);
 
+    guess_to_integrate->phiScal_inf = guess_to_integrate->x_final;
     ode_phiScal_integrate(guess_to_integrate);
 
     for(int i=1; i <= guess_left_n; i++){
@@ -845,7 +854,9 @@ void ode_phiScal_shooting_regular(int n, double *v, double *f){
     return;
 }
 
-void ode_phiScal_shooting_fitting(int n, double *v, double *f){
+static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
+
+    printf("\n\n fitting starting \n\n");
 
     if(n != guess_left_n + guess_right_n){
         printf(
@@ -860,54 +871,101 @@ void ode_phiScal_shooting_fitting(int n, double *v, double *f){
         *tmp_y = dvector(1, guess_to_integrate->eqs_count),
         *tmp_f1 = dvector(1, guess_left_n + guess_right_n ),
         *tmp_f2 = dvector(1, guess_left_n + guess_right_n),
-        tmp_x_left, tmp_x_right;
+        tmp_x_left = guess_to_integrate->x_initial,
+        tmp_x_right = guess_to_integrate->x_final;
 
     dvector_copy(guess_to_integrate->y, tmp_y ,guess_to_integrate->eqs_count);
 
-    tmp_x_left = guess_to_integrate->x_initial;
-    tmp_x_right = guess_to_integrate->x_final;
+    dvector_copy_to_index(
+      v,
+      guess_to_integrate->y,
+      guess_left_n,
+      guess_left_indexes
+    );
 
-    dvector_copy_to_index(v, guess_to_integrate->y, guess_left_n, guess_left_indexes);
-
-    dvector_copy_to_index(known_left_values, guess_to_integrate->y, guess_right_n, guess_right_indexes);
+    dvector_copy_to_index(
+      known_left_values,
+      guess_to_integrate->y,
+      guess_right_n,
+      guess_right_indexes
+    );
 
     guess_to_integrate->x_initial = tmp_x_left;
     guess_to_integrate->x_final = shoot_fiting_point;
+    guess_to_integrate->phiScal_inf = shoot_fiting_point;
 
-    ode_phiScal_integrate(guess_to_integrate);
-
-    for(int i=1; i <= guess_left_n; i++){
-        tmp_f1[i] = guess_to_integrate->y[guess_left_indexes[i]];
-    }
-
-    for(int i=guess_left_n+1; i <= guess_right_n; i++){
-        tmp_f1[i] = guess_to_integrate->y[guess_right_indexes[i]];
-    }
-
-    dvector_copy_to_index(&v[guess_left_n], guess_to_integrate->y, guess_right_n, guess_right_indexes);
-
-    dvector_copy_to_index(known_right_values, guess_to_integrate->y, guess_left_n, guess_left_indexes);
-
-    guess_to_integrate->x_initial = shoot_fiting_point;
-    guess_to_integrate->x_final = tmp_x_right;
-
+    printf("\n\n\n fitting from left to right \n");
     ode_phiScal_integrate(guess_to_integrate);
 
     ode_phiScal_LivePlot_append_solver(guess_to_integrate);
 
-    for(int i=1; i <= guess_left_n; i++){
-        tmp_f1[i] = guess_to_integrate->y[guess_left_indexes[i]];
-    }
+    dvector_copy_to_index_opps(
+      guess_to_integrate->y,
+      tmp_f1,
+      guess_left_n,
+      guess_left_indexes
+    );
 
-    for(int i=guess_left_n+1; i <= guess_right_n; i++){
-        tmp_f1[i] = guess_to_integrate->y[guess_right_indexes[i]];
+    dvector_copy_to_index_opps(
+      guess_to_integrate->y,
+      &tmp_f1[guess_left_n],
+      guess_right_n,
+      guess_right_indexes
+    );
+
+    dvector_copy_to_index(
+      &v[guess_left_n],
+      guess_to_integrate->y,
+      guess_right_n,
+      guess_right_indexes
+    );
+
+    dvector_copy_to_index(
+      known_right_values,
+      guess_to_integrate->y,
+      guess_left_n,
+      guess_left_indexes
+    );
+
+    guess_to_integrate->x_initial = shoot_fiting_point;
+    guess_to_integrate->x_final = tmp_x_right;
+
+    printf("\n fitting from right to left \n\n\n");
+    ode_phiScal_integrate(guess_to_integrate);
+
+    R = AR = 0;
+
+    ode_phiScal_LivePlot_append_solver(guess_to_integrate);
+
+    dvector_copy_to_index_opps(
+      guess_to_integrate->y,
+      tmp_f2,
+      guess_left_n,
+      guess_left_indexes
+    );
+
+    dvector_copy_to_index_opps(
+      guess_to_integrate->y,
+      &tmp_f2[guess_left_n],
+      guess_right_n,
+      guess_right_indexes
+    );
+
+    for(int i=1; i <= n; i++){
+        f[i] = tmp_f1[i] - tmp_f2[i];
+        printf("\n %d %e %e %e \n",i, tmp_f1[i], tmp_f2[i], f[i] );
     }
 
     dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
 
+    guess_to_integrate->x_initial = tmp_x_left;
+    guess_to_integrate->x_final = tmp_x_right;
+
     free(tmp_f1);
     free(tmp_f2);
     free(tmp_y);
+
+    printf("\n\n fitting ending \n\n");
 
     return;
 }

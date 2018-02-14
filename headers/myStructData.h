@@ -40,12 +40,8 @@
             *points_x, \
             // place to save corresponding y points, size is defined by points_count
             **points_y, \
-            // desired accuracy for the integrator (odeint)
-            //eps,
-            // initial step size for the integrator (odeint)
-            //h1,
-            // minimum allowed step size, can be zero (odeint)
-            //hmin,
+            // the infinity for the phiScal
+            phiScal_inf,
             // pointer to include the free parameters of the system
             *free_parmeters_values, \
             // all possible values of parameters we are interested per parameter

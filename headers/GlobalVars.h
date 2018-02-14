@@ -59,8 +59,5 @@
     extern void eos_free(EOSmodelInfoStruct **eos);
     extern void EOSeq( EOSmodelInfoStruct *eos, double pressure );
 
-    extern void ode_phiScal_shooting_fitting(int n, double *v, double *f);
-    extern void ode_phiScal_shooting_regular(int n, double *v, double *f);
-
     extern double pow10(double);
 #endif

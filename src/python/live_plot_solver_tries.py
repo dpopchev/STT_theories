@@ -26,6 +26,8 @@ def animate(something):
     plot_titles = [ k.pop(0) for k in graph_data ]
 
     plot_R = [ float(k.split(",")[1].split(" = ")[1]) for k in plot_titles ]
+    plot_phiScal_inf = [ float(k.split(",")[2].split(" = ")[1]) for k in plot_titles ]
+
     plot_titles = [ k.split(",")[0] for k in plot_titles ]
 
     plot_x, plot_y = \
@@ -54,16 +56,18 @@ def animate(something):
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
     ax.set_ylabel(system_names[1])
 
-    for single_set_x, single_set_y , single_set_title, R \
-      in zip(plot_x, plot_y, plot_titles, plot_R):
+    for single_set_x, single_set_y , single_set_title, R, phiScal_inf \
+      in zip(plot_x[-4:], plot_y[-4:], plot_titles[-4:], plot_R[-4:], plot_phiScal_inf[-4:]):
 
         ax.plot(
           single_set_x, single_set_y[1],
-          marker="o", markersize=7,
+          marker="o", markersize=5,
           linewidth=1.5,
           label=single_set_title
         )
-        ax.axvline(x=R, alpha = 0.4, linestyle = "--", linewidth = 1.75)
+        if(R):
+            ax.axvline(x=R, alpha = 0.4, linestyle = "--", linewidth = 1.5)
+        ax.axvline(x=phiScal_inf, alpha = 0.4, linestyle = "-", linewidth = 1.5)
 
     #ax_live.legend(loc="best")
     #ax_live.legend(loc="right")
@@ -84,6 +88,8 @@ if __name__ == "__main__":
 
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
+
+    fig.set_tight_layout(True)
 
     ani_live = animation.FuncAnimation(fig,animate,interval=1000)
 

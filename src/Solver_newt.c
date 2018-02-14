@@ -171,13 +171,13 @@ static void fdjac(int n, double x[], double _fvec[], double **df,
     void (*vecfunc)(int, double [], double [])
 ){
     int i,j;
-    double h,temp,*f;
+    double h,temp,*f, _eps_fdjac = GV_MACHINE_EPSILON_SQRT;
 
     f=dvector(1,n);
     for (j=1;j<=n;j++) {
         temp=x[j];
-        h=EPS_fdjac*fabs(temp);
-        if (h == 0.0) h=EPS_fdjac;
+        h=_eps_fdjac*fabs(temp);
+        if (h == 0.0) h=_eps_fdjac;
         x[j]=temp+h;
         h=x[j]-temp;
         (*vecfunc)(n,x,f);

@@ -2,11 +2,12 @@
 
 #define DEBUGGING_dvector_copy 1
 #define DEBUGGING_dvector_copy_to_index 1
+#define DEBUGGING_dvector_copy_to_index_opps 1
 #define DEBUGGING_OPEN_WRITE_RESULT 0
 
 #define PARAM_VAL_CHAR_LENG 16
 
-void dvector_copy( double *copy_from, double *copy_to, int size ){
+void dvector_copy( double *src, double *dst, int size ){
 
     const char \
         function_path[] = "General_purpose.c dvector_copy", \
@@ -23,29 +24,29 @@ void dvector_copy( double *copy_from, double *copy_to, int size ){
 
         if(DEBUGGING_dvector_copy){
             printf(\
-                "%s %s copy_from[%d] = %.3e copy_to[%d] = %.3e \n", \
+                "%s %s src[%d] = %e will go to dst[%d] = %e \n", \
                 identation, function_path, \
-                i, copy_from[i], \
-                i, copy_to[i] \
+                i, src[i], \
+                i, dst[i] \
             );
         }
 
-        copy_to[i] = copy_from[i];
+        dst[i] = src[i];
     }
 
     return;
 }
 
-void dvector_copy_to_index( double *copy_from, double *copy_to, int size, int *indexes){
+void dvector_copy_to_index( double *src, double *dst, int size, int *indexes){
 
-    const char \
-        function_path[] = "General_purpose.c dvector_copy_to_index", \
+    const char
+        function_path[] = "General_purpose.c dvector_copy_to_index",
         identation[] = "\n";
 
     if(DEBUGGING_dvector_copy_to_index){
-        printf(\
-            "%s %s starting to copy dvector with size %d \n", \
-            identation, function_path, size \
+        printf(
+            "%s %s starting to copy dvector with size %d \n",
+            identation, function_path, size
         );
     }
 
@@ -53,14 +54,44 @@ void dvector_copy_to_index( double *copy_from, double *copy_to, int size, int *i
 
         if(DEBUGGING_dvector_copy_to_index){
             printf(
-                "%s %s copy_from[%d] = %.3e copy_to[%d] = %.3e \n",
+                "%s %s src[%d] = %e will go to dst[%d] = %e \n",
                 identation, function_path,
-                i, copy_from[i],
-                indexes[i], copy_to[indexes[i]]
+                i, src[i],
+                indexes[i], dst[indexes[i]]
             );
         }
 
-        copy_to[indexes[i]] = copy_from[i];
+        dst[indexes[i]] = src[i];
+    }
+
+    return;
+}
+
+void dvector_copy_to_index_opps( double *src, double *dst, int size, int *indexes){
+
+    const char \
+        function_path[] = "General_purpose.c dvector_copy_to_index_opps",
+        identation[] = "\n";
+
+    if(DEBUGGING_dvector_copy_to_index_opps){
+        printf(\
+            "%s %s starting to copy dvector with size %d \n",
+            identation, function_path, size
+        );
+    }
+
+    for(int i=1; i <= size; i++){
+
+        if(DEBUGGING_dvector_copy_to_index_opps){
+            printf(
+                "%s %s src[%d] = %.3e will go to dst[%d] = %.3e \n",
+                identation, function_path,
+                indexes[i], src[indexes[i]],
+                i, dst[i]
+            );
+        }
+
+        dst[i] = src[indexes[i]];
     }
 
     return;
