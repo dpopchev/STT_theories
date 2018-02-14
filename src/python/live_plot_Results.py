@@ -76,7 +76,7 @@ if __name__ == "__main__":
     style.use("seaborn-poster")
     #style.use("fivethirtyeight")
 
-    fig, axes = plt.subplots(2,1)
+    fig, axes = plt.subplots(1,2)
 
     fig.set_tight_layout(True)
 

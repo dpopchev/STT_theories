@@ -48,7 +48,10 @@
             **free_parmeters_values_all, \
             // interval in which we will change the initial value of y
             // with index index_of_y_to_change
-            initial_y_start, initial_y_end, initial_y_current, initial_y_step;
+            initial_y_start, initial_y_end, initial_y_current, initial_y_step,
+            // we want to print also the density
+            *points_rho;
+
 
         char \
             // name with simple description, see GlobalVars.h

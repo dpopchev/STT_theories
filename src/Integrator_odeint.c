@@ -122,7 +122,7 @@ void odeint_info_print_ResultFile(FILE *fp){
 // odeint global variables
 // TODO place dxsav value in ODEsystemStruct
 int kmax,kount;
-double *xp,**yp,dxsav=1e-1;
+double *xp,**yp, dxsav=1e-1, *rho, rho_tmp;
 
 // rkck code
 static void rkck(\
@@ -278,6 +278,7 @@ void odeint(
         if (kmax > 0 && kount < kmax-1 && fabs(x-xsav) > fabs(dxsav)) {
             xp[++kount]=x;
             for (i=1;i<=nvar;i++) yp[i][kount]=y[i];
+            rho[kount] = rho_tmp;
             xsav=x;
         }
         if ((x+h-x2)*(x+h-x1) > 0.0) h=x2-x;
@@ -288,6 +289,7 @@ void odeint(
             if (kmax) {
                 xp[++kount]=x;
                 for (i=1;i<=nvar;i++) yp[i][kount]=y[i];
+                rho[kount] = rho_tmp;
             }
             free_dvector(dydx,1,nvar);
             free_dvector(y,1,nvar);

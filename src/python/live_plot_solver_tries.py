@@ -7,7 +7,57 @@ file_path = "/home/dimitar/projects/STT_theories/results/"
 file_name_results = "STT_phiScal_"
 file_name_live = "live_plot_solver"
 
-system_names = [ "r", "phiScal", "Q", "p", "LambdaMetr", "m"]
+system_names = ["r", "phiScal", "Q", "p", "LambdaMetr", "m", "rho"]
+
+def my_plotting_phiScal(
+  ax,
+  label_x, plots_x,
+  label_y, plots_y,
+  plots_R,
+  plots_phiScal_inf
+):
+
+    ax.clear()
+
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
+    ax.set_xlabel(label_x)
+
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
+    ax.set_ylabel(label_y)
+
+    for x, y, R, phiScal_inf in zip(plots_x, plots_y, plots_R, plots_phiScal_inf):
+
+        ax.plot(
+            x, y[1],
+            marker="o", markersize = 5,
+            linewidth = 1.5
+        )
+
+        if(R):
+            ax.axvline(x=R, alpha = 0.4, linestyle = "--", linewidth = 1.5)
+
+        ax.axvline(x=phiScal_inf, alpha = 0.4, linestyle = "-", linewidth = 1.5)
+
+def my_plotting_rho(
+  ax,
+  label_x, plots_x,
+  label_y, plots_y,
+):
+    ax.clear()
+
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
+    ax.set_xlabel(label_x)
+
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
+    ax.set_ylabel(label_y)
+
+    for x, y in zip(plots_x, plots_y):
+
+        ax.plot(
+            x[:len(y[-1])], y[-1],
+            marker="o", markersize = 5,
+            linewidth = 1.5
+        )
 
 def animate(something):
 
@@ -46,31 +96,23 @@ def animate(something):
                 for m,n in zip(single_set_y, tmp):
                     m.append(float(n))
 
-    ax.clear()
+                single_set_y[-1] = [ m for m in single_set_y[-1] if m ]
 
-    ax.set_title(file_to_use.split("_")[6:10])
+    my_plotting_phiScal(
+      ax_phiScal,
+      "r", plot_x,
+      "phiScal", plot_y,
+      plot_R,
+      plot_phiScal_inf
+    );
 
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_xlabel(system_names[0])
+    my_plotting_rho(
+      ax_rho,
+      "r", plot_x,
+      "rho", plot_y
+    );
 
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_ylabel(system_names[1])
-
-    for single_set_x, single_set_y , single_set_title, R, phiScal_inf \
-      in zip(plot_x, plot_y, plot_titles, plot_R, plot_phiScal_inf):
-
-        ax.plot(
-          single_set_x, single_set_y[1],
-          marker="o", markersize=5,
-          linewidth=1.5,
-          label=single_set_title
-        )
-        if(R):
-            ax.axvline(x=R, alpha = 0.4, linestyle = "--", linewidth = 1.5)
-        ax.axvline(x=phiScal_inf, alpha = 0.4, linestyle = "-", linewidth = 1.5)
-
-    #ax_live.legend(loc="best")
-    #ax_live.legend(loc="right")
+    ax_phiScal.set_title(file_to_use.split("_")[6:10])
 
 if __name__ == "__main__":
 
@@ -81,15 +123,17 @@ if __name__ == "__main__":
     from matplotlib import style
     from matplotlib.ticker import FormatStrFormatter
 
-    sleep(1)
+    #sleep(1)
 
     style.use("seaborn-poster")
     #style.use("fivethirtyeight")
 
-    fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
+    fig, axes = plt.subplots(1,2)
 
     fig.set_tight_layout(True)
+
+    ax_phiScal = axes[0]
+    ax_rho = axes[1]
 
     ani_live = animation.FuncAnimation(fig,animate,interval=1000)
 

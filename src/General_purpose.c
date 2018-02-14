@@ -165,6 +165,7 @@ FILE* open_file_to_APPEND_ResultFile( ODEsystemStruct *arg ){
     free(parm_val);
 
     FILE *fp = fopen(full_file_path,"a");
+
     if( fp == NULL ){
         printf(
           "\n\n ERROR open_file_to_write_ResultFile oppenning file:\n\n \

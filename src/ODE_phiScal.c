@@ -55,7 +55,7 @@
 #define INITIAL_Y_END 5e-3
 #define INITIAL_Y_STEP 1e-5
 
-static double *GV_PARAMETERS_VALUES, AR, R, *rho;
+static double *GV_PARAMETERS_VALUES, AR, R;
 static EOSmodelInfoStruct *eos;
 
 static void ode_phiScal_foo(double x, double *y, double *dydx){
@@ -96,6 +96,8 @@ static void ode_phiScal_foo(double x, double *y, double *dydx){
         EOSeq(eos,p);
         rho = eos->current;
     }
+
+    rho_tmp = rho;
 
     double \
       PhiMetr_dr = \
@@ -271,9 +273,12 @@ void ode_phiScal_init( ODEsystemStruct **arg ){
 
         (*arg)->points_x = dvector(1, (*arg)->points_count);
         (*arg)->points_y = dmatrix(1, (*arg)->eqs_count, 1, (*arg)->points_count);
+        (*arg)->points_rho = dvector(1, (*arg)->points_count);
 
         xp = (*arg)->points_x;
         yp = (*arg)->points_y;
+        rho = (*arg)->points_rho;
+
     }else{
 
         xp = NULL;
@@ -692,6 +697,8 @@ static void ode_phiScal_LivePlot_append_solver(ODEsystemStruct *arg){
             for(int j=1; j <= arg->eqs_count; j++){
                 fprintf(fp,"%e ", arg->points_y[j][i]);
             }
+
+            fprintf(fp,"%e ", arg->points_rho[i]);
         }
     }
     else{
@@ -753,6 +760,8 @@ void ode_phiScal_free( ODEsystemStruct **arg ){
 
     free((*arg)->free_parmeters_values_all);
 
+    free((*arg)->points_rho);
+
     free(*arg);
 
     return;
@@ -773,10 +782,12 @@ static void ode_phiScal_integrate( ODEsystemStruct *arg ){
             for(int l=1; l <= arg->eqs_count; l++){
                 yp[l][i] = 0;
             }
+            rho[i] = 0;
         }
     }else{
         xp = NULL;
         yp = NULL;
+        rho = NULL;
     }
 
     arg->nok = arg->nbad = 0;
@@ -856,8 +867,6 @@ static void ode_phiScal_shooting_regular(int n, double *v, double *f){
 
 static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
 
-    printf("\n\n %e \n\n", v[1]);
-
     if(n != guess_left_n + guess_right_n){
         printf(
           "\n ODE_phiScal.c ode_phiScal_shooting_fitting something"
@@ -890,9 +899,10 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
       guess_right_indexes
     );
 
+    guess_to_integrate->phiScal_inf = shoot_fiting_point;
+
     guess_to_integrate->x_initial = tmp_x_left;
     guess_to_integrate->x_final = shoot_fiting_point;
-    guess_to_integrate->phiScal_inf = shoot_fiting_point;
 
     ode_phiScal_integrate(guess_to_integrate);
 
