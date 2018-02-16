@@ -10,13 +10,18 @@ system_names = [ "r", "phiScal", "Q", "p", "LambdaMetr", "m"]
 
 def my_ploting(ax, label_x, x, label_y, y):
 
+    label_fontsize = 12
+    ticks_label_size = 10
+
     ax.clear()
 
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_xlabel(label_x)
+    ax.set_xlabel(label_x, fontsize=label_fontsize)
+    ax.xaxis.set_tick_params(labelsize=ticks_label_size)
 
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_ylabel(label_y)
+    ax.set_ylabel(label_y, fontsize=label_fontsize)
+    ax.yaxis.set_tick_params(labelsize=ticks_label_size)
 
     ax.plot(
       x, y,
@@ -60,7 +65,8 @@ def animate(something):
       plot_labels[2], plots_all[2],
     )
 
-    ax_phiScal.set_title(file_to_use.split("_")[2:])
+    #ax_phiScal.set_title(file_to_use.split("_")[3:])
+    plt.suptitle(file_to_use.split("_")[3:], fontsize=16, y=1.001)
 
 if __name__ == "__main__":
 
@@ -70,8 +76,6 @@ if __name__ == "__main__":
     from matplotlib import animation as animation
     from matplotlib import style
     from matplotlib.ticker import FormatStrFormatter
-
-    sleep(1)
 
     style.use("seaborn-poster")
     #style.use("fivethirtyeight")

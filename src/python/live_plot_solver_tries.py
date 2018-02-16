@@ -17,19 +17,23 @@ def my_plotting_phiScal(
   plots_phiScal_inf
 ):
 
+    label_fontsize = 12
+    ticks_label_size = 10
+
     ax.clear()
 
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_xlabel(label_x)
+    ax.set_xlabel(label_x, fontsize=label_fontsize)
+    ax.xaxis.set_tick_params(labelsize=ticks_label_size)
 
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_ylabel(label_y)
+    ax.set_ylabel(label_y, fontsize=label_fontsize)
+    ax.yaxis.set_tick_params(labelsize=ticks_label_size)
 
     for x, y, R, phiScal_inf in zip(plots_x, plots_y, plots_R, plots_phiScal_inf):
 
         ax.plot(
             x, y[1],
-            marker="o", markersize = 5,
             linewidth = 1.5
         )
 
@@ -43,13 +47,18 @@ def my_plotting_rho(
   label_x, plots_x,
   label_y, plots_y,
 ):
+    label_fontsize = 12
+    ticks_label_size = 10
+
     ax.clear()
 
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_xlabel(label_x)
+    ax.set_xlabel(label_x, fontsize=label_fontsize)
+    ax.xaxis.set_tick_params(labelsize=ticks_label_size)
 
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_ylabel(label_y)
+    ax.set_ylabel(label_y, fontsize=label_fontsize)
+    ax.yaxis.set_tick_params(labelsize=ticks_label_size)
 
     for x, y in zip(plots_x, plots_y):
 
@@ -112,7 +121,7 @@ def animate(something):
       "rho", plot_y
     );
 
-    ax_phiScal.set_title(file_to_use.split("_")[6:10])
+    plt.suptitle(file_to_use.split("_")[6:10], fontsize=16, y=1.001)
 
 if __name__ == "__main__":
 
@@ -135,6 +144,6 @@ if __name__ == "__main__":
     ax_phiScal = axes[0]
     ax_rho = axes[1]
 
-    ani_live = animation.FuncAnimation(fig,animate,interval=1000)
+    ani_live = animation.FuncAnimation(fig,animate,interval=500)
 
     plt.show()

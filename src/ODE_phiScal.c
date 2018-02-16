@@ -37,7 +37,7 @@
 // m
 #define ODE_FREE_PARM_COUNT_2 1
 // 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1
-#define ODE_FREE_PARM_VALS_2 0
+#define ODE_FREE_PARM_VALS_2 1e-3
 
 // lambda
 #define ODE_FREE_PARM_COUNT_3 1
@@ -277,12 +277,13 @@ void ode_phiScal_init( ODEsystemStruct **arg ){
 
         xp = (*arg)->points_x;
         yp = (*arg)->points_y;
-        rho = (*arg)->points_rho;
+        rhop = (*arg)->points_rho;
 
     }else{
 
         xp = NULL;
         yp = NULL;
+        rhop = NULL;
 
     }
 
@@ -782,12 +783,12 @@ static void ode_phiScal_integrate( ODEsystemStruct *arg ){
             for(int l=1; l <= arg->eqs_count; l++){
                 yp[l][i] = 0;
             }
-            rho[i] = 0;
+            rhop[i] = 0;
         }
     }else{
         xp = NULL;
         yp = NULL;
-        rho = NULL;
+        rhop = NULL;
     }
 
     arg->nok = arg->nbad = 0;
@@ -1173,12 +1174,12 @@ static void ode_phiScal_change_central_value(
             iterate = 0;
         }
 
-        unsigned short time_interval = 1;
-        printf(
-          "\n\t\t\t small time sleep %d s\n",
-          time_interval
-        );
-        sleep(time_interval);
+        //unsigned short time_interval = 1;
+        //printf(
+          //"\n\t\t\t small time sleep %d s\n",
+          //time_interval
+        //);
+        //sleep(time_interval);
     }
 
     free(tmp_y);
