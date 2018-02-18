@@ -28,8 +28,8 @@
 
     // odeint vars and touches
     // they are included inside ODEsystemStruct
-    extern int kmax, kount;
-    extern double *xp, **yp, dxsav, *rhop, rho_tmp;
+    extern int kmax, kount, *did_it_go_boom;
+    extern double *xp, **yp, dxsav, *rhop, rho_tmp, *where_it_went_boom;
     extern void odeint(
         double ystart[], int nvar, double x1, double x2, int *nok, int *nbad,
         void (*derivs)(double, double [], double [])

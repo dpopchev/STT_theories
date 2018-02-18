@@ -27,7 +27,10 @@
             // how many values of each parameter we are interested
             *free_parameters_count_each, \
             // index for the y whos initial value will be changed
-            index_of_y_to_change;
+            index_of_y_to_change,
+            // if the system goes boom
+            did_it_go_boom;
+
 
         double \
             // the system itself
@@ -50,7 +53,9 @@
             // with index index_of_y_to_change
             initial_y_start, initial_y_end, initial_y_current, initial_y_step,
             // we want to print also the density
-            *points_rho;
+            *points_rho,
+            // where did it go boom
+            where_it_went_boom;
 
 
         char \

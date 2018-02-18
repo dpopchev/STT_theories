@@ -34,6 +34,7 @@ def my_plotting_phiScal(
 
         ax.plot(
             x, y[1],
+            marker="o", markersize = 5,
             linewidth = 1.5
         )
 
@@ -74,6 +75,8 @@ def animate(something):
     import os
 
     all_files = glob.glob(file_path + file_name_live + "*")
+    while not len(all_files):
+        all_files = glob.glob(file_path + file_name_live + "*")
 
     file_to_use = max(all_files, key=os.path.getctime)
 

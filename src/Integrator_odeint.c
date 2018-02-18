@@ -121,8 +121,8 @@ void odeint_info_print_ResultFile(FILE *fp){
 
 // odeint global variables
 // TODO place dxsav value in ODEsystemStruct
-int kmax,kount;
-double *xp,**yp, dxsav=1e-1, *rhop, rho_tmp;
+int kmax,kount, *did_it_go_boom;
+double *xp,**yp, dxsav=1e-1, *rhop, rho_tmp, *where_it_went_boom;
 
 // rkck code
 static void rkck(\
@@ -218,7 +218,11 @@ static void rkqs(\
                     break;
         }
         xnew=(*x)+h;
-        if (xnew == *x) nrerror("stepsize underflow in rkqs");
+        if (xnew == *x){
+            //nrerror("stepsize underflow in rkqs");
+            *did_it_go_boom = 1;
+            return;
+        }
     }
     if (errmax > ERRCON) *hnext=SAFETY*h*pow(errmax,PGROW);
     else *hnext=5.0*h;
@@ -283,6 +287,13 @@ void odeint(
         }
         if ((x+h-x2)*(x+h-x1) > 0.0) h=x2-x;
         (*rkqs)(y,dydx,nvar,&x,h,eps,yscal,&hdid,&hnext,derivs);
+        if(*did_it_go_boom){
+            *where_it_went_boom = x;
+            xp[++kount]=x;
+            for (i=1;i<=nvar;i++) yp[i][kount]=y[i];
+            rhop[kount] = rho_tmp;
+            return;
+        }
         if (hdid == h) ++(*nok); else ++(*nbad);
         if ((x-x2)*(x2-x1) >= 0.0) {
             for (i=1;i<=nvar;i++) ystart[i]=y[i];
@@ -296,7 +307,15 @@ void odeint(
             free_dvector(yscal,1,nvar);
             return;
         }
-        if (fabs(hnext) <= hmin) nrerror("Step size too small in odeint");
+        if (fabs(hnext) <= hmin){
+            //nrerror("Step size too small in odeint");
+            *did_it_go_boom = 1;
+            *where_it_went_boom = x;
+            xp[++kount]=x;
+            for (i=1;i<=nvar;i++) yp[i][kount]=y[i];
+            rhop[kount] = rho_tmp;
+            return;
+        }
         h=hnext;
     }
     nrerror("Too many steps in routine odeint");

@@ -35,6 +35,8 @@ def animate(something):
     import os
 
     all_files = glob.glob(file_path + file_name_results + "*")
+    while not len(all_files):
+        all_files = glob.glob(file_path + file_name_results + "*")
 
     file_to_use = max(all_files, key=os.path.getctime)
 
@@ -76,6 +78,8 @@ if __name__ == "__main__":
     from matplotlib import animation as animation
     from matplotlib import style
     from matplotlib.ticker import FormatStrFormatter
+
+    #sleep(30)
 
     style.use("seaborn-poster")
     #style.use("fivethirtyeight")
