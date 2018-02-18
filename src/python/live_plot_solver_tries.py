@@ -8,6 +8,7 @@ file_name_results = "STT_phiScal_"
 file_name_live = "live_plot_solver"
 
 system_names = ["r", "phiScal", "Q", "p", "LambdaMetr", "m", "rho"]
+colors = ['b', 'g', 'r', 'c', 'm', 'y', 'k']
 
 def my_plotting_phiScal(
   ax,
@@ -16,6 +17,8 @@ def my_plotting_phiScal(
   plots_R,
   plots_phiScal_inf
 ):
+
+    from random import randint
 
     label_fontsize = 12
     ticks_label_size = 10
@@ -30,18 +33,28 @@ def my_plotting_phiScal(
     ax.set_ylabel(label_y, fontsize=label_fontsize)
     ax.yaxis.set_tick_params(labelsize=ticks_label_size)
 
-    for x, y, R, phiScal_inf in zip(plots_x, plots_y, plots_R, plots_phiScal_inf):
+    colors_iter = iter(colors)
+    c = "w"
 
-        ax.plot(
-            x, y[1],
-            marker="o", markersize = 5,
-            linewidth = 1.5
-        )
+    try:
+        for x, y, R, phiScal_inf in zip(plots_x, plots_y, plots_R, plots_phiScal_inf):
 
-        if(R):
-            ax.axvline(x=R, alpha = 0.4, linestyle = "--", linewidth = 1.5)
+            if R:
+                c = next(colors_iter)
 
-        ax.axvline(x=phiScal_inf, alpha = 0.4, linestyle = "-", linewidth = 1.5)
+            ax.plot(
+                x, y[1],
+                marker="o", markersize = 5,
+                linewidth = 1.5,
+                color = c
+            )
+
+            if R:
+                ax.axvline(x=R, alpha = 0.4, linestyle = "--", linewidth = 1.5)
+
+            ax.axvline(x=phiScal_inf, alpha = 0.4, linestyle = "-", linewidth = 1.5)
+    except ValueError:
+        pass
 
 def my_plotting_rho(
   ax,
@@ -61,13 +74,16 @@ def my_plotting_rho(
     ax.set_ylabel(label_y, fontsize=label_fontsize)
     ax.yaxis.set_tick_params(labelsize=ticks_label_size)
 
-    for x, y in zip(plots_x, plots_y):
+    try:
+        for x, y in zip(plots_x, plots_y):
 
-        ax.plot(
-            x[:len(y[-1])], y[-1],
-            marker="o", markersize = 5,
-            linewidth = 1.5
-        )
+            ax.plot(
+                x[:len(y[-1])], y[-1],
+                marker="o", markersize = 5,
+                linewidth = 1.5
+            )
+    except ValueError:
+        pass
 
 def animate(something):
 
@@ -80,10 +96,26 @@ def animate(something):
 
     file_to_use = max(all_files, key=os.path.getctime)
 
-    with open(file_to_use,'r') as f:
+    with open(file_to_use,"r+") as f:
         graph_data = f.read()
 
-    graph_data = [ k.split("\n") for k in graph_data.split("# ") if len(k) > 1 ]
+    graph_data = [ k for k in graph_data.split("# ") if len(k) ]
+
+    print("asdasda " + str(len(graph_data)))
+
+    if len(graph_data) > 2:
+
+        if not "R = 0.000000e+00" in graph_data[-1] and not "R = 0.000000e+00" in graph_data[-2]:
+            graph_data = graph_data[-len(colors):]
+        elif "R = 0.000000e+00" in graph_data[-1]:
+            graph_data = graph_data[-2*len(colors):]
+        else:
+            del graph_data[-1]
+            graph_data = graph_data[-2*len(colors):]
+
+    print(str(len(graph_data)) + "\n\n")
+
+    graph_data = [ k.split("\n") for k in graph_data ]
 
     plot_titles = [ k.pop(0) for k in graph_data ]
 
@@ -96,19 +128,22 @@ def animate(something):
         [ [] for k in range(0,len(graph_data)) ], \
         [ [ [] for l in range(0, len(system_names)) ] for k in range(0,len(graph_data)) ]
 
-    for single_set, single_set_x, single_set_y \
-      in zip(graph_data, plot_x, plot_y):
+    try:
+        for single_set, single_set_x, single_set_y \
+          in zip(graph_data, plot_x, plot_y):
 
-        for single_line in single_set:
-            if len(single_line) > 1:
-                tmp = [ j for j in single_line.split(" ") if len(j) > 1 ]
+            for single_line in single_set:
+                if len(single_line) > 1:
+                    tmp = [ j for j in single_line.split(" ") if len(j) > 1 ]
 
-                single_set_x.append(float(tmp[0]))
+                    single_set_x.append(float(tmp[0]))
 
-                for m,n in zip(single_set_y, tmp):
-                    m.append(float(n))
+                    for m,n in zip(single_set_y, tmp):
+                        m.append(float(n))
 
-                single_set_y[-1] = [ m for m in single_set_y[-1] if m ]
+                    single_set_y[-1] = [ m for m in single_set_y[-1] if m ]
+    except ValueError:
+        pass
 
     my_plotting_phiScal(
       ax_phiScal,
@@ -147,6 +182,6 @@ if __name__ == "__main__":
     ax_phiScal = axes[0]
     ax_rho = axes[1]
 
-    ani_live = animation.FuncAnimation(fig,animate,interval=500)
+    ani_live = animation.FuncAnimation(fig,animate,interval=100)
 
     plt.show()

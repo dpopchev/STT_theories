@@ -23,11 +23,14 @@ def my_ploting(ax, label_x, x, label_y, y):
     ax.set_ylabel(label_y, fontsize=label_fontsize)
     ax.yaxis.set_tick_params(labelsize=ticks_label_size)
 
-    ax.plot(
-      x, y,
-      marker="o", markersize=7,
-      linewidth=1.5
-    )
+    try:
+        ax.plot(
+          x, y,
+          marker="o", markersize=7,
+          linewidth=1.5
+        )
+    except ValueError:
+        pass
 
 def animate(something):
 
@@ -49,11 +52,14 @@ def animate(something):
 
     plots_all = [ [] for k in range(len(plot_labels)) ]
 
-    for single_line in graph_data:
-        if len(single_line) > 1:
-            tmp = [ j for j in single_line.split(" ") if len(j) > 1 ]
-            for m,n in zip(plots_all, tmp):
-                m.append(float(n))
+    try:
+        for single_line in graph_data:
+            if len(single_line) > 1:
+                tmp = [ j for j in single_line.split(" ") if len(j) > 1 ]
+                for m,n in zip(plots_all, tmp):
+                    m.append(float(n))
+    except ValueError:
+        pass
 
     my_ploting(
       ax_phiScal,
@@ -91,6 +97,6 @@ if __name__ == "__main__":
     ax_phiScal = axes[0]
     ax_mR = axes[1]
 
-    ani_live = animation.FuncAnimation(fig,animate,interval=1000)
+    ani_live = animation.FuncAnimation(fig,animate,interval=250)
 
     plt.show()

@@ -55,8 +55,9 @@
 #define INITIAL_Y_END 5e-3 // 5e-3
 #define INITIAL_Y_STEP 1e-5 // 1e-5
 
-static double *GV_PARAMETERS_VALUES, AR, R;
+static double *GV_PARAMETERS_VALUES, AR, R, tiny = 1e-30;
 static EOSmodelInfoStruct *eos;
+static int too_small_to_count_pressure_pow = -14, pressure_index = 3;
 
 static void ode_phiScal_foo(double x, double *y, double *dydx){
 
@@ -78,11 +79,7 @@ static void ode_phiScal_foo(double x, double *y, double *dydx){
         exp_2LambdaMetr = exp(2*LambdaMetr ), \
         \
         step4_A = pow(A,4), \
-        rho, \
-        tiny = 1e-30;
-
-    int \
-        too_small_to_count_pressure_pow = -14;
+        rho;
 
     if( !R && p && floor(log10(fabs( p + tiny))) <= too_small_to_count_pressure_pow ){
         R = r;
@@ -857,96 +854,155 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
         *tmp_f1 = dvector(1, guess_left_n + guess_right_n ),
         *tmp_f2 = dvector(1, guess_left_n + guess_right_n),
         tmp_x_left = guess_to_integrate->x_initial,
-        tmp_x_right = guess_to_integrate->x_final;
+        tmp_x_right = guess_to_integrate->x_final,
+        coef = 0.1, coef_step = 0.1;
 
     dvector_copy(guess_to_integrate->y, tmp_y ,guess_to_integrate->eqs_count);
 
-    dvector_copy_to_index(
-      v,
-      guess_to_integrate->y,
-      guess_left_n,
-      guess_left_indexes
-    );
+    int iterate = 1;
 
-    dvector_copy_to_index(
-      known_left_values,
-      guess_to_integrate->y,
-      guess_right_n,
-      guess_right_indexes
-    );
+    while(iterate){
 
-    guess_to_integrate->phiScal_inf = shoot_fiting_point;
+        dvector_copy_to_index(
+          v,
+          guess_to_integrate->y,
+          guess_left_n,
+          guess_left_indexes
+        );
 
-    guess_to_integrate->x_initial = tmp_x_left;
-    guess_to_integrate->x_final = shoot_fiting_point;
+        dvector_copy_to_index(
+          known_left_values,
+          guess_to_integrate->y,
+          guess_right_n,
+          guess_right_indexes
+        );
 
-    ode_phiScal_integrate(guess_to_integrate);
+        guess_to_integrate->x_initial = tmp_x_left;
+        guess_to_integrate->x_final = shoot_fiting_point;
 
-    ode_phiScal_LivePlot_append_solver( guess_to_integrate );
+        ode_phiScal_integrate(guess_to_integrate);
 
-    if(guess_to_integrate->did_it_go_boom){
-        printf("\n\n it whent booommmmm at %e \n\n",guess_to_integrate->where_it_went_boom);
-        exit(123);
-    }
+        guess_to_integrate->phiScal_inf = shoot_fiting_point;
+        ode_phiScal_LivePlot_append_solver( guess_to_integrate );
 
-    dvector_copy_to_index_opps(
-      guess_to_integrate->y,
-      tmp_f1,
-      guess_left_n,
-      guess_left_indexes
-    );
+        if(guess_to_integrate->did_it_go_boom){
+            printf(
+             "\n\n it whent booommmmm at %e when using fitt %e \n\t"
+             "change it to %e \n\n",
+             guess_to_integrate->where_it_went_boom, shoot_fiting_point,
+             guess_to_integrate->where_it_went_boom - coef*guess_to_integrate->where_it_went_boom
+            );
+            //exit(123);
+            shoot_fiting_point = guess_to_integrate->where_it_went_boom - coef*guess_to_integrate->where_it_went_boom;
 
-    dvector_copy_to_index_opps(
-      guess_to_integrate->y,
-      &tmp_f1[guess_left_n],
-      guess_right_n,
-      guess_right_indexes
-    );
+            if(shoot_fiting_point < 0 ){
+                printf(
+                  "\n in attempt to not boom we reached negative values"
+                  " ode_phiScal.c line 900 \n");
+                exit(898);
+            }
 
-    dvector_copy_to_index(
-      &v[guess_left_n],
-      guess_to_integrate->y,
-      guess_right_n,
-      guess_right_indexes
-    );
+            dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
 
-    dvector_copy_to_index(
-      known_right_values,
-      guess_to_integrate->y,
-      guess_left_n,
-      guess_left_indexes
-    );
+            coef += coef_step;
+            continue;
+        }
 
-    guess_to_integrate->x_initial = tmp_x_right;
-    guess_to_integrate->x_final = shoot_fiting_point;
+        dvector_copy_to_index_opps(
+          guess_to_integrate->y,
+          tmp_f1,
+          guess_left_n,
+          guess_left_indexes
+        );
 
-    ode_phiScal_integrate(guess_to_integrate);
+        dvector_copy_to_index_opps(
+          guess_to_integrate->y,
+          &tmp_f1[guess_left_n],
+          guess_right_n,
+          guess_right_indexes
+        );
 
-    R = AR = 0;
+        dvector_copy_to_index(
+          &v[guess_left_n],
+          guess_to_integrate->y,
+          guess_right_n,
+          guess_right_indexes
+        );
 
-    ode_phiScal_LivePlot_append_solver( guess_to_integrate );
+        dvector_copy_to_index(
+          known_right_values,
+          guess_to_integrate->y,
+          guess_left_n,
+          guess_left_indexes
+        );
 
-    if(guess_to_integrate->did_it_go_boom){
-        printf("\n\n it whent booommmmm 2222 at %e \n\n",guess_to_integrate->where_it_went_boom);
-        exit(123);
-    }
+        guess_to_integrate->x_initial = tmp_x_right;
+        guess_to_integrate->x_final = shoot_fiting_point;
 
-    dvector_copy_to_index_opps(
-      guess_to_integrate->y,
-      tmp_f2,
-      guess_left_n,
-      guess_left_indexes
-    );
+        // check if pressure is zero or not since it will blow my solution
+        if(
+          floor(
+            log10(
+              fabs( guess_to_integrate->y[pressure_index] + tiny)
+            )
+          ) > too_small_to_count_pressure_pow + 1
+        ){
+            guess_to_integrate->y[pressure_index] = 0;
+            printf("\n LOOOLLL setting no pressure at inf !!!! \n");
+        }
 
-    dvector_copy_to_index_opps(
-      guess_to_integrate->y,
-      &tmp_f2[guess_left_n],
-      guess_right_n,
-      guess_right_indexes
-    );
+        ode_phiScal_integrate(guess_to_integrate);
 
-    for(int i=1; i <= n; i++){
-        f[i] = tmp_f1[i] - tmp_f2[i];
+        R = AR = 0;
+
+        guess_to_integrate->phiScal_inf = shoot_fiting_point;
+        ode_phiScal_LivePlot_append_solver( guess_to_integrate );
+
+        if(guess_to_integrate->did_it_go_boom){
+            printf(
+             "\n\n it whent booommmmm2 at %e when using fitt %e \n\t"
+             "change it to %e \n\n",
+             guess_to_integrate->where_it_went_boom, shoot_fiting_point,
+             guess_to_integrate->where_it_went_boom + coef*guess_to_integrate->where_it_went_boom
+            );
+            //exit(123);
+
+            shoot_fiting_point = guess_to_integrate->where_it_went_boom + coef*guess_to_integrate->where_it_went_boom;
+
+            dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
+
+            coef += coef_step;
+
+            if(shoot_fiting_point > tmp_x_right){
+                printf(
+                  "\n in attempt to not boom we reached above the end interval"
+                  " ode_phiScal.c line 977 \n");
+                exit(977);
+            }
+
+            continue;
+        }
+
+        dvector_copy_to_index_opps(
+          guess_to_integrate->y,
+          tmp_f2,
+          guess_left_n,
+          guess_left_indexes
+        );
+
+        dvector_copy_to_index_opps(
+          guess_to_integrate->y,
+          &tmp_f2[guess_left_n],
+          guess_right_n,
+          guess_right_indexes
+        );
+
+        for(int i=1; i <= n; i++){
+            f[i] = tmp_f1[i] - tmp_f2[i];
+        }
+
+        iterate = 0;
+        guess_to_integrate->phiScal_inf = shoot_fiting_point;
     }
 
     dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
