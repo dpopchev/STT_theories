@@ -101,8 +101,6 @@ def animate(something):
 
     graph_data = [ k for k in graph_data.split("# ") if len(k) ]
 
-    print("asdasda " + str(len(graph_data)))
-
     if len(graph_data) > 2:
 
         if not "R = 0.000000e+00" in graph_data[-1] and not "R = 0.000000e+00" in graph_data[-2]:
@@ -112,8 +110,6 @@ def animate(something):
         else:
             del graph_data[-1]
             graph_data = graph_data[-2*len(colors):]
-
-    print(str(len(graph_data)) + "\n\n")
 
     graph_data = [ k.split("\n") for k in graph_data ]
 
