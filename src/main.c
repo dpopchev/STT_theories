@@ -127,7 +127,7 @@ int main( void ){
 
     switch(ODE_index){
 
-        case 0 :
+        case 0:
             if(DEBUGGING){
                 printf(
                     "%s %s ODE_index = %d to init, %s \n", \
@@ -139,11 +139,12 @@ int main( void ){
             }
 
             ode_phiScal_init( &ode );
+
             ode_phiScal_compute_parameters(ode);
 
             break;
 
-        default :
+        default:
             printf(
                 "%s %s ODE_index = %d UNKNOWN, exiting.., line 153 \n", \
                 identation,\

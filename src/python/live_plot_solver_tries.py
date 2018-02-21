@@ -50,7 +50,7 @@ def my_plotting_phiScal(
                 color = c
             )
 
-            if R:
+            if R and R < 50:
                 ax.axvline(x=R, alpha = 0.4, linestyle = "--", linewidth = 1.5)
 
             ax.axvline(x=phiScal_inf, alpha = 0.4, linestyle = "-", linewidth = 1.5)
@@ -163,7 +163,7 @@ def animate(something):
                     m.append(float(n))
 
                 single_plot[-1] = [ k for k in single_plot[-1] if k ]
-                single_plot[3] = [ k for k in single_plot[3] if k > 1e-12 ]
+                single_plot[3] = [ k for k in single_plot[3] if k > 1e-14 ]
 
     except ValueError:
         pass

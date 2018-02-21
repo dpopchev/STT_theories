@@ -31,18 +31,22 @@
 #define ODE_FREE_PARM_NAME "beta", "m", "lambda"
 
 // beta
-#define ODE_FREE_PARM_COUNT_1 1
-#define ODE_FREE_PARM_VALS_1 -10
+// 7
+#define ODE_FREE_PARM_COUNT_1 7
+// 0, -4, -6, -8, -10, -12, -14
+#define ODE_FREE_PARM_VALS_1 0, -4, -6, -8, -10, -12, -14
 
 // m
-#define ODE_FREE_PARM_COUNT_2 1
-// 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1
-#define ODE_FREE_PARM_VALS_2 0
+// 7
+#define ODE_FREE_PARM_COUNT_2 7
+// 0, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1
+#define ODE_FREE_PARM_VALS_2 0, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1
 
 // lambda
+// 7
 #define ODE_FREE_PARM_COUNT_3 1
-// 1e-2, 1e-1, 1, 10, 100, 500
-#define ODE_FREE_PARM_VALS_3 10
+// 0, 1e-1, 1, 10, 100, 500, 1000
+#define ODE_FREE_PARM_VALS_3 0, 1e-1, 1, 10, 100, 500, 1000
 
 // the interval for the independent variable
 #define ODE_INDEP_INIT 1e-30
@@ -57,7 +61,7 @@
 
 static double *GV_PARAMETERS_VALUES, AR, R, tiny = 1e-30;
 static EOSmodelInfoStruct *eos;
-static int too_small_to_count_pressure_pow = -14, pressure_index = 3;
+static int too_small_to_count_pressure_pow = -15, pressure_index = 3;
 
 static void ode_phiScal_foo(double x, double *y, double *dydx){
 
@@ -875,10 +879,12 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
 
         guess_to_integrate->x_initial = tmp_x_left;
         guess_to_integrate->x_final = shoot_fiting_point;
+        guess_to_integrate->phiScal_inf = shoot_fiting_point;
 
         ode_phiScal_integrate(guess_to_integrate);
 
         // check if pressure is zero or not since it will blow my solution
+        // from left to right
         if(
           floor(
             log10(
@@ -890,13 +896,12 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
             printf("\n LOOOLLL setting no pressure at inf !!!! \n");
         }
 
-        guess_to_integrate->phiScal_inf = shoot_fiting_point;
         ode_phiScal_LivePlot_append_solver( guess_to_integrate );
 
         if(guess_to_integrate->did_it_go_boom){
             printf(
              "\n\n it whent booommmmm at %e when using fitt %e \n\t"
-             "change it to %e \n\n",
+             "change the fit point to %e \n\n",
              guess_to_integrate->where_it_went_boom, shoot_fiting_point,
              guess_to_integrate->where_it_went_boom - coef*guess_to_integrate->where_it_went_boom
             );
@@ -946,10 +951,10 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
 
         guess_to_integrate->x_initial = tmp_x_right;
         guess_to_integrate->x_final = shoot_fiting_point;
+        guess_to_integrate->phiScal_inf = shoot_fiting_point;
 
         ode_phiScal_integrate(guess_to_integrate);
 
-        guess_to_integrate->phiScal_inf = shoot_fiting_point;
         ode_phiScal_LivePlot_append_solver( guess_to_integrate );
 
         if(guess_to_integrate->did_it_go_boom){
@@ -1331,13 +1336,6 @@ void ode_phiScal_compute_parameters( ODEsystemStruct *arg ){
 
                 eos_free(&eos);
                 shooting_free(&shoot_vars);
-
-                //unsigned short time_interval = 10;
-                //printf(
-                  //"\n\n TIME TO SLEEP FOR RESULT PLOT CHECK for %d s \n\n",
-                  //time_interval
-                //);
-                //sleep(time_interval);
             }
         }
     }

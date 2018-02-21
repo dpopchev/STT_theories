@@ -21,13 +21,18 @@
 #define ALF 1e-10
 
 // lnsrch convergence criterion on \Delta x
-#define TOLX_lnsrch 1.0e-10
+#define TOLX_lnsrch 1.0e-8
 
-// machine epsilon for the numerical Jacobian fdjac
-#define EPS_fdjac 1.0e-8
+// fdjac derivative method to use
+#define DEREVITIVE_METHOD 1
 
 // ludcmp smallest number
 #define TINY 1e-30
+
+static const char *derevitive_methods[] = {
+    "numerical Jacobian with forward difference approximation with GV_MACHINE_EPSILON_SQRT",
+    "numerical Jacobian with symmetrical difference approximation with GV_MACHINE_EPSILON_CUBROOT"
+};
 
 static int nn;
 static double *fvec;
@@ -166,25 +171,75 @@ static void lnsrch(
     }
 }
 
-// numerical Jacobian using forward difference approximation method
 static void fdjac(int n, double x[], double _fvec[], double **df,
     void (*vecfunc)(int, double [], double [])
 ){
-    int i,j;
-    double h,temp,*f, _eps_fdjac = GV_MACHINE_EPSILON_SQRT;
 
-    f=dvector(1,n);
-    for (j=1;j<=n;j++) {
-        temp=x[j];
-        h=_eps_fdjac*fabs(temp);
-        if (h == 0.0) h=_eps_fdjac;
-        x[j]=temp+h;
-        h=x[j]-temp;
-        (*vecfunc)(n,x,f);
-        x[j]=temp;
-        for (i=1;i<=n;i++) df[i][j]=(f[i]-_fvec[i])/h;
+    switch(DEREVITIVE_METHOD){
+
+        case 0:{
+            int i,j;
+            double h,temp,*f, _eps_fdjac = GV_MACHINE_EPSILON_SQRT;
+
+            f=dvector(1,n);
+
+            for (j=1;j<=n;j++) {
+                temp=x[j];
+                h=_eps_fdjac*fabs(temp);
+                if (h == 0.0) h=_eps_fdjac;
+                x[j]=temp+h;
+                h=x[j]-temp;
+                (*vecfunc)(n,x,f);
+                x[j]=temp;
+                for (i=1;i<=n;i++) df[i][j]=(f[i]-_fvec[i])/h;
+            }
+
+            free(f);
+            break;
+        } case 1:{
+
+            int i,j;
+            double *f1, *f2, _eps_fdjac = GV_MACHINE_EPSILON_CUBROOT;
+
+            f1=dvector(1,n);
+            f2=dvector(1,n);
+
+            for (j=1;j<=n;j++) {
+
+                double temp=x[j];
+                double h=_eps_fdjac*fabs(temp);
+
+                if (h == 0.0) h=_eps_fdjac;
+
+                volatile double hh = temp + h;
+                hh -= temp;
+
+                if(hh == 0.0){
+                    printf("\n solver newt the unthinkable happened, hh is 0 !!! %e exiting...\n", hh);
+                    exit(123);
+                }
+
+                x[j]=temp+hh;
+                (*vecfunc)(n,x,f2);
+
+                x[j]=temp-hh;
+                (*vecfunc)(n,x,f1);
+
+                for(i=1;i<=n;i++){
+                    df[i][j]=(f2[i]-f1[i])/(2*hh);
+                }
+
+                x[j] = temp;
+            }
+            free(f1);
+            free(f2);
+            break;
+        }default:{
+            printf("\n Solver_newt.c fdjac method %d unknown, terminating", DEREVITIVE_METHOD);
+            exit(239);
+            break;
+        }
     }
-    free_dvector(f,1,n);
 }
 
 // returns f = 0.5 \vec F * \vec F at x
@@ -212,14 +267,12 @@ void newt_info_print_stdout(void){
         "\n\t lnsrch parameters \n"
         "\t\t sufficient decrease in function value %.3e \n"
         "\t\t convergence criterion on Delta x %.3e \n"
-        "\n\t numerical Jacobian fdjac \n"
-        "\t\t differentiation method: forward difference method \n"
-        "\t\t machine epsilon %.3e \n"
+        "\n\t numerical Jacobian fdjac: %s \n"
         "\n\t ludcmp parameters \n"
         "\t\t tiny parameter %.3e \n"
-        , "newt","newt",
+        ,"newt", "newt",
         (int)MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
-        EPS_fdjac, TINY
+        derevitive_methods[DEREVITIVE_METHOD], TINY
     );
 
     return;
@@ -241,14 +294,12 @@ void newt_info_print_ResultFile(FILE *fp){
         "\n\t lnsrch parameters \n"
         "\t\t sufficient decrease in function value %.3e \n"
         "\t\t convergence criterion on Delta x %.3e \n"
-        "\n\t numerical Jacobian fdjac \n"
-        "\t\t differentiation method: forward difference method \n"
-        "\t\t machine epsilon %.3e \n"
+        "\n\t numerical Jacobian fdjac: %s \n"
         "\n\t ludcmp parameters \n"
         "\t\t tiny parameter %.3e \n"
-        , "newt","newt",
+        ,"newt", "newt",
         (int)MAXITS, TOLF, TOLMIN, TOLX_newt, STPMX, ALF, TOLX_lnsrch,
-        EPS_fdjac, TINY
+        derevitive_methods[DEREVITIVE_METHOD], TINY
     );
 
     fclose(fp);
@@ -331,7 +382,7 @@ void newt(double x[], int n, int *check, void (*vecfunc)(int, double [], double 
 #undef TOLX_newt
 #undef STPMX
 #undef FREERETURN
-#undef EPS_fdjac
 #undef ALF
 #undef TOLX
 #undef TINY
+#undef DEREVITIVE_METHOD

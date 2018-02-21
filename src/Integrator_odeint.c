@@ -20,7 +20,7 @@
 
 // rkqs is advancing with small steps
 // choose the method to evaluate the new value for x
-#define RKQS_STEP_METHOD 0
+#define RKQS_STEP_METHOD 1
 
 static const char *ODEINT_SCALING_METHOD_DESCRIPTION[] = \
     { \
@@ -208,14 +208,16 @@ static void rkqs(\
                 volatile double hh = *x + h;
                 hh -= *x;
                 xnew = (*x) + hh;
-                break; }
-            default:
+                break;
+            } default:{
                 printf(\
                     "\n rkqs step method %d UNKNOWN, line 213", \
                     RKQS_STEP_METHOD\
                 );
-                    exit(213);
-                    break;
+
+                exit(213);
+                break;
+            }
         }
         xnew=(*x)+h;
         if (xnew == *x){
