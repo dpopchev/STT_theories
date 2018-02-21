@@ -122,7 +122,7 @@ void odeint_info_print_ResultFile(FILE *fp){
 // odeint global variables
 // TODO place dxsav value in ODEsystemStruct
 int kmax,kount, *did_it_go_boom;
-double *xp,**yp, dxsav=1e-1, *rhop, rho_tmp, *where_it_went_boom;
+double *xp,**yp, dxsav = 1e-1, *rhop, rho_tmp, *where_it_went_boom;
 
 // rkck code
 static void rkck(\

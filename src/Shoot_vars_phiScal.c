@@ -459,7 +459,7 @@ void shooting_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp ){
     fprintf(fp,"\n\n");
 
     //TODO this better not be here
-    fprintf( fp, "# p_c phiScal_c M AR delta_phiScal delta_Q delta_Lambda\n");
+    fprintf( fp, "# p_c phiScal_c M AR delta_phiScal\n");
 
     fclose(fp);
     return;

@@ -24,7 +24,7 @@
 #define ODE_NAME_DEP "phiScal", "Q", "p", "LambdaMetr", "m"
 
 // odeint mount of points we want to print if any
-#define ODE_POINTS_COUNT 5e3
+#define ODE_POINTS_COUNT 1e4
 
 // amount of ode free parameters, name/symbol for each one
 #define ODE_FREE_PARM_COUNT_ALL 3
@@ -42,7 +42,7 @@
 // lambda
 #define ODE_FREE_PARM_COUNT_3 1
 // 1e-2, 1e-1, 1, 10, 100, 500
-#define ODE_FREE_PARM_VALS_3 0
+#define ODE_FREE_PARM_VALS_3 10
 
 // the interval for the independent variable
 #define ODE_INDEP_INIT 1e-30
@@ -51,8 +51,8 @@
 // if we are to change vary any of the initial values of the ODE
 // index, start and end value, also the step to achieve it
 #define Y_INDEX_CHANGE 3
-#define INITIAL_Y_START 1e-5 // 1e-5
-#define INITIAL_Y_END 5e-3 // 5e-3
+#define INITIAL_Y_START 5e-5 // 1e-5
+#define INITIAL_Y_END 5e-5 // 5e-3
 #define INITIAL_Y_STEP 1e-5 // 1e-5
 
 static double *GV_PARAMETERS_VALUES, AR, R, tiny = 1e-30;
@@ -621,14 +621,12 @@ static void ode_phiScal_ResultFile_append_shootfitting(
 
     fprintf(
       fp,
-      "%e %e %e %e %e %e %e\n",
+      "%e %e %e %e %e\n",
       arg->initial_y_current,
       shoot_vars->newt_v[1],
       arg->y[5],
       AR,
-      fabs(arg->y[1] - shoot_vars->known_right_values[1]),
-      fabs(shoot_vars->newt_v[1] - shoot_vars->known_left_values[1]),
-      fabs(shoot_vars->newt_v[2] - shoot_vars->known_left_values[2])
+      fabs(arg->y[1] - shoot_vars->known_right_values[1])
     );
 
     fclose(fp);
@@ -766,10 +764,8 @@ static void ode_phiScal_integrate( ODEsystemStruct *arg ){
         }
     }
 
-    if(arg->x_final > arg->x_initial){
-        R =  0;
-        AR = 0;
-    }
+    R =  0;
+    AR = 0;
 
     arg->did_it_go_boom = 0;
     arg->where_it_went_boom = 0;
@@ -882,6 +878,18 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
 
         ode_phiScal_integrate(guess_to_integrate);
 
+        // check if pressure is zero or not since it will blow my solution
+        if(
+          floor(
+            log10(
+              fabs( guess_to_integrate->y[pressure_index] + tiny)
+            )
+          ) > too_small_to_count_pressure_pow + 1
+        ){
+            guess_to_integrate->y[pressure_index] = 0;
+            printf("\n LOOOLLL setting no pressure at inf !!!! \n");
+        }
+
         guess_to_integrate->phiScal_inf = shoot_fiting_point;
         ode_phiScal_LivePlot_append_solver( guess_to_integrate );
 
@@ -939,21 +947,7 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
         guess_to_integrate->x_initial = tmp_x_right;
         guess_to_integrate->x_final = shoot_fiting_point;
 
-        // check if pressure is zero or not since it will blow my solution
-        if(
-          floor(
-            log10(
-              fabs( guess_to_integrate->y[pressure_index] + tiny)
-            )
-          ) > too_small_to_count_pressure_pow + 1
-        ){
-            guess_to_integrate->y[pressure_index] = 0;
-            printf("\n LOOOLLL setting no pressure at inf !!!! \n");
-        }
-
         ode_phiScal_integrate(guess_to_integrate);
-
-        R = AR = 0;
 
         guess_to_integrate->phiScal_inf = shoot_fiting_point;
         ode_phiScal_LivePlot_append_solver( guess_to_integrate );
@@ -1128,11 +1122,15 @@ static void ode_phiScal_shoot_fitting_execute(
       guess_left_indexes
     );
 
-    ode_phiScal_integrate(arg);
-
     printf("\n\t newt check %d \n", newt_checker);
 
-    ode_phiScal_ResultFile_append_shootfitting( arg,shoot_vars );
+    ode_phiScal_LivePlot_open_solver(arg);
+
+    ode_phiScal_integrate(arg);
+
+    ode_phiScal_LivePlot_append_solver( arg );
+
+    ode_phiScal_ResultFile_append_shootfitting( arg, shoot_vars );
 
     guess_left_indexes = NULL;
     guess_right_indexes = NULL;
@@ -1212,21 +1210,29 @@ static void ode_phiScal_change_central_value(
               shoot_vars->newt_v[1]
             );
             shoot_vars->UNknown_left_values[1] = shoot_vars->newt_v[1];
+        }else if(
+          floor(
+            log10(
+              fabs(
+                shoot_vars->newt_v[1] + tiny
+              )
+            )
+          ) >= -3
+        ){
+            shoot_vars->UNknown_left_values[1] = shoot_vars->newt_v[1];
+            printf(
+              "\n\t reducing from %e to %e \n",
+              shoot_vars->UNknown_left_values[1],
+              shoot_vars->newt_v[1]
+            );
         }
 
-        if( arg->initial_y_current <= arg->initial_y_end ){
-            arg->initial_y_current += arg->initial_y_step;
-            iterate = 1;
-        }else{
+        arg->initial_y_current += arg->initial_y_step;
+        if( arg->initial_y_current > arg->initial_y_end ){
             iterate = 0;
+        }else{
+            iterate = 1;
         }
-
-        //unsigned short time_interval = 1;
-        //printf(
-          //"\n\t\t\t small time sleep %d s\n",
-          //time_interval
-        //);
-        //sleep(time_interval);
     }
 
     free(tmp_y);
