@@ -55,7 +55,10 @@ def my_plotting_phiScal(
 
             ax.axvline(x=phiScal_inf, alpha = 0.4, linestyle = "-", linewidth = 1.5)
     except ValueError:
+        all_plots = []
         pass
+
+    all_plots = []
 
 def my_plotting_rho(
   ax,
@@ -87,7 +90,10 @@ def my_plotting_rho(
                 linewidth = 1.5
             )
     except ValueError:
+        all_plots = []
         pass
+
+    all_plots = []
 
 def my_plotting_p(
   ax,
@@ -121,9 +127,12 @@ def my_plotting_p(
 
             ax.axhline(y=1e-14, linestyle="--", alpha=0.5, linewidth=2)
     except ValueError:
+        all_plots = []
         pass
 
-def animate(something):
+    all_plots = []
+
+def tries_live(arg):
 
     import glob
     import os
@@ -134,7 +143,7 @@ def animate(something):
 
     file_to_use = max(all_files, key=os.path.getctime)
 
-    with open(file_to_use,"r+") as f:
+    with open(file_to_use,"r") as f:
         graph_data = f.read()
 
     graph_data = [ k for k in graph_data.split("# ") if len(k) ]
@@ -166,6 +175,11 @@ def animate(something):
                 single_plot[3] = [ k for k in single_plot[3] if k > 1e-14 ]
 
     except ValueError:
+        graph_data = []
+        plot_R = []
+        plot_phiScal_inf = []
+        plot_titles = []
+        all_plots = []
         pass
 
     my_plotting_phiScal(
@@ -193,6 +207,12 @@ def animate(something):
 
     plt.suptitle(file_to_use.split("_")[6:10], fontsize=16, y=1.001)
 
+    graph_data = []
+    plot_R = []
+    plot_phiScal_inf = []
+    plot_titles = []
+    all_plots = []
+
 if __name__ == "__main__":
 
     from time import sleep
@@ -208,7 +228,7 @@ if __name__ == "__main__":
     style.use("seaborn-poster")
     #style.use("fivethirtyeight")
 
-    gs = gridspec.GridSpec(2,2)
+    gs = gridspec.GridSpec(nrows=2, ncols=2)
 
     fig = plt.figure()
 
@@ -218,6 +238,8 @@ if __name__ == "__main__":
     ax_p = fig.add_subplot(gs[0,1])
     ax_rho= fig.add_subplot(gs[1,1])
 
-    ani_live = animation.FuncAnimation(fig,animate,interval=100)
+    ani_live = animation.FuncAnimation(
+      fig = fig, func = tries_live, interval = 100, save_count = 0
+    )
 
     plt.show()

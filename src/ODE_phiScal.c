@@ -32,21 +32,21 @@
 
 // beta
 // 7
-#define ODE_FREE_PARM_COUNT_1 7
-// 0, -4, -6, -8, -10, -12, -14
-#define ODE_FREE_PARM_VALS_1 0, -4, -6, -8, -10, -12, -14
+#define ODE_FREE_PARM_COUNT_1 8
+// 0, -4, -6, -8, -10, -12, -14, -16
+#define ODE_FREE_PARM_VALS_1 0, -4, -6, -8, -10, -12, -14, -16
 
 // m
 // 7
-#define ODE_FREE_PARM_COUNT_2 7
+#define ODE_FREE_PARM_COUNT_2 1
 // 0, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1
-#define ODE_FREE_PARM_VALS_2 0, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 5e-1
+#define ODE_FREE_PARM_VALS_2 0
 
 // lambda
 // 7
 #define ODE_FREE_PARM_COUNT_3 1
 // 0, 1e-1, 1, 10, 100, 500, 1000
-#define ODE_FREE_PARM_VALS_3 0, 1e-1, 1, 10, 100, 500, 1000
+#define ODE_FREE_PARM_VALS_3 0
 
 // the interval for the independent variable
 #define ODE_INDEP_INIT 1e-30
@@ -55,8 +55,8 @@
 // if we are to change vary any of the initial values of the ODE
 // index, start and end value, also the step to achieve it
 #define Y_INDEX_CHANGE 3
-#define INITIAL_Y_START 5e-5 // 1e-5
-#define INITIAL_Y_END 5e-5 // 5e-3
+#define INITIAL_Y_START 1e-5 // 1e-5
+#define INITIAL_Y_END 5e-3 // 5e-3
 #define INITIAL_Y_STEP 1e-5 // 1e-5
 
 static double *GV_PARAMETERS_VALUES, AR, R, tiny = 1e-30;

@@ -1,12 +1,20 @@
 #!/usr/bin/env python
 
-# Based on
-#   https://pythonprogramming.net/live-graphs-matplotlib-tutorial/
-
 file_path = "/home/dimitar/projects/STT_theories/results/"
 file_name_results = "STT_phiScal_"
 
-system_names = [ "r", "phiScal", "Q", "p", "LambdaMetr", "m"]
+system_names = [ "r", "phiScal", "Q", "p", "LambdaMetr", "m" ]
+
+parameters = {
+    "names" : [ "beta", "m", "lambda" ],
+    "values" : {
+        "beta" : [ 0, -4, -6, -8, -10, -12, -14, -16 ],
+        "m" : [ 0 ],
+        "lambda" : [ 0 ]
+    }
+}
+
+eos_names = [ "EOSII", "AkmalPR" ]
 
 def my_ploting(ax, label_x, x, label_y, y):
 
@@ -26,15 +34,12 @@ def my_ploting(ax, label_x, x, label_y, y):
     try:
         ax.plot(
           x, y,
-          marker="o", markersize=7,
           linewidth=1.5
         )
     except ValueError:
-        x = []
-        y = []
         pass
 
-def results_live(arg):
+def animate():
 
     import glob
     import os
@@ -85,6 +90,73 @@ def results_live(arg):
     plot_labels = []
     plots_all = []
 
+def get_parm_order():
+
+    all_choices = {
+        1 : {
+            "change" : parameters["names"][0],
+            "fixed" : [ parameters["names"][1], parameters["names"][2] ]
+        },
+
+        2 : {
+            "change" : parameters["names"][1],
+            "fixed" : [ parameters["names"][0], parameters["names"][2] ]
+        },
+
+        3 : {
+            "change" : parameters["names"][2],
+            "fixed" : [ parameters["names"][0], parameters["names"][1] ]
+        }
+    }
+
+    print("\n Choose graph type: \n")
+    for i in all_choices.keys():
+        print(
+          "{}. change {}; \t fixed {} and {}".format(
+            i, all_choices[i]["change"],
+            all_choices[i]["fixed"][0], all_choices[i]["fixed"][1]
+          )
+        )
+
+    while True:
+        try:
+            choice = int(input("\n Type index of parameter order:... "))
+
+        except ValueError:
+            print("{} not valid, try again... \n".format(choice))
+            continue
+
+        else:
+            if choice > 3 or choice < 1:
+                print("{} not valid, try again... \n".format(choice))
+                continue
+            else:
+                return all_choices[choice]
+
+def set_fix_parm(fix_parm_name):
+
+    print("\n Set parameter {}: \n".format(fix_parm_name))
+    for i, value in enumerate(parameters["values"][fix_parm_name]):
+        print(
+          "\t {}. {}".format(i, value)
+        )
+
+    while True:
+        try:
+            choice = int(input("\n Type index of value:... "))
+
+        except ValueError:
+            print("{} not valid, try again... \n".format(choice))
+            continue
+
+        else:
+            if choice > len(parameters["values"][fix_parm_name]) or choice < 0:
+                print("{} not valid, try again... \n".format(choice))
+                continue
+            else:
+                return parameters["values"][fix_parm_name][choice]
+
+
 if __name__ == "__main__":
 
     from time import sleep
@@ -92,7 +164,6 @@ if __name__ == "__main__":
     from matplotlib import animation as animation
     from matplotlib import style
     from matplotlib.ticker import FormatStrFormatter
-    from matplotlib import gridspec
 
     #sleep(30)
 
@@ -107,9 +178,5 @@ if __name__ == "__main__":
 
     ax_phiScal = fig.add_subplot(gs[0,0])
     ax_mR = fig.add_subplot(gs[0,1])
-
-    ani_live = animation.FuncAnimation(
-      fig = fig, func = results_live, interval = 250, save_count = 0
-    )
 
     plt.show()
