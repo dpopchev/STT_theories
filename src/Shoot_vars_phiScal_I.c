@@ -1,38 +1,38 @@
 #include "ExternalHeaders.h"
 
-#define DEBUGGING_shooting_phiScal_regular_init 0
+#define DEBUGGING_shooting_phiScal_I_regular_init 0
 
 // how many values of the ODE are given on the left side of the interval
-#define KNOWN_LEFT_N 2
-#define KNOWN_LEFT_INDEXES 2,4
-#define KNOWN_LEFT_VALUES 0,0
+#define KNOWN_LEFT_N 3
+#define KNOWN_LEFT_INDEXES 2,4,7
+#define KNOWN_LEFT_VALUES 0,0,0
 
 // how many values of the ODE are unknown and their corresponding guessed values
-#define UNKNOWN_LEFT_N 1
-#define UNKNOWN_LEFT_INDEXES 1
-#define UNKNOWN_LEFT_VALUES -5e-2
+#define UNKNOWN_LEFT_N 3
+#define UNKNOWN_LEFT_INDEXES 1,6,8
+#define UNKNOWN_LEFT_VALUES -5e-2,-5e-1,5e-1
 
 // how many values of the ODE are given on the right side of the interval
-#define KNOWN_RIGHT_N 1
-#define KNOWN_RIGHT_INDEXES 1
-#define KNOWN_RIGHT_VALUES 0
+#define KNOWN_RIGHT_N 3
+#define KNOWN_RIGHT_INDEXES 1,6,8
+#define KNOWN_RIGHT_VALUES 0,0,1
 
 // how many values of the ODE are unknown and right corresponding guessed values
-#define UNKNOWN_RIGHT_N 2
-#define UNKNOWN_RIGHT_INDEXES 2,4
-#define UNKNOWN_RIGHT_VALUES 0,0
+#define UNKNOWN_RIGHT_N 3
+#define UNKNOWN_RIGHT_INDEXES 2,4,7
+#define UNKNOWN_RIGHT_VALUES -1e-8,2e-5,1e-16
 
 // TODO this is not ready for the fitting point
-#define SHOOT_FREE_N 2
-#define SHOOT_FREE_INDEXES 3,5
+#define SHOOT_FREE_N 3
+#define SHOOT_FREE_INDEXES 3,5,9
 
-void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
+void shooting_phiScal_I_init(shooting_phiScal_IVarsStruct **arg){
 
     const char \
-        function_path[] = "Shoot_vars.c shooting_phiScal_regular_init ", \
+        function_path[] = "Shoot_vars.c shooting_phiScal_I_regular_init ", \
         identation[] = "\n\t";
 
-    if(DEBUGGING_shooting_phiScal_regular_init){
+    if(DEBUGGING_shooting_phiScal_I_regular_init){
         printf("%s %s starting \n", identation, function_path);
     }
 
@@ -58,7 +58,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
             (*arg)->known_left_indexes[i] = known_left_indexes[i];
             (*arg)->known_left_values[i] = known_left_values[i];
 
-            if(DEBUGGING_shooting_phiScal_regular_init){
+            if(DEBUGGING_shooting_phiScal_I_regular_init){
 
                 printf(
                     "%s %s known left [%d] = %.3e \n",
@@ -72,7 +72,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
         (*arg)->known_left_indexes = NULL;
         (*arg)->known_left_values = NULL;
 
-        if(DEBUGGING_shooting_phiScal_regular_init){
+        if(DEBUGGING_shooting_phiScal_I_regular_init){
             printf(
               "%s %s non known indexes on left side of interval \n",
               identation, function_path
@@ -102,7 +102,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
             (*arg)->UNknown_left_indexes[i] = UNknown_left_indexes[i];
             (*arg)->UNknown_left_values[i] = UNknown_left_values[i];
 
-            if(DEBUGGING_shooting_phiScal_regular_init){
+            if(DEBUGGING_shooting_phiScal_I_regular_init){
 
                 printf(
                     "%s %s (init guess) UNknown left [%d] = %.3e \n",
@@ -115,7 +115,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
         (*arg)->UNknown_left_indexes = NULL;
         (*arg)->UNknown_left_values = NULL;
 
-        if(DEBUGGING_shooting_phiScal_regular_init){
+        if(DEBUGGING_shooting_phiScal_I_regular_init){
             printf(
               "%s %s non UNknown indexes on left side of interval \n",
               identation, function_path
@@ -145,7 +145,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
             (*arg)->known_right_indexes[i] = known_right_indexes[i];
             (*arg)->known_right_values[i] = known_right_values[i];
 
-            if(DEBUGGING_shooting_phiScal_regular_init){
+            if(DEBUGGING_shooting_phiScal_I_regular_init){
 
                 printf(
                     "%s %s known right [%d] = %.3e \n",
@@ -159,7 +159,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
         (*arg)->known_right_indexes = NULL;
         (*arg)->known_right_values = NULL;
 
-        if(DEBUGGING_shooting_phiScal_regular_init){
+        if(DEBUGGING_shooting_phiScal_I_regular_init){
             printf(
               "%s %s non known indexes on right side of interval \n",
               identation, function_path
@@ -189,7 +189,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
             (*arg)->UNknown_right_indexes[i] = UNknown_right_indexes[i];
             (*arg)->UNknown_right_values[i] = UNknown_right_values[i];
 
-            if(DEBUGGING_shooting_phiScal_regular_init){
+            if(DEBUGGING_shooting_phiScal_I_regular_init){
 
                 printf(
                     "%s %s (init guesses) UNknown right [%d] = %.3e \n",
@@ -203,7 +203,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
         (*arg)->UNknown_right_indexes = NULL;
         (*arg)->UNknown_right_values = NULL;
 
-        if(DEBUGGING_shooting_phiScal_regular_init){
+        if(DEBUGGING_shooting_phiScal_I_regular_init){
             printf(
               "%s %s non (init guesses) UNknown indexes on right side of interval \n",
               identation, function_path
@@ -221,7 +221,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
 
             (*arg)->newt_v[i] = (*arg)->UNknown_left_values[i];
 
-            if(DEBUGGING_shooting_phiScal_regular_init){
+            if(DEBUGGING_shooting_phiScal_I_regular_init){
 
                 printf(
                     "%s %s newt_v[%d] = %.3e \t newt_f[%d] = %.3e \n",
@@ -236,7 +236,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
 
             (*arg)->newt_v[(*arg)->UNknown_left_n + i] = (*arg)->UNknown_right_values[i];
 
-            if(DEBUGGING_shooting_phiScal_regular_init){
+            if(DEBUGGING_shooting_phiScal_I_regular_init){
 
                 printf(
                     "%s %s newt_v[%d] = %.3e \t newt_f[%d] = %.3e \n",
@@ -273,7 +273,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
 
             (*arg)->shoot_free_indexes[i] = shoot_free_indexes[i];
 
-            if(DEBUGGING_shooting_phiScal_regular_init){
+            if(DEBUGGING_shooting_phiScal_I_regular_init){
 
                 printf(
                     "%s %s shoot free index [%d] \n",
@@ -287,7 +287,7 @@ void shooting_phiScal_init(shooting_phiScalVarsStruct **arg){
     return;
 }
 
-void shooting_phiScal_free(shooting_phiScalVarsStruct **arg){
+void shooting_phiScal_I_free(shooting_phiScal_IVarsStruct **arg){
 
     free((*arg)->known_left_indexes);
     free((*arg)->UNknown_left_indexes);
@@ -308,13 +308,13 @@ void shooting_phiScal_free(shooting_phiScalVarsStruct **arg){
     return;
 }
 
-void shooting_phiScal_info_print_stdout(shooting_phiScalVarsStruct *arg){
+void shooting_phiScal_I_info_print_stdout(shooting_phiScal_IVarsStruct *arg){
 
     printf(
-        "\n shooting_phiScal info: \n"
+        "\n shooting_phiScal_I info: \n"
         "\n\t General info: \n"
         "\t\t name %s \n",
-        "general shooting_phiScal, pay attention"
+        "general shooting_phiScal_I, pay attention"
     );
 
     printf(
@@ -386,14 +386,14 @@ void shooting_phiScal_info_print_stdout(shooting_phiScalVarsStruct *arg){
     return;
 }
 
-void shooting_phiScal_info_print_ResultFile( shooting_phiScalVarsStruct *arg, FILE *fp ){
+void shooting_phiScal_I_info_print_ResultFile( shooting_phiScal_IVarsStruct *arg, FILE *fp ){
 
     fprintf(
         fp,
-        "\n shooting_phiScal info: \n"
+        "\n shooting_phiScal_I info: \n"
         "\n\t General info: \n"
         "\t\t name %s \n",
-        "general shooting_phiScal, pay attention"
+        "general shooting_phiScal_I, pay attention"
     );
 
     fprintf(
@@ -465,7 +465,7 @@ void shooting_phiScal_info_print_ResultFile( shooting_phiScalVarsStruct *arg, FI
     return;
 }
 
-void shooting_phiScal_check(shooting_phiScalVarsStruct *arg_shoot, ODEsystemStruct *arg_ode){
+void shooting_phiScal_I_check(shooting_phiScal_IVarsStruct *arg_shoot, ODEsystemStruct *arg_ode){
 
     if(
       arg_shoot->known_left_n + arg_shoot->UNknown_left_n != arg_ode->eqs_count - SHOOT_FREE_N
@@ -527,7 +527,7 @@ void shooting_phiScal_check(shooting_phiScalVarsStruct *arg_shoot, ODEsystemStru
     return;
 }
 
-#undef DEBUGGING_shooting_phiScal_regular_init
+#undef DEBUGGING_shooting_phiScal_I_regular_init
 #undef KNOWN_LEFT_N
 #undef KNOWN_LEFT_INDEXES
 #undef KNOWN_LEFT_VALUES

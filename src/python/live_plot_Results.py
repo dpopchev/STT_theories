@@ -109,7 +109,7 @@ if __name__ == "__main__":
     ax_mR = fig.add_subplot(gs[0,1])
 
     ani_live = animation.FuncAnimation(
-      fig = fig, func = results_live, interval = 250, save_count = 0
+      fig = fig, func = results_live, interval = 1000, save_count = None
     )
 
     plt.show()

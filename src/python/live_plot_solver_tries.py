@@ -239,7 +239,7 @@ if __name__ == "__main__":
     ax_rho= fig.add_subplot(gs[1,1])
 
     ani_live = animation.FuncAnimation(
-      fig = fig, func = tries_live, interval = 100, save_count = 0
+      fig = fig, func = tries_live, interval = 1000, save_count = None
     )
 
     plt.show()

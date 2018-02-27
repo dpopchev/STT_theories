@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 file_path = "/home/dimitar/projects/STT_theories/results/"
-file_name_results = "STT_phiScal_"
+file_name_results = "STT_phiScal"
 
 system_names = [ "r", "phiScal", "Q", "p", "LambdaMetr", "m" ]
 
@@ -154,8 +154,76 @@ def set_fix_parm(fix_parm_name):
                 print("{} not valid, try again... \n".format(choice))
                 continue
             else:
-                return parameters["values"][fix_parm_name][choice]
+                return {
+                  "name" : fix_parm_name,
+                  "value" : parameters["values"][fix_parm_name][choice]
+                }
 
+def set_change_parm(change_parm_name):
+
+    print("\n Choose parameter range {}: \n".format(change_parm_name))
+    for i, value in enumerate(parameters["values"][change_parm_name]):
+        print(
+          "\t {}. {}".format(i, value)
+        )
+
+    while True:
+        try:
+            choice1 = int(input("\n Start value index:... "))
+
+        except ValueError:
+            print("{} not valid, try again... \n".format(choice1))
+            continue
+
+        else:
+            if choice1 > len(parameters["values"][change_parm_name]) or choice1 < 0:
+                print("{} not valid, try again... \n".format(choice1))
+                continue
+            else:
+                break
+
+    while True:
+        try:
+            choice2 = int(input("\n End value index:... "))
+
+        except ValueError:
+            print("{} not valid, try again... \n".format(choice2))
+            continue
+
+        else:
+            if choice2 > len(parameters["values"][change_parm_name]) or choice2 < 0:
+                print("{} not valid, try again... \n".format(choice1))
+            else:
+                break
+
+    return {
+      "name" : change_parm_name,
+       "value" : parameters["values"][change_parm_name][choice1 : choice2]
+    }
+
+def set_eos_name():
+
+    print("\n Choose EOS name: \n")
+    for i, value in enumerate(eos_names):
+        print(
+          "\t {}. {}".format(i, value)
+        )
+
+    while True:
+        try:
+            choice = int(input("\n EOS name:... "))
+
+        except ValueError:
+            print("{} not valid, try again... \n".format(choice))
+            continue
+
+        else:
+            if choice > len(eos_names) or choice < 0:
+                print("{} not valid, try again... \n".format(choice))
+                continue
+            else:
+                return \
+                  { "name" : eos_names[choice] }
 
 if __name__ == "__main__":
 
@@ -165,18 +233,30 @@ if __name__ == "__main__":
     from matplotlib import style
     from matplotlib.ticker import FormatStrFormatter
 
-    #sleep(30)
+    parm_order = get_parm_order()
 
-    style.use("seaborn-poster")
-    #style.use("fivethirtyeight")
+    fix_parm_1 = set_fix_parm(parm_order["fixed"][0])
+    fix_parm_2 = set_fix_parm(parm_order["fixed"][1])
+    change_parm = set_change_parm(parm_order["change"])
+    eos = set_eos_name()
 
-    gs = gridspec.GridSpec(nrows=1,ncols=2)
+    for i in change_parm["value"]:
+        filename = "{}_{}_{}".format(
+          file_name_results, eos["name"], "beta",
+        )
 
-    fig = plt.figure()
+        print()
 
-    fig.set_tight_layout(True)
+    #style.use("seaborn-poster")
+    ##style.use("fivethirtyeight")
 
-    ax_phiScal = fig.add_subplot(gs[0,0])
-    ax_mR = fig.add_subplot(gs[0,1])
+    #gs = gridspec.GridSpec(nrows=1,ncols=2)
 
-    plt.show()
+    #fig = plt.figure()
+
+    #fig.set_tight_layout(True)
+
+    #ax_phiScal = fig.add_subplot(gs[0,0])
+    #ax_mR = fig.add_subplot(gs[0,1])
+
+    #plt.show()
