@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
-file_path = "/home/dimitar/projects/STT_theories/results/"
-file_name_results = "STT_phiScal"
+file_path = "/home/dimitar/projects/STT_theories/results"
+file_name_results = "STT_phiScal_I"
 
 system_names = [ "r", "phiScal", "Q", "p", "LambdaMetr", "m" ]
 
 parameters = {
     "names" : [ "beta", "m", "lambda" ],
     "values" : {
-        "beta" : [ 0, -4, -6, -8, -10, -12, -14, -16 ],
-        "m" : [ 0 ],
-        "lambda" : [ 0 ]
+        "beta" : [ 0, -6, -10 ],
+        "m" : [ 0, 1e-3, 5e-2 ],
+        "lambda" : [ 0, 1e-1, 1, 10, 100 ]
     }
 }
 
@@ -95,17 +95,20 @@ def get_parm_order():
     all_choices = {
         1 : {
             "change" : parameters["names"][0],
-            "fixed" : [ parameters["names"][1], parameters["names"][2] ]
+            "fixed" : [ parameters["names"][1], parameters["names"][2] ],
+            "file" : "{f_name:}_{eos_name:}_beta{change:.3e}_m{fix1:.3e}_lambda{fix2:.3e}"
         },
 
         2 : {
             "change" : parameters["names"][1],
-            "fixed" : [ parameters["names"][0], parameters["names"][2] ]
+            "fixed" : [ parameters["names"][0], parameters["names"][2] ],
+            "file" : "{f_name:}_{eos_name:}_beta{fix1:.3e}_m{change:.3e}_lambda{fix2:.3e}"
         },
 
         3 : {
             "change" : parameters["names"][2],
-            "fixed" : [ parameters["names"][0], parameters["names"][1] ]
+            "fixed" : [ parameters["names"][0], parameters["names"][1] ],
+            "file" : "{f_name:}_{eos_name:}_beta{fix1:.3e}_m{fix2.3e}_lambda{change:.3e}"
         }
     }
 
@@ -138,7 +141,7 @@ def set_fix_parm(fix_parm_name):
     print("\n Set parameter {}: \n".format(fix_parm_name))
     for i, value in enumerate(parameters["values"][fix_parm_name]):
         print(
-          "\t {}. {}".format(i, value)
+          "\t {}. {:.3e}".format(i, value)
         )
 
     while True:
@@ -164,7 +167,7 @@ def set_change_parm(change_parm_name):
     print("\n Choose parameter range {}: \n".format(change_parm_name))
     for i, value in enumerate(parameters["values"][change_parm_name]):
         print(
-          "\t {}. {}".format(i, value)
+          "\t {}. {:.3e}".format(i, value)
         )
 
     while True:
@@ -198,7 +201,7 @@ def set_change_parm(change_parm_name):
 
     return {
       "name" : change_parm_name,
-       "value" : parameters["values"][change_parm_name][choice1 : choice2]
+       "value" : parameters["values"][change_parm_name][choice1 : choice2+1]
     }
 
 def set_eos_name():
@@ -225,38 +228,96 @@ def set_eos_name():
                 return \
                   { "name" : eos_names[choice] }
 
+def load_data(filename, data = {}):
+
+    data.clear()
+
+    with open(filename, "r") as f:
+        tmp_data = f.read()
+
+    tmp_data = tmp_data.split("#")[1].split("\n")
+
+    data["labels"] = [ k for k in tmp_data.pop(0).split(" ") if len(k) ]
+
+    data["data"] = [ [] for k in range(len(data["labels"])) ]
+
+    for i in tmp_data:
+        for m, n in zip( i.split(" "), data["data"] ):
+            if len(m):
+                n.append(float(m))
+
+    return
+
+def get_figure_phiScal_mR():
+
+    from matplotlib import style
+    from matplotlib.gridspec import GridSpec
+
+    style.use("seaborn-poster")
+    gs = GridSpec(nrows=1,ncols=2)
+
+    fig = plt.figure()
+    fig.set_tight_layout(True)
+
+    ax_phiScal = fig.add_subplot(gs[0,0])
+    ax_mR = fig.add_subplot(gs[0,1])
+
+    return ax_phiScal, ax_mR
+
+def my_plot_set_params( ax, label_x, label_y, label_fontsize, label_ticksize ):
+
+    from matplotlib.ticker import FormatStrFormatter
+
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
+    ax.set_xlabel(label_x, fontsize=label_fontsize)
+    ax.xaxis.set_tick_params(labelsize=label_ticksize)
+
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
+    ax.set_ylabel(label_y, fontsize=label_fontsize)
+    ax.yaxis.set_tick_params(labelsize=label_ticksize)
+
+    return
+
+def my_plot_set_data( ax, x, y, linewidth):
+
+    ax.plot(x, y, linewidth = linewidth)
+
 if __name__ == "__main__":
 
-    from time import sleep
     from matplotlib import pyplot as plt
-    from matplotlib import animation as animation
-    from matplotlib import style
-    from matplotlib.ticker import FormatStrFormatter
 
     parm_order = get_parm_order()
 
     fix_parm_1 = set_fix_parm(parm_order["fixed"][0])
-    fix_parm_2 = set_fix_parm(parm_order["fixed"][1])
-    change_parm = set_change_parm(parm_order["change"])
-    eos = set_eos_name()
 
-    for i in change_parm["value"]:
-        filename = "{}_{}_{}".format(
-          file_name_results, eos["name"], "beta",
+    fix_parm_2 = set_fix_parm(parm_order["fixed"][1])
+
+    change_parm = set_change_parm(parm_order["change"])
+
+    eos_name_val = set_eos_name()["name"]
+
+    f_name_val = file_name_results
+    fix1_val = fix_parm_1["value"]
+    fix2_val = fix_parm_2["value"]
+
+    ax_phiScal, ax_mR = get_figure_phiScal_mR()
+
+    data = {}
+    for change_val in change_parm["value"]:
+
+        current_file = parm_order["file"].format(
+          f_name = f_name_val, eos_name = eos_name_val,
+          fix1 = fix1_val, fix2 = fix2_val, change = change_val
         )
 
-        print()
+        print( current_file )
+        load_data(file_path + "/" +current_file, data)
 
-    #style.use("seaborn-poster")
-    ##style.use("fivethirtyeight")
+        my_plot_set_params(ax_phiScal, data["labels"][0], data["labels"][1], 12, 10)
+        my_plot_set_params(ax_mR, data["labels"][5], data["labels"][4], 12, 10)
 
-    #gs = gridspec.GridSpec(nrows=1,ncols=2)
+        my_plot_set_data( ax_phiScal, data["data"][0], data["data"][1], 1.5)
+        my_plot_set_data( ax_mR, data["data"][5], data["data"][4], 1.5)
 
-    #fig = plt.figure()
 
-    #fig.set_tight_layout(True)
-
-    #ax_phiScal = fig.add_subplot(gs[0,0])
-    #ax_mR = fig.add_subplot(gs[0,1])
-
-    #plt.show()
+    plt.show()

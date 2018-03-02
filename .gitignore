@@ -1,4 +1,5 @@
 *.o
+*_test.*
 bin/
 build/
 resources/

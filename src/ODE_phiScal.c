@@ -35,7 +35,7 @@
 // 3
 #define ODE_FREE_PARM_COUNT_1 1
 // 0, -6, -10
-#define ODE_FREE_PARM_VALS_1 -16
+#define ODE_FREE_PARM_VALS_1 -10
 
 // m
 // 3
@@ -60,7 +60,7 @@
 #define INITIAL_Y_END 5e-3 // 5e-3
 #define INITIAL_Y_STEP 1 // 1e-5
 
-static double *GV_PARAMETERS_VALUES, AR, R, tiny = 1e-30;
+static double *GV_PARAMETERS_VALUES, AR, R, tiny = 1e-30, rho_c;
 static EOSmodelInfoStruct *eos;
 static int too_small_to_count_pressure_pow = -15, pressure_index = 3;
 
@@ -97,9 +97,11 @@ static void ode_phiScal_foo(double x, double *y, double *dydx){
     }else{
         EOSeq(eos,p);
         rho = eos->current;
-    }
 
-    rho_tmp = rho;
+        if(!rho_c){
+            rho_c = rho;
+        }
+    }
 
     double \
       PhiMetr_dr = \
@@ -626,11 +628,12 @@ static void ode_phiScal_ResultFile_append_shootfitting(
 
     fprintf(
       fp,
-      "%e %e %e %e %e\n",
+      "%e %e %e %e %e %e\n",
       arg->initial_y_current,
       shoot_vars->newt_v[1],
       arg->y[5],
       AR,
+      rho_c,
       fabs(arg->y[1] - shoot_vars->known_right_values[1])
     );
 
@@ -771,6 +774,7 @@ static void ode_phiScal_integrate( ODEsystemStruct *arg ){
 
     R =  0;
     AR = 0;
+    rho_c = 0;
 
     arg->did_it_go_boom = 0;
     arg->where_it_went_boom = 0;
@@ -805,13 +809,13 @@ static double *known_left_values, *known_right_values, shoot_fiting_point;
 
 static ODEsystemStruct *guess_to_integrate;
 
-static void ode_phiScal_shooting_regular(int n, double *v, double *f){
+static void ode_phiScal_shooting_phiScal_regular(int n, double *v, double *f){
 
     double *tmp_y;
 
     if(n != guess_left_n){
         printf(
-          "ODE_phiScal.c ode_phiScal_shooting_regular something"
+          "ODE_phiScal.c ode_phiScal_shooting_phiScal_regular something"
           "verrryyy fissshyyy %d %d line 822",
           n, guess_left_n
         );
@@ -839,11 +843,11 @@ static void ode_phiScal_shooting_regular(int n, double *v, double *f){
     return;
 }
 
-static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
+static void ode_phiScal_shooting_phiScal_fitting(int n, double *v, double *f){
 
     if(n != guess_left_n + guess_right_n){
         printf(
-          "\n ODE_phiScal.c ode_phiScal_shooting_fitting something"
+          "\n ODE_phiScal.c ode_phiScal_shooting_phiScal_fitting something"
           "verrryyy fissshyyy %d %d line 853 \n",
           n, guess_left_n + guess_right_n
         );
@@ -861,7 +865,6 @@ static void ode_phiScal_shooting_fitting(int n, double *v, double *f){
     dvector_copy(guess_to_integrate->y, tmp_y ,guess_to_integrate->eqs_count);
 
     int iterate = 1;
-
     while(iterate){
 
         dvector_copy_to_index(
@@ -1049,7 +1052,7 @@ static void ode_phiScal_shoot_regular_execute(
       shoot_vars->newt_v,
       shoot_vars->newt_n,
       &newt_checker,
-      &ode_phiScal_shooting_regular
+      &ode_phiScal_shooting_phiScal_regular
     );
 
     dvector_copy_to_index(
@@ -1118,7 +1121,7 @@ static void ode_phiScal_shoot_fitting_execute(
       shoot_vars->newt_v,
       shoot_vars->newt_n,
       &newt_checker,
-      &ode_phiScal_shooting_fitting
+      &ode_phiScal_shooting_phiScal_fitting
     );
 
     dvector_copy_to_index(
@@ -1314,8 +1317,8 @@ void ode_phiScal_compute_parameters( ODEsystemStruct *arg ){
 
                 ShootingVarsStruct *shoot_vars;
                 shoot_vars = calloc(1,sizeof(ShootingVarsStruct));
-                shooting_init(&shoot_vars);
-                shooting_check(shoot_vars, arg);
+                shooting_phiScal_init(&shoot_vars);
+                shooting_phiScal_check(shoot_vars, arg);
 
                 ode_phiScal_ResultFile_open(arg);
                 ode_phiScal_LivePlot_open_solver(arg);
@@ -1331,15 +1334,15 @@ void ode_phiScal_compute_parameters( ODEsystemStruct *arg ){
                 newt_info_print_stdout();
                 newt_info_print_ResultFile(open_file_to_APPEND_ResultFile(arg));
 
-                shooting_info_print_stdout(shoot_vars);
-                shooting_info_print_ResultFile(
+                shooting_phiScal_info_print_stdout(shoot_vars);
+                shooting_phiScal_info_print_ResultFile(
                   shoot_vars,open_file_to_APPEND_ResultFile(arg)
                 );
 
                 ode_phiScal_change_central_value(arg, shoot_vars);
 
                 eos_free(&eos);
-                shooting_free(&shoot_vars);
+                shooting_phiScal_free(&shoot_vars);
             }
         }
     }

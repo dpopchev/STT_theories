@@ -1,7 +1,7 @@
 #include "ExternalHeaders.h"
 
 // odeint defines
-#define EPS 1e-10
+#define EPS 1e-9
 #define H1 1e-30
 #define MAXSTP 1e9
 #define HMIN 0.0
@@ -16,7 +16,7 @@
 // odeint determines the step size by monitoring
 // local truncation error by scaling several scaling techniques are available
 // thus choose one of the below
-#define ODEINT_SCALING_METHOD 0
+#define ODEINT_SCALING_METHOD 3
 
 // rkqs is advancing with small steps
 // choose the method to evaluate the new value for x
@@ -34,15 +34,15 @@ static const char *ODEINT_SCALING_METHOD_DESCRIPTION[] = \
         \
         "[2], \
          stiff integrator recommends scaling to constant value, try 1, \
-         yscal[i]=FMAX(fabs(eps*dydx[i]*h), 1e-11);", \
+         yscal[i]=FMAX(fabs(eps*dydx[i]*h), EPS*1e-1);", \
         \
         "[3], \
          stiff integrator recommends scaling to constant value, try 2, \
-         yscal[i]=FMAX(fabs(y[i]), 1e-15);", \
+         yscal[i]=FMAX(fabs(y[i]), EPS*1e-1);", \
         \
         "[4], \
          stiff integrator recommends scaling to constant value, try 3, \
-         yscal[i]=FMAX(fabs(y[i])+fabs(dydx[i]*h)+TINY, 1e-11);" \
+         yscal[i]=FMAX(fabs(y[i])+fabs(dydx[i]*h)+TINY, EPS*1e-1);" \
     };
 
 static const char *RKQS_STEP_METHOD_DESCRIPTION[] = \
@@ -263,13 +263,13 @@ void odeint(
                     yscal[i]=fabs(eps*dydx[i]*h)+TINY;
                     break;
                 case 2:
-                    yscal[i]=FMAX(fabs(eps*dydx[i]*h), 1e-11);
+                    yscal[i]=FMAX(fabs(eps*dydx[i]*h), EPS*1e-1);
                     break;
                 case 3:
-                    yscal[i]=FMAX(fabs(y[i]), 1e-15);
+                    yscal[i]=FMAX(fabs(y[i]), EPS*1e-1);
                     break;
                 case 4:
-                    yscal[i]=FMAX(fabs(y[i])+fabs(dydx[i]*h)+TINY, 1e-11);
+                    yscal[i]=FMAX(fabs(y[i])+fabs(dydx[i]*h)+TINY, EPS*1e-1);
                     break;
                 default:
                     printf(\

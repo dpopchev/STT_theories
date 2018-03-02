@@ -3,7 +3,7 @@
 #define DEBUGGING 0
 
 // 0 - ode logistics, for test purposes
-#define ODE_SYSTEM_INDEX 0
+#define ODE_SYSTEM_INDEX 2
 
 // the constants of nature
 double \
@@ -127,7 +127,7 @@ int main( void ){
 
     switch(ODE_index){
 
-        case 0:
+        case 1:
             if(DEBUGGING){
                 printf(
                     "%s %s ODE_index = %d to init, %s \n", \
@@ -141,6 +141,23 @@ int main( void ){
             ode_phiScal_init( &ode );
 
             ode_phiScal_compute_parameters(ode);
+
+            break;
+
+        case 2:
+            if(DEBUGGING){
+                printf(
+                    "%s %s ODE_index = %d to init, %s \n", \
+                    identation,\
+                    function_path,\
+                    ODE_index,\
+                    ODE_equtions_list[ODE_index] \
+                );
+            }
+
+            ode_phiScal_I_init( &ode );
+
+            ode_phiScal_I_compute_parameters(ode);
 
             break;
 
@@ -160,7 +177,7 @@ int main( void ){
 
     switch(ODE_index){
 
-        case 0 :
+        case 1 :
             if(DEBUGGING){
                 printf(
                     "%s %s ODE_index = %d to free, %s \n", \
@@ -172,6 +189,20 @@ int main( void ){
             }
 
             ode_phiScal_free( &ode );
+            break;
+
+        case 2 :
+            if(DEBUGGING){
+                printf(
+                    "%s %s ODE_index = %d to free, %s \n", \
+                    identation,\
+                    function_path,\
+                    ODE_index,\
+                    ODE_equtions_list[ODE_index] \
+                );
+            }
+
+            ode_phiScal_I_free( &ode );
             break;
 
         default :

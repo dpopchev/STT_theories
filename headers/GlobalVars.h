@@ -44,15 +44,25 @@
     extern void newt_info_print_stdout(void);
     extern void newt_info_print_ResultFile(FILE *fp);
 
-    extern void shooting_init(ShootingVarsStruct **arg);
-    extern void shooting_free(ShootingVarsStruct **arg);
-    extern void shooting_info_print_stdout(ShootingVarsStruct *arg);
-    extern void shooting_info_print_ResultFile(ShootingVarsStruct *arg, FILE *fp);
-    extern void shooting_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_ode);
+    extern void shooting_phiScal_init(ShootingVarsStruct **arg);
+    extern void shooting_phiScal_free(ShootingVarsStruct **arg);
+    extern void shooting_phiScal_info_print_stdout(ShootingVarsStruct *arg);
+    extern void shooting_phiScal_info_print_ResultFile(ShootingVarsStruct *arg, FILE *fp);
+    extern void shooting_phiScal_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_ode);
+
+    extern void shooting_phiScal_I_init(ShootingVarsStruct **arg);
+    extern void shooting_phiScal_I_free(ShootingVarsStruct **arg);
+    extern void shooting_phiScal_I_info_print_stdout(ShootingVarsStruct *arg);
+    extern void shooting_phiScal_I_info_print_ResultFile(ShootingVarsStruct *arg, FILE *fp);
+    extern void shooting_phiScal_I_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_ode);
 
     extern void ode_phiScal_init( ODEsystemStruct **arg );
     extern void ode_phiScal_free( ODEsystemStruct **arg );
     extern void ode_phiScal_compute_parameters( ODEsystemStruct *arg );
+
+    extern void ode_phiScal_I_init( ODEsystemStruct **arg );
+    extern void ode_phiScal_I_free( ODEsystemStruct **arg );
+    extern void ode_phiScal_I_compute_parameters( ODEsystemStruct *arg );
 
     extern void eos_init(EOSmodelInfoStruct **eos);
     extern void eos_print_info_stdout(EOSmodelInfoStruct *eos);

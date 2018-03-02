@@ -6,15 +6,15 @@
     typedef struct ODEsystemStruct{
         int \
             // ODE system index
-            index, \
+            index,
             // total number of ODE equations
-            eqs_count, \
+            eqs_count,
             // amount of points we want to record, if any
-            points_count, \
+            points_count,
             // count OK steps done by the integrator
-            nok, \
+            nok,
             // count BAD steps done by the integrator
-            nbad, \
+            nbad,
             // scaling method, see Integrator_odeint.c for more details
             // default is 0
             //odeint_scaling_method,
@@ -23,9 +23,9 @@
             // default is 0
             //rkqs_step_method,
             // amount of free parameters for the system
-            free_parmeters_count_all, \
+            free_parmeters_count_all,
             // how many values of each parameter we are interested
-            *free_parameters_count_each, \
+            *free_parameters_count_each,
             // index for the y whos initial value will be changed
             index_of_y_to_change,
             // if the system goes boom
@@ -34,28 +34,30 @@
 
         double \
             // the system itself
-            *y, \
+            *y,
             // the independent variable start
-            x_initial, \
+            x_initial,
             // the independent variable
-            x_final, \
+            x_final,
             // place to save x points, size is defined by points_count
-            *points_x, \
+            *points_x,
             // place to save corresponding y points, size is defined by points_count
-            **points_y, \
+            **points_y,
             // the infinity for the phiScal
             phiScal_inf,
             // pointer to include the free parameters of the system
-            *free_parmeters_values, \
+            *free_parmeters_values,
             // all possible values of parameters we are interested per parameter
-            **free_parmeters_values_all, \
+            **free_parmeters_values_all,
             // interval in which we will change the initial value of y
             // with index index_of_y_to_change
             initial_y_start, initial_y_end, initial_y_current, initial_y_step,
             // we want to print also the density
             *points_rho,
             // where did it go boom
-            where_it_went_boom;
+            where_it_went_boom,
+            // we want the central value of rho,
+            rho_c;
 
 
         char \

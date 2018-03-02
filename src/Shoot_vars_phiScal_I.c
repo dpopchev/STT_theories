@@ -26,7 +26,7 @@
 #define SHOOT_FREE_N 3
 #define SHOOT_FREE_INDEXES 3,5,9
 
-void shooting_phiScal_I_init(shooting_phiScal_IVarsStruct **arg){
+void shooting_phiScal_I_init(ShootingVarsStruct **arg){
 
     const char \
         function_path[] = "Shoot_vars.c shooting_phiScal_I_regular_init ", \
@@ -287,7 +287,7 @@ void shooting_phiScal_I_init(shooting_phiScal_IVarsStruct **arg){
     return;
 }
 
-void shooting_phiScal_I_free(shooting_phiScal_IVarsStruct **arg){
+void shooting_phiScal_I_free(ShootingVarsStruct **arg){
 
     free((*arg)->known_left_indexes);
     free((*arg)->UNknown_left_indexes);
@@ -308,7 +308,7 @@ void shooting_phiScal_I_free(shooting_phiScal_IVarsStruct **arg){
     return;
 }
 
-void shooting_phiScal_I_info_print_stdout(shooting_phiScal_IVarsStruct *arg){
+void shooting_phiScal_I_info_print_stdout(ShootingVarsStruct *arg){
 
     printf(
         "\n shooting_phiScal_I info: \n"
@@ -386,7 +386,7 @@ void shooting_phiScal_I_info_print_stdout(shooting_phiScal_IVarsStruct *arg){
     return;
 }
 
-void shooting_phiScal_I_info_print_ResultFile( shooting_phiScal_IVarsStruct *arg, FILE *fp ){
+void shooting_phiScal_I_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp ){
 
     fprintf(
         fp,
@@ -459,13 +459,17 @@ void shooting_phiScal_I_info_print_ResultFile( shooting_phiScal_IVarsStruct *arg
     fprintf(fp,"\n\n");
 
     //TODO this better not be here
-    fprintf( fp, "# p_c phiScal_c M AR delta_phiScal\n");
+    fprintf(
+        fp,
+        "#p_c phiScal_c PhiMetr_c Omega_c M AR rho_c J "
+        "delta_phiScal delta_PhiMetr delta_Omega_c\n"
+    );
 
     fclose(fp);
     return;
 }
 
-void shooting_phiScal_I_check(shooting_phiScal_IVarsStruct *arg_shoot, ODEsystemStruct *arg_ode){
+void shooting_phiScal_I_check(ShootingVarsStruct *arg_shoot, ODEsystemStruct *arg_ode){
 
     if(
       arg_shoot->known_left_n + arg_shoot->UNknown_left_n != arg_ode->eqs_count - SHOOT_FREE_N
