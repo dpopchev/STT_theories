@@ -1,115 +1,120 @@
 #!/usr/bin/env python
 
-# Based on
-#   https://pythonprogramming.net/live-graphs-matplotlib-tutorial/
+file_path = "/home/dimitar/projects/STT_theories/results"
+file_results = "STT_phiScal_I_"
 
-file_path = "/home/dimitar/projects/STT_theories/results/"
-file_name_results = "STT_phiScal_"
+def get_recent_file(starts_with):
+    import glob
+    import os
 
-system_names = [ "r", "phiScal", "Q", "p", "LambdaMetr", "m"]
+    return max(glob.glob("{}*".format(starts_with)), key=os.path.getctime)
 
-def my_ploting(ax, label_x, x, label_y, y):
+def data_loader():
 
-    label_fontsize = 12
-    ticks_label_size = 10
+    data_chunk = []
+    while True:
 
-    ax.clear()
+        file_model = file_path + "/" + file_results
 
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_xlabel(label_x, fontsize=label_fontsize)
-    ax.xaxis.set_tick_params(labelsize=ticks_label_size)
+        filename = get_recent_file(file_model)
 
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_ylabel(label_y, fontsize=label_fontsize)
-    ax.yaxis.set_tick_params(labelsize=ticks_label_size)
+        while get_recent_file(file_model) == filename:
+
+            data_chunk.clear()
+            with open(filename, "r") as f:
+                data_chunk = f.read().split("#")[1].split("\n")
+
+            clear_plots_params(ax_phiScal_c, "p_c", "phiScal_c", 12, 10 )
+            clear_plots_params(ax_M_AR, "AR", "M", 12, 10 )
+            clear_plots_params(ax_J_M, "M", "J", 12, 10 )
+
+            yield data_chunk, filename
+
+def my_plotting(ax, x, y):
 
     try:
         ax.plot(
           x, y,
-          marker="o", markersize=7,
+          marker="o",markersize=5,
           linewidth=1.5
         )
     except ValueError:
-        x = []
-        y = []
         pass
 
-def results_live(arg):
+def update(
+  frame, ax_phiScal_c, ax_M_AR, ax_J_M
+):
+    if len(frame[0]) == 0:
+        return
 
-    import glob
-    import os
+    titles = [ i for i in frame[0].pop(0).split(" ") if len(i) ]
 
-    all_files = glob.glob(file_path + file_name_results + "*")
-    while not len(all_files):
-        all_files = glob.glob(file_path + file_name_results + "*")
+    to_be_ploted = [ [] for i in titles if len(i) ]
 
-    file_to_use = max(all_files, key=os.path.getctime)
+    for line in frame[0]:
+        for m, n in zip(to_be_ploted, line.split(" ")):
+            try:
+                m.append(float(n))
+            except ValueError:
+                pass
 
-    with open(file_to_use,'r') as f:
-        graph_data = f.read()
+    my_plotting(ax_phiScal_c, to_be_ploted[0], to_be_ploted[1])
+    my_plotting(ax_M_AR, to_be_ploted[5], to_be_ploted[4])
+    my_plotting(ax_J_M, to_be_ploted[4], to_be_ploted[7])
 
-    graph_data = [ k.split("\n") for k in graph_data.split("# ") if len(k) > 1 ][1]
+    plt.suptitle(frame[1].split("_")[4:], y=0.998)
 
-    plot_labels = graph_data.pop(0).split(" ")
+def clear_plots_params(ax, label_x, label_y, fontsize, ticksize):
 
-    plots_all = [ [] for k in range(len(plot_labels)) ]
+    from matplotlib.ticker import FormatStrFormatter
 
-    try:
-        for single_line in graph_data:
-            if len(single_line) > 1:
-                tmp = [ j for j in single_line.split(" ") if len(j) > 1 ]
-                for m,n in zip(plots_all, tmp):
-                    m.append(float(n))
-    except ValueError:
-        graph_data = []
-        plot_labels = []
-        plots_all = []
-        pass
+    ax.clear()
 
-    my_ploting(
-      ax_phiScal,
-      plot_labels[0], plots_all[0],
-      plot_labels[1], plots_all[1],
-    )
+    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
+    ax.set_xlabel(label_x, fontsize=fontsize)
+    ax.xaxis.set_tick_params(labelsize=ticksize)
 
-    my_ploting(
-      ax_mR,
-      plot_labels[3], plots_all[3],
-      plot_labels[2], plots_all[2],
-    )
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
+    ax.set_ylabel(label_y, fontsize=fontsize)
+    ax.yaxis.set_tick_params(labelsize=ticksize)
 
-    #ax_phiScal.set_title(file_to_use.split("_")[3:])
-    plt.suptitle(file_to_use.split("_")[3:], fontsize=16, y=1.001)
+    return
 
-    graph_data = []
-    plot_labels = []
-    plots_all = []
+def get_figure():
+
+    from matplotlib import style
+    from matplotlib.gridspec import GridSpec
+
+    style.use("seaborn-poster")
+    gs = GridSpec(nrows=2,ncols=2)
+
+    fig = plt.figure()
+    fig.set_tight_layout(True)
+
+    ax_phiScal_c = fig.add_subplot(gs[0,:])
+    ax_M_AR = fig.add_subplot(gs[1,0])
+    ax_J_M = fig.add_subplot(gs[1,1])
+
+    clear_plots_params(ax_phiScal_c, "p_c", "phiScal_c", 12, 10 )
+    clear_plots_params(ax_M_AR, "AR", "M", 12, 10 )
+    clear_plots_params(ax_J_M, "M", "J", 12, 10 )
+
+    return fig, ax_phiScal_c, ax_M_AR, ax_J_M
 
 if __name__ == "__main__":
 
-    from time import sleep
     from matplotlib import pyplot as plt
-    from matplotlib import animation as animation
-    from matplotlib import style
-    from matplotlib.ticker import FormatStrFormatter
-    from matplotlib import gridspec
+    from matplotlib.animation import FuncAnimation
 
-    #sleep(30)
+    global \
+      ax_phiScal_c, ax_M_AR, ax_J_M
 
-    style.use("seaborn-poster")
-    #style.use("fivethirtyeight")
+    fig, ax_phiScal_c, ax_M_AR, ax_J_M = get_figure()
 
-    gs = gridspec.GridSpec(nrows=1,ncols=2)
-
-    fig = plt.figure()
-
-    fig.set_tight_layout(True)
-
-    ax_phiScal = fig.add_subplot(gs[0,0])
-    ax_mR = fig.add_subplot(gs[0,1])
-
-    ani_live = animation.FuncAnimation(
-      fig = fig, func = results_live, interval = 1000, save_count = None
+    animation_live = FuncAnimation(
+      fig = fig, func = update,
+      fargs = (ax_phiScal_c, ax_M_AR, ax_J_M),
+      frames = data_loader, interval = 1000, save_count = 0
     )
 
     plt.show()

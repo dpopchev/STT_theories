@@ -30,7 +30,9 @@ double \
     // the square root of the machine epsilon
     GV_MACHINE_EPSILON_SQRT, \
     // the cube root of the machine epsilon
-    GV_MACHINE_EPSILON_CUBROOT;
+    GV_MACHINE_EPSILON_CUBROOT, \
+    // units for moment of inertia gcm^2
+    GV_J_UNITS;
 
 // sets the units factors as we are working dimensionless
 static void calculate_gv_units( void ){
@@ -65,6 +67,8 @@ static void calculate_gv_units( void ){
             identation, function_path, GV_PRESSURE_UNITS \
         );
     }
+
+    GV_J_UNITS = 1e-1*pow(GV_G,2)*pow(GV_MSUN,3)/pow(GV_C,4);
 
     if(DEBUGGING){
         printf("%s %s ending \n", identation, function_path);
@@ -117,6 +121,8 @@ int main( void ){
     if(DEBUGGING){
         printf("%s %s starting \n", identation, function_path);
     }
+
+    srand((unsigned int)time(NULL));
 
     int ODE_index = ODE_SYSTEM_INDEX;
 

@@ -9,7 +9,8 @@
         GV_MSUN,    GV_G,   GV_C,   GV_MBAR,    GV_PI, \
         GV_DENSITY_UNITS,   GV_PRESSURE_UNITS,  GV_RADCORD_UNITS, \
         GV_MACHINE_EPSILON, GV_MACHINE_EPSILON_SQRT, \
-        GV_MACHINE_EPSILON_CUBROOT;
+        GV_MACHINE_EPSILON_CUBROOT, GV_J_UNITS;
+    extern int GV_fadj_switch;
 
     extern void dvector_copy( double *from, double *to, int size );
     extern void dvector_copy_to_index( double *src, double *dst, int size, int *indexes);

@@ -3,28 +3,28 @@
 #define DEBUGGING_shooting_phiScal_I_regular_init 0
 
 // how many values of the ODE are given on the left side of the interval
-#define KNOWN_LEFT_N 3
-#define KNOWN_LEFT_INDEXES 2,4,7
-#define KNOWN_LEFT_VALUES 0,0,0
+#define KNOWN_LEFT_N 5
+#define KNOWN_LEFT_INDEXES  2,  4,  7,  9,  5
+#define KNOWN_LEFT_VALUES   0,  0,  0,  0,  0
 
 // how many values of the ODE are unknown and their corresponding guessed values
 #define UNKNOWN_LEFT_N 3
-#define UNKNOWN_LEFT_INDEXES 1,6,8
-#define UNKNOWN_LEFT_VALUES -5e-2,-5e-1,5e-1
+#define UNKNOWN_LEFT_INDEXES    1,      6,         8
+#define UNKNOWN_LEFT_VALUES     -5e-2,  -2.89e-1,  6.84e-1
 
 // how many values of the ODE are given on the right side of the interval
 #define KNOWN_RIGHT_N 3
-#define KNOWN_RIGHT_INDEXES 1,6,8
-#define KNOWN_RIGHT_VALUES 0,0,1
+#define KNOWN_RIGHT_INDEXES 1,  6,  8
+#define KNOWN_RIGHT_VALUES  0,  0,  1
 
 // how many values of the ODE are unknown and right corresponding guessed values
-#define UNKNOWN_RIGHT_N 3
-#define UNKNOWN_RIGHT_INDEXES 2,4,7
-#define UNKNOWN_RIGHT_VALUES -1e-8,2e-5,1e-16
+#define UNKNOWN_RIGHT_N 5
+#define UNKNOWN_RIGHT_INDEXES   2,      4,      7,      9,      5
+#define UNKNOWN_RIGHT_VALUES    -1e-15, 5e-4,   1e-16,  1.67e1, 9.28e-1
 
 // TODO this is not ready for the fitting point
-#define SHOOT_FREE_N 3
-#define SHOOT_FREE_INDEXES 3,5,9
+#define SHOOT_FREE_N 1
+#define SHOOT_FREE_INDEXES 3
 
 void shooting_phiScal_I_init(ShootingVarsStruct **arg){
 
@@ -461,8 +461,8 @@ void shooting_phiScal_I_info_print_ResultFile( ShootingVarsStruct *arg, FILE *fp
     //TODO this better not be here
     fprintf(
         fp,
-        "#p_c phiScal_c PhiMetr_c Omega_c M AR rho_c J "
-        "delta_phiScal delta_PhiMetr delta_Omega_c\n"
+        "# p_c phiScal_c PhiMetr_c Omega_c M AR rho_c J "
+        "Q_inf LambdaMetr_inf Z_inf \n"
     );
 
     fclose(fp);

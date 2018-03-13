@@ -4,7 +4,7 @@
 #define MAXITS 1e5
 
 // newt sets convergence criterion on function values
-#define TOLF 1.0e-10
+#define TOLF 1.0e-12
 
 // newt sets the criterion for deciding whether spurious convergence to a minimum
 // of NR_fmin has occured
@@ -12,22 +12,25 @@
 
 // newt is the convergence criterion on \delta x, such that it is not meaningful to
 // make more corrections to the root
-#define TOLX_newt 1.0e-8
+#define TOLX_newt 1.0e-12
 
 // newt maximum scaled step length allowed in the line searches
 #define STPMX 100.0
 
 // lnsrch ensures sufficient decrease in function value
-#define ALF 1e-10
+#define ALF 1e-12
 
 // lnsrch convergence criterion on \Delta x
-#define TOLX_lnsrch 1.0e-8
+#define TOLX_lnsrch 1.0e-12
 
 // fdjac derivative method to use
 #define DEREVITIVE_METHOD 1
 
 // ludcmp smallest number
 #define TINY 1e-30
+
+// I do not want to see points which are for evaluating the numerical Jacubian
+int GV_fadj_switch;
 
 static const char *derevitive_methods[] = {
     "numerical Jacobian with forward difference approximation with GV_MACHINE_EPSILON_SQRT",
@@ -174,7 +177,7 @@ static void lnsrch(
 static void fdjac(int n, double x[], double _fvec[], double **df,
     void (*vecfunc)(int, double [], double [])
 ){
-
+    GV_fadj_switch = 1;
     switch(DEREVITIVE_METHOD){
 
         case 0:{
@@ -240,6 +243,7 @@ static void fdjac(int n, double x[], double _fvec[], double **df,
             break;
         }
     }
+    GV_fadj_switch = 0;
 }
 
 // returns f = 0.5 \vec F * \vec F at x

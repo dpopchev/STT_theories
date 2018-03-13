@@ -114,6 +114,7 @@ void odeint_info_print_ResultFile(FILE *fp){
         H1, HMIN, EPS, SAFETY, PGROW, PSHRNK, ERRCON, (int)MAXSTP, TINY
     );
 
+    fflush(fp);
     fclose(fp);
 
     return;
@@ -147,25 +148,40 @@ static void rkck(\
     ak5=dvector(1,n);
     ak6=dvector(1,n);
     ytemp=dvector(1,n);
-    for (i=1;i<=n;i++)
+
+    for (i=1;i<=n;i++){
         ytemp[i]=y[i]+b21*h*dydx[i];
+    }
+
+
     (*derivs)(x+a2*h,ytemp,ak2);
+
     for (i=1;i<=n;i++)
         ytemp[i]=y[i]+h*(b31*dydx[i]+b32*ak2[i]);
+
     (*derivs)(x+a3*h,ytemp,ak3);
+
     for (i=1;i<=n;i++)
         ytemp[i]=y[i]+h*(b41*dydx[i]+b42*ak2[i]+b43*ak3[i]);
+
     (*derivs)(x+a4*h,ytemp,ak4);
+
     for (i=1;i<=n;i++)
         ytemp[i]=y[i]+h*(b51*dydx[i]+b52*ak2[i]+b53*ak3[i]+b54*ak4[i]);
+
     (*derivs)(x+a5*h,ytemp,ak5);
+
     for (i=1;i<=n;i++)
         ytemp[i]=y[i]+h*(b61*dydx[i]+b62*ak2[i]+b63*ak3[i]+b64*ak4[i]+b65*ak5[i]);
+
     (*derivs)(x+a6*h,ytemp,ak6);
+
     for (i=1;i<=n;i++)
         yout[i]=y[i]+h*(c1*dydx[i]+c3*ak3[i]+c4*ak4[i]+c6*ak6[i]);
+
     for (i=1;i<=n;i++)
         yerr[i]=h*(dc1*dydx[i]+dc3*ak3[i]+dc4*ak4[i]+dc5*ak5[i]+dc6*ak6[i]);
+
     free_dvector(ytemp,1,n);
     free_dvector(ak6,1,n);
     free_dvector(ak5,1,n);
@@ -219,6 +235,7 @@ static void rkqs(\
                 break;
             }
         }
+
         xnew=(*x)+h;
         if (xnew == *x){
             //nrerror("stepsize underflow in rkqs");
@@ -289,6 +306,7 @@ void odeint(
         }
         if ((x+h-x2)*(x+h-x1) > 0.0) h=x2-x;
         (*rkqs)(y,dydx,nvar,&x,h,eps,yscal,&hdid,&hnext,derivs);
+
         if(*did_it_go_boom){
             *where_it_went_boom = x;
             xp[++kount]=x;
@@ -296,6 +314,7 @@ void odeint(
             rhop[kount] = rho_tmp;
             return;
         }
+
         if (hdid == h) ++(*nok); else ++(*nbad);
         if ((x-x2)*(x2-x1) >= 0.0) {
             for (i=1;i<=nvar;i++) ystart[i]=y[i];

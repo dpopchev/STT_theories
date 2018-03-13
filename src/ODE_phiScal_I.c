@@ -34,21 +34,21 @@
 // beta
 // beta to be up to -10
 // 3
-#define ODE_FREE_PARM_COUNT_1 3
+#define ODE_FREE_PARM_COUNT_1 1
 // 0, -6, -10
-#define ODE_FREE_PARM_VALS_1 0, -6, -10
+#define ODE_FREE_PARM_VALS_1 -6
 
 // m
 // 3
-#define ODE_FREE_PARM_COUNT_2 3
+#define ODE_FREE_PARM_COUNT_2 1
 // 0, 1e-3, 5e-2
-#define ODE_FREE_PARM_VALS_2 0, 1e-3, 5e-2
+#define ODE_FREE_PARM_VALS_2 5e-2
 
 // lambda
 // 5
-#define ODE_FREE_PARM_COUNT_3 5
+#define ODE_FREE_PARM_COUNT_3 1
 // 0, 1e-1, 1, 10, 100
-#define ODE_FREE_PARM_VALS_3 0, 1e-1, 1, 10, 100
+#define ODE_FREE_PARM_VALS_3 0
 
 // the interval for the independent variable
 #define ODE_INDEP_INIT 1e-30
@@ -57,38 +57,48 @@
 // if we are to change vary any of the initial values of the ODE
 // index, start and end value, also the step to achieve it
 #define Y_INDEX_CHANGE 3
-#define INITIAL_Y_START 1e-5 // 1e-5
+#define INITIAL_Y_START 2.65e-4 // 1e-5
 #define INITIAL_Y_END 5e-3 // 5e-3
 #define INITIAL_Y_STEP 1 // 1e-5
 
+// if we have greater difference than the power of this we stop iterating over guesses
+#define MIN_DIFF_POW -3
+// if the guessed value for scalar field is less than -8 the re is no point in trying
+#define MIN_PHISCAL_POW -3
+// the coefficient to increase the infinity
+#define INCREASE_COEF 0.1
+
+// how many 1/m we will try the fitting
+#define FITTING_MASSIVE_COEF 5
+
 static double *GV_PARAMETERS_VALUES, AR, R, tiny = 1e-30, rho_c;
 static EOSmodelInfoStruct *eos;
-static int too_small_to_count_pressure_pow = -15, pressure_index = 3;
+static int too_small_to_count_pressure_pow = -16, pressure_index = 3;
 
 static void ode_phiScal_I_foo(double x, double *y, double *dydx){
 
     double \
-        beta_phiScal = GV_PARAMETERS_VALUES[1], \
-        m_phiScal = GV_PARAMETERS_VALUES[2], \
-        lambda_phiScal = GV_PARAMETERS_VALUES[3], \
-        r = x, \
-        phiScal = y[1], \
-        Q = y[2], \
-        p = y[3], \
-        LambdaMetr = y[4], \
-        m = y[5], \
-        PhiMetr = y[6], \
-        Z = y[7], \
-        Omega = y[8], \
-        J = y[9], \
+        beta_phiScal = GV_PARAMETERS_VALUES[1],
+        m_phiScal = GV_PARAMETERS_VALUES[2],
+        lambda_phiScal = GV_PARAMETERS_VALUES[3],
+        r = x,
+        phiScal = y[1],
+        Q = y[2],
+        p = y[3],
+        LambdaMetr = y[4],
+        m = y[5],
+        PhiMetr = y[6],
+        Z = y[7],
+        Omega = y[8],
+        J = y[9],
         \
-        Vhat = 2*pow(m_phiScal,2)*pow(phiScal,2) + lambda_phiScal*pow(phiScal,4), \
-        Vhat_dphiScal = 4*pow(m_phiScal,2)*phiScal + 4*lambda_phiScal*pow(phiScal,3), \
-        alpha = beta_phiScal*phiScal, \
-        A = exp(1.0/2 * beta_phiScal * pow(phiScal,2)), \
-        exp_2LambdaMetr = exp(2*LambdaMetr ), \
+        Vhat = 2*pow(m_phiScal,2)*pow(phiScal,2) + lambda_phiScal*pow(phiScal,4),
+        Vhat_dphiScal = 4*pow(m_phiScal,2)*phiScal + 4*lambda_phiScal*pow(phiScal,3),
+        alpha = beta_phiScal*phiScal,
+        A = exp(1.0/2 * beta_phiScal * pow(phiScal,2)),
+        exp_2LambdaMetr = exp(2*LambdaMetr ),
         \
-        step4_A = pow(A,4), \
+        step4_A = pow(A,4),
         rho;
 
     if( !R && p && floor(log10(fabs( p + tiny))) <= too_small_to_count_pressure_pow ){
@@ -107,6 +117,8 @@ static void ode_phiScal_I_foo(double x, double *y, double *dydx){
             rho_c = rho;
         }
     }
+
+    rho_tmp = rho;
 
     double \
       Omega_dr = Z, \
@@ -148,7 +160,6 @@ static void ode_phiScal_I_foo(double x, double *y, double *dydx){
         - Z * ( 4/r - (PhiMetr_dr + LambdaMetr_dr) ), \
       \
       J_dr = 8.0/3*GV_PI*step4_A*(rho+p)*exp(LambdaMetr-PhiMetr)*pow(r,4)*Omega;
-
 
     dydx[1] = phiScal_dr;
     dydx[2] = Q_dr;
@@ -479,8 +490,14 @@ static void ode_phiScal_I_info_print_stdout( ODEsystemStruct *arg ){
         "\n\t Independent variable info: \n"
         "\t\t name: %s \n"
         "\t\t initial value: %.3e \n"
-        "\t\t final value: %.3e \n",
-        arg->name_vars[0], arg->x_initial, arg->x_final
+        "\t\t final value: %.3e \n"
+        "\t\t increase inf coef: %.3e \n"
+        "\t\t min phiScal power vars: %d \n"
+        "\t\t min diff power for shooting vars: %d \n"
+        "\t\t xfitting massive coef: %d \n",
+        arg->name_vars[0], arg->x_initial, arg->x_final,
+        INCREASE_COEF, MIN_PHISCAL_POW, MIN_DIFF_POW,
+        FITTING_MASSIVE_COEF
     );
 
     printf(
@@ -547,8 +564,14 @@ static void ode_phiScal_I_info_print_ResultFile( ODEsystemStruct *arg){
         "\n\t Independent variable info: \n"
         "\t\t name: %s \n"
         "\t\t initial value: %.3e \n"
-        "\t\t final value: %.3e \n",
-        arg->name_vars[0], arg->x_initial, arg->x_final
+        "\t\t final value: %.3e \n"
+        "\t\t increase inf coef: %.3e \n"
+        "\t\t min phiScal power vars: %d \n"
+        "\t\t min diff power for shooting vars: %d \n"
+        "\t\t xfitting massive coef: %d \n",
+        arg->name_vars[0], arg->x_initial, arg->x_final,
+        INCREASE_COEF, MIN_PHISCAL_POW, MIN_DIFF_POW,
+        FITTING_MASSIVE_COEF
     );
 
     fprintf(
@@ -656,13 +679,15 @@ static void ode_phiScal_I_ResultFile_append_shootfitting(
       shoot_vars->newt_v[1],
       shoot_vars->newt_v[2],
       shoot_vars->newt_v[3],
-      arg->y[5],
+      //arg->y[5],
+      //M,
+      shoot_vars->newt_v[8],
       AR,
       rho_c,
-      arg->y[9],
-      fabs(arg->y[1] - shoot_vars->known_right_values[1]),
-      fabs(arg->y[6] - shoot_vars->known_right_values[2]),
-      fabs(arg->y[8] - shoot_vars->known_right_values[3])
+      shoot_vars->newt_v[7],
+      shoot_vars->newt_v[4],
+      shoot_vars->newt_v[5],
+      shoot_vars->newt_v[6]
     );
 
     fclose(fp);
@@ -699,14 +724,17 @@ static void ode_phiScal_I_LivePlot_append_solver(ODEsystemStruct *arg){
 
             fprintf(fp,"%e ", arg->points_rho[i]);
         }
-    }
-    else{
+        fprintf(fp,"\n");
+    }else{
         fprintf(fp,"# NO POINTS OOOO");
     }
 
-    fprintf(fp,"\n");
+    //printf("\n\t\t\t Small sleep when appending to live plot %d \n", GV_fadj_switch);
+    //sleep(1);
 
     fclose(fp);
+
+    //sleep(1);
 
     return;
 }
@@ -773,9 +801,9 @@ static void ode_phiScal_I_integrate( ODEsystemStruct *arg ){
     const char function_path[] = "ode_phiScal_I.c ode_phiScal_I_integrate", \
                identation[] = "\n";
 
-    if(DEBUGGING_ode_phiScal_I_integrate){
-        printf("%s %s starting \n", identation, function_path);
-    }
+    //if(DEBUGGING_ode_phiScal_I_integrate){
+        //printf("\n\n %s %s starting \n", identation, function_path);
+    //}
 
     if(kmax){
         for(int i=1; i <= arg->points_count && xp[i]; i++){
@@ -793,16 +821,19 @@ static void ode_phiScal_I_integrate( ODEsystemStruct *arg ){
 
     arg->nok = arg->nbad = 0;
 
-    if(DEBUGGING_ode_phiScal_I_integrate){
+    if(DEBUGGING_ode_phiScal_I_integrate && !GV_fadj_switch){
         printf("\n\n");
+        printf("r = %e", arg->x_initial);
         for(int i=1; i<=arg->eqs_count;i++){
             printf(" %s_init = %e ", arg->name_vars[i], arg->y[i]);
         }
     }
 
-    R =  0;
-    AR = 0;
-    rho_c = 0;
+    if(arg->x_final > arg->x_initial){
+        R =  0;
+        AR = 0;
+        rho_c = 0;
+    }
 
     arg->did_it_go_boom = 0;
     arg->where_it_went_boom = 0;
@@ -817,12 +848,21 @@ static void ode_phiScal_I_integrate( ODEsystemStruct *arg ){
       arg->foo
     );
 
-    if(DEBUGGING_ode_phiScal_I_integrate){
+    //M = arg->y[5];
+
+    if(DEBUGGING_ode_phiScal_I_integrate && !GV_fadj_switch){
         printf("\n\n");
+        printf("r = %e", arg->x_final);
         for(int i=1; i<=arg->eqs_count;i++){
             printf(" %s_final = %e ", arg->name_vars[i], arg->y[i]);
         }
     }
+
+    //if(DEBUGGING_ode_phiScal_I_integrate){
+        //printf("\n%s %s ending \n\n", identation, function_path);
+    //}
+
+    //sleep(2);
 
     return;
 }
@@ -833,13 +873,16 @@ static int \
     shoot_free_n, *shoot_free_indexes, \
     solver_try;
 
-static double *known_left_values, *known_right_values, shoot_fiting_point;
+static double \
+  *known_left_values, *known_right_values, shoot_fiting_point;
 
 static ODEsystemStruct *guess_to_integrate;
 
 static void ode_phiScal_I_shooting_phiScal_I_regular(int n, double *v, double *f){
 
-    double *tmp_y;
+    double \
+      *tmp_y = dvector(1, guess_to_integrate->eqs_count),
+      *tmp_f1 = dvector(1, guess_left_n );
 
     if(n != guess_left_n){
         printf(
@@ -854,201 +897,44 @@ static void ode_phiScal_I_shooting_phiScal_I_regular(int n, double *v, double *f
     tmp_y = dvector(1, guess_to_integrate->eqs_count);
     dvector_copy(guess_to_integrate->y, tmp_y ,guess_to_integrate->eqs_count);
 
-    dvector_copy_to_index(v, guess_to_integrate->y, guess_left_n, guess_left_indexes);
+    dvector_copy_to_index(
+      v,
+      guess_to_integrate->y,
+      guess_left_n,
+      guess_left_indexes
+    );
 
-    guess_to_integrate->phiScal_inf = guess_to_integrate->x_final;
+    dvector_copy_to_index(
+      known_left_values,
+      guess_to_integrate->y,
+      guess_right_n,
+      guess_right_indexes
+    );
+
+    //guess_to_integrate->phiScal_inf = guess_to_integrate->x_final;
     ode_phiScal_I_integrate(guess_to_integrate);
 
-    for(int i=1; i <= guess_left_n; i++){
-        f[i] = guess_to_integrate->y[i] - known_right_values[i];
+    dvector_copy_to_index_opps(
+      guess_to_integrate->y,
+      tmp_f1,
+      guess_left_n,
+      guess_left_indexes
+    );
+
+    for(int i=1; i <= n; i++){
+        f[i] = known_right_values[i] - tmp_f1[i];
     }
 
-    ode_phiScal_I_LivePlot_append_solver( guess_to_integrate );
+    //ode_phiScal_I_LivePlot_append_solver( guess_to_integrate );
 
     dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
     free(tmp_y);
-
-    return;
-}
-
-static void ode_phiScal_I_shooting_phiScal_I_fitting(int n, double *v, double *f){
-
-    if(n != guess_left_n + guess_right_n){
-        printf(
-          "\n ode_phiScal_I.c ode_phiScal_I_shooting_phiScal_I_fitting something"
-          "verrryyy fissshyyy %d %d line 853 \n",
-          n, guess_left_n + guess_right_n
-        );
-        exit(856);
-    }
-
-    double \
-        *tmp_y = dvector(1, guess_to_integrate->eqs_count),
-        *tmp_f1 = dvector(1, guess_left_n + guess_right_n ),
-        *tmp_f2 = dvector(1, guess_left_n + guess_right_n),
-        tmp_x_left = guess_to_integrate->x_initial,
-        tmp_x_right = guess_to_integrate->x_final,
-        coef = 0.1, coef_step = 0.05;
-
-    dvector_copy(guess_to_integrate->y, tmp_y ,guess_to_integrate->eqs_count);
-
-    int iterate = 1;
-
-    while(iterate){
-
-        dvector_copy_to_index(
-          v,
-          guess_to_integrate->y,
-          guess_left_n,
-          guess_left_indexes
-        );
-
-        dvector_copy_to_index(
-          known_left_values,
-          guess_to_integrate->y,
-          guess_right_n,
-          guess_right_indexes
-        );
-
-        guess_to_integrate->x_initial = tmp_x_left;
-        guess_to_integrate->x_final = shoot_fiting_point;
-        guess_to_integrate->phiScal_inf = shoot_fiting_point;
-
-        ode_phiScal_I_integrate(guess_to_integrate);
-
-        // check if pressure is zero or not since it will blow my solution
-        // from left to right
-        if(
-          floor(
-            log10(
-              fabs( guess_to_integrate->y[pressure_index] + tiny)
-            )
-          ) > too_small_to_count_pressure_pow + 1
-        ){
-            guess_to_integrate->y[pressure_index] = 0;
-            printf("\n LOOOLLL setting no pressure at inf !!!! \n");
-        }
-
-        ode_phiScal_I_LivePlot_append_solver( guess_to_integrate );
-
-        if(guess_to_integrate->did_it_go_boom){
-            printf(
-             "\n\n it whent booommmmm at %e when using fitt %e \n\t"
-             "change the fit point to %e \n\n",
-             guess_to_integrate->where_it_went_boom, shoot_fiting_point,
-             guess_to_integrate->where_it_went_boom - coef*guess_to_integrate->where_it_went_boom
-            );
-            //exit(123);
-            shoot_fiting_point = guess_to_integrate->where_it_went_boom - coef*guess_to_integrate->where_it_went_boom;
-
-            if(shoot_fiting_point < 0 ){
-                printf(
-                  "\n in attempt to not boom we reached negative values"
-                  " ode_phiScal_I.c line 900 \n");
-                exit(898);
-            }
-
-            dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
-
-            coef += coef_step;
-            continue;
-        }
-
-        dvector_copy_to_index_opps(
-          guess_to_integrate->y,
-          tmp_f1,
-          guess_left_n,
-          guess_left_indexes
-        );
-
-        dvector_copy_to_index_opps(
-          guess_to_integrate->y,
-          &tmp_f1[guess_left_n],
-          guess_right_n,
-          guess_right_indexes
-        );
-
-        dvector_copy_to_index(
-          &v[guess_left_n],
-          guess_to_integrate->y,
-          guess_right_n,
-          guess_right_indexes
-        );
-
-        dvector_copy_to_index(
-          known_right_values,
-          guess_to_integrate->y,
-          guess_left_n,
-          guess_left_indexes
-        );
-
-        guess_to_integrate->x_initial = tmp_x_right;
-        guess_to_integrate->x_final = shoot_fiting_point;
-        guess_to_integrate->phiScal_inf = shoot_fiting_point;
-
-        ode_phiScal_I_integrate(guess_to_integrate);
-
-        ode_phiScal_I_LivePlot_append_solver( guess_to_integrate );
-
-        if(guess_to_integrate->did_it_go_boom){
-            printf(
-             "\n\n it whent booommmmm2 at %e when using fitt %e \n\t"
-             "change it to %e \n\n",
-             guess_to_integrate->where_it_went_boom, shoot_fiting_point,
-             guess_to_integrate->where_it_went_boom + coef*guess_to_integrate->where_it_went_boom
-            );
-            //exit(123);
-
-            shoot_fiting_point = guess_to_integrate->where_it_went_boom + coef*guess_to_integrate->where_it_went_boom;
-
-            dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
-
-            coef += coef_step;
-
-            if(shoot_fiting_point > tmp_x_right){
-                printf(
-                  "\n in attempt to not boom we reached above the end interval"
-                  " ode_phiScal_I.c line 977 \n");
-                exit(977);
-            }
-
-            continue;
-        }
-
-        dvector_copy_to_index_opps(
-          guess_to_integrate->y,
-          tmp_f2,
-          guess_left_n,
-          guess_left_indexes
-        );
-
-        dvector_copy_to_index_opps(
-          guess_to_integrate->y,
-          &tmp_f2[guess_left_n],
-          guess_right_n,
-          guess_right_indexes
-        );
-
-        for(int i=1; i <= n; i++){
-            f[i] = tmp_f1[i] - tmp_f2[i];
-        }
-
-        iterate = 0;
-        guess_to_integrate->phiScal_inf = shoot_fiting_point;
-    }
-
-    dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
-
-    guess_to_integrate->x_initial = tmp_x_left;
-    guess_to_integrate->x_final = tmp_x_right;
-
     free(tmp_f1);
-    free(tmp_f2);
-    free(tmp_y);
 
     return;
 }
 
+// Not up to date !!!!
 static void ode_phiScal_I_shoot_regular_execute(
   ODEsystemStruct *arg, ShootingVarsStruct *shoot_vars
 ){
@@ -1091,10 +977,10 @@ static void ode_phiScal_I_shoot_regular_execute(
       guess_left_indexes
     );
 
-    ode_phiScal_I_integrate(arg);
+    //ode_phiScal_I_integrate(arg);
 
     printf(
-      "\n p_c = %.3e; \t phi_c = %.3e -> phi_g = %.3e \t newt_check %d",
+      "\n REGULAR try p_c = %.3e; \t phi_c = %.3e -> phi_g = %.3e \t newt_check %d",
       arg->initial_y_current,
       shoot_vars->UNknown_left_values[1],
       shoot_vars->newt_v[1],
@@ -1113,10 +999,184 @@ static void ode_phiScal_I_shoot_regular_execute(
     return;
 }
 
+static void ode_phiScal_I_shooting_phiScal_I_fitting(int n, double *v, double *f){
+
+    if(n != guess_left_n + guess_right_n){
+        printf(
+          "\n ode_phiScal_I.c ode_phiScal_I_shooting_phiScal_I_fitting something"
+          "verrryyy fissshyyy %d %d line 853 \n",
+          n, guess_left_n + guess_right_n
+        );
+        exit(856);
+    }
+
+    double \
+        *tmp_y = dvector(1, guess_to_integrate->eqs_count),
+        *tmp_f1 = dvector(1, guess_left_n + guess_right_n ),
+        *tmp_f2 = dvector(1, guess_left_n + guess_right_n),
+        tmp_x_left = guess_to_integrate->x_initial,
+        tmp_x_right = guess_to_integrate->x_final,
+        coef = 0.1, coef_step = 0.05;
+
+    dvector_copy(guess_to_integrate->y, tmp_y ,guess_to_integrate->eqs_count);
+
+    int iterate = 1;
+
+    // we will loop through the process of evaluating the discrepancy at the fitting point
+    // by integrating from the left end in the interval of interest to a fitting point
+    // and from right end of the interval of interest to a fitting point
+    // if for any circumstance we have encountered an "boom" solution
+    // we change the fitting point with little bit from left/right of the
+    // point of "explosion" depending on whether we are left ot fit or right to fit
+    while(iterate){
+
+        dvector_copy_to_index(
+          v,
+          guess_to_integrate->y,
+          guess_left_n,
+          guess_left_indexes
+        );
+
+        dvector_copy_to_index(
+          known_left_values,
+          guess_to_integrate->y,
+          guess_right_n,
+          guess_right_indexes
+        );
+
+        guess_to_integrate->x_initial = tmp_x_left;
+        guess_to_integrate->x_final = shoot_fiting_point;
+        guess_to_integrate->phiScal_inf = shoot_fiting_point;
+
+        ode_phiScal_I_integrate(guess_to_integrate);
+
+        // append only if we are not calculating fadj in the solver
+        if(!GV_fadj_switch){
+            ode_phiScal_I_LivePlot_append_solver( guess_to_integrate );
+        }
+
+        // we just make sure the pressure is not 0 for the integration right to left
+        guess_to_integrate->y[pressure_index] = 0;
+
+        if(guess_to_integrate->did_it_go_boom){
+
+            printf(
+              "\n\t\t\t\t\t it whent booommmmm left to right at %e when using fitt %e \n",
+              guess_to_integrate->where_it_went_boom, shoot_fiting_point
+            );
+
+            ode_phiScal_I_LivePlot_append_solver( guess_to_integrate );
+
+            exit(123);
+        }
+
+        dvector_copy_to_index_opps(
+          guess_to_integrate->y,
+          tmp_f1,
+          guess_left_n,
+          guess_left_indexes
+        );
+
+        dvector_copy_to_index_opps(
+          guess_to_integrate->y,
+          &tmp_f1[guess_left_n],
+          guess_right_n,
+          guess_right_indexes
+        );
+
+        dvector_copy_to_index(
+          &v[guess_left_n],
+          guess_to_integrate->y,
+          guess_right_n,
+          guess_right_indexes
+        );
+
+        dvector_copy_to_index(
+          known_right_values,
+          guess_to_integrate->y,
+          guess_left_n,
+          guess_left_indexes
+        );
+
+        guess_to_integrate->x_initial = tmp_x_right;
+        guess_to_integrate->x_final = shoot_fiting_point;
+        guess_to_integrate->phiScal_inf = shoot_fiting_point;
+
+
+        // we will try to get rid of any mass or lambda in the scalar field
+        // in the right to left integration
+        double \
+          tmp_beta = GV_PARAMETERS_VALUES[1],
+          tmp_m = GV_PARAMETERS_VALUES[2],
+          tmp_lambda = GV_PARAMETERS_VALUES[3];
+
+        //GV_PARAMETERS_VALUES[1] = 0;
+        GV_PARAMETERS_VALUES[2] = 0;
+        GV_PARAMETERS_VALUES[3] = 0;
+
+        ode_phiScal_I_integrate(guess_to_integrate);
+
+        //GV_PARAMETERS_VALUES[1] = tmp_beta;
+        GV_PARAMETERS_VALUES[2] = tmp_m;
+        GV_PARAMETERS_VALUES[3] = tmp_lambda;
+
+        // append only if we are not calculating fadj in the solver
+        if(!GV_fadj_switch){
+            ode_phiScal_I_LivePlot_append_solver( guess_to_integrate );
+        }
+
+        if(guess_to_integrate->did_it_go_boom){
+
+            printf(
+              "\n\t\t\t\t\t it whent booommmmm right to left at %e when using fitt %e \n",
+              guess_to_integrate->where_it_went_boom, shoot_fiting_point
+            );
+
+            ode_phiScal_I_LivePlot_append_solver( guess_to_integrate );
+
+            exit(123);
+        }
+
+        dvector_copy_to_index_opps(
+          guess_to_integrate->y,
+          tmp_f2,
+          guess_left_n,
+          guess_left_indexes
+        );
+
+        dvector_copy_to_index_opps(
+          guess_to_integrate->y,
+          &tmp_f2[guess_left_n],
+          guess_right_n,
+          guess_right_indexes
+        );
+
+        for(int i=1; i <= n; i++){
+            f[i] = tmp_f1[i] - tmp_f2[i];
+        }
+
+        iterate = 0;
+        guess_to_integrate->phiScal_inf = shoot_fiting_point;
+    }
+
+    dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
+
+    guess_to_integrate->x_initial = tmp_x_left;
+    guess_to_integrate->x_final = tmp_x_right;
+
+    free(tmp_f1);
+    free(tmp_f2);
+    free(tmp_y);
+
+    return;
+}
+
 static void ode_phiScal_I_shoot_fitting_execute(
   ODEsystemStruct *arg, ShootingVarsStruct *shoot_vars, int *newt_check
 ){
 
+    // setting the variables we will use in the function
+    // which calculates the discrepancy caused by initial values
     guess_left_n = shoot_vars->UNknown_left_n;
     guess_left_indexes = shoot_vars->UNknown_left_indexes;
     known_right_values = shoot_vars->known_right_values;
@@ -1143,7 +1203,14 @@ static void ode_phiScal_I_shoot_fitting_execute(
 
     ode_phiScal_I_LivePlot_open_solver(arg);
 
-    shoot_fiting_point = (arg->x_final - arg->x_initial)/2;
+    if(shoot_fiting_point > arg->x_final){
+        printf(
+          "\n ODE_phiScal_I something fisshy fitting greater than end "
+          "%e > %e \n",
+          shoot_fiting_point, arg->x_final
+        );
+        exit(123);
+    }
 
     newt(
       shoot_vars->newt_v,
@@ -1151,19 +1218,6 @@ static void ode_phiScal_I_shoot_fitting_execute(
       newt_check,
       &ode_phiScal_I_shooting_phiScal_I_fitting
     );
-
-    dvector_copy_to_index(
-      shoot_vars->newt_v,
-      arg->y,
-      guess_left_n,
-      guess_left_indexes
-    );
-
-    ode_phiScal_I_LivePlot_open_solver(arg);
-
-    ode_phiScal_I_integrate(arg);
-
-    ode_phiScal_I_LivePlot_append_solver( arg );
 
     guess_left_indexes = NULL;
     guess_right_indexes = NULL;
@@ -1173,6 +1227,25 @@ static void ode_phiScal_I_shoot_fitting_execute(
     guess_to_integrate = NULL;
 
     return;
+}
+
+// get the guessed values
+// compare to the previous guessed values to evaluate who has the minimal difference
+// save the new guessed over the previous so we can make the same next time
+static int minmal_difference(int newt_n, double *newt_v, double *tmp_v){
+
+    int diff = -30;
+
+    for(int k = 1;k <= newt_n; k++){
+
+        int tmp_diff = (int)floor( log10( fabs( newt_v[k] - tmp_v[k] + tiny ) ) );
+
+        diff = tmp_diff > diff ? tmp_diff : diff;
+
+        // will do this in the function
+        //tmp_v[k] = newt_v[k];
+    }
+    return diff;
 }
 
 static void ode_phiScal_I_change_central_value(
@@ -1186,9 +1259,11 @@ static void ode_phiScal_I_change_central_value(
         printf("%s %s starting \n", identation, function_path);
     }
 
-    double max_val = 1, min_val = 0, current = min_val, *tmp_y;
-
-    tmp_y = dvector(1, arg->eqs_count);
+    double \
+      max_val = 1,
+      min_val = 0,
+      current = min_val,
+      *tmp_y = dvector(1, arg->eqs_count);
 
     if(DEBUGGING_ode_phiScal_I_change_central_value){
         printf("%s %s dvector_copy \n", identation, function_path);
@@ -1207,50 +1282,52 @@ static void ode_phiScal_I_change_central_value(
     );
 
     int iterate = 1, newt_check;
-    double
-      tmp_xfinal = 50,
-      xfinal_original = ODE_INDEP_FINAL,
+    double \
       phiScal_c = shoot_vars->UNknown_left_values[1],
       dphiScal_c_dr = shoot_vars->UNknown_right_values[1],
-      *tmp_v;
+      tmp_x_final = ODE_INDEP_FINAL,
+      tmp_fitting_point = GV_PARAMETERS_VALUES[2] ? \
+            (FITTING_MASSIVE_COEF/GV_PARAMETERS_VALUES[2]) : (arg->x_final - arg->x_initial)/2,
+      // copy the initial guesses into this dummy variable
+      // it will be used later to check if there is significant change
+      // when increasing the infinities
+      *tmp_v = dvector(1,shoot_vars->UNknown_left_n + shoot_vars->UNknown_right_n);
 
-    // copu the initial guesses into this dummy variable
-    // it will be used later to check if there is significant change
-    // when increasing the infinities
-    // since I prefer shooting thought fitting point I will write for it now
-    tmp_v = dvector(1,shoot_vars->UNknown_left_n + shoot_vars->UNknown_right_n);
-
-    dvector_copy(
-      shoot_vars->UNknown_left_values,
-      tmp_v,
-      shoot_vars->UNknown_left_n
-    );
-
-    dvector_copy(
-      shoot_vars->UNknown_right_values,
-      &tmp_v[shoot_vars->UNknown_left_n],
-      shoot_vars->UNknown_right_n
-    );
-
-    // cycle to go over initial pressurises
+    // loop to go over initial pressurises
     while( iterate ){
 
         printf("\n p_c = %.3e \n", arg->initial_y_current);
-        arg->x_final = tmp_xfinal;
 
-        // cycle to increase the infinity until significant difference
-        // in the initial and guessed values vanishes
-        while( arg->x_final <= xfinal_original ){
+        // we will increase the inf for fine tunning the guessed values
+        // so if it was icnearsed, we need to take the new value
+        // same holds for the fitting point
+        arg->x_final = tmp_x_final;
+        shoot_fiting_point = tmp_fitting_point;
 
-            if(DEBUGGING_ode_phiScal_I_change_central_value){
-                printf("%s %s dvector_copy \n", identation, function_path);
-            }
+        dvector_copy(
+          shoot_vars->UNknown_left_values,
+          tmp_v,
+          shoot_vars->UNknown_left_n
+        );
+
+        dvector_copy(
+          shoot_vars->UNknown_right_values,
+          &tmp_v[shoot_vars->UNknown_left_n],
+          shoot_vars->UNknown_right_n
+        );
+
+        // loop to increase the infinity until significant difference
+        // in the previous and guessed values vanishes
+        while( 1 ){
 
             // initialize the ode system and set the current initial pressure
             dvector_copy(tmp_y,arg->y ,arg->eqs_count);
             arg->y[arg->index_of_y_to_change] = arg->initial_y_current;
 
             if(DEBUGGING_ode_phiScal_I_change_central_value){
+
+                printf("%s %s dvector_copy \n", identation, function_path);
+
                 printf(
                   "%s %s [%d] %s_init = %.3e  \n",
                   identation, function_path, arg->index_of_y_to_change,
@@ -1259,45 +1336,59 @@ static void ode_phiScal_I_change_central_value(
                 );
             }
 
-            // for the fitting we have two options - regular and through fitting point
-            // I prefer fitting point method
-            // TODO make sure regular can also work, look at line 1221
+            printf(
+              "\n\t inf %e; phiScal_guess = %e \n",
+              arg->x_final, shoot_vars->UNknown_left_values[1]
+            );
+
+            dvector_copy(shoot_vars->newt_v, tmp_v, shoot_vars->newt_n);
+
+            // TODO make sure this is working also fine
             //ode_phiScal_I_shoot_regular_execute( arg, shoot_vars );
+
+            // I prefer fitting for the moment
             ode_phiScal_I_shoot_fitting_execute( arg, shoot_vars, &newt_check);
 
             printf(
-              "\n\t inf = %.3e; newt check %d"
-              "\t phi_c = %.3e -> phi_g = %.3e\n",
-              arg->x_final,
+              "\n\t\t --> \t newt check %d; phiScal_v = %e \n",
               newt_check,
-              shoot_vars->UNknown_left_values[1],
               shoot_vars->newt_v[1]
             );
 
-            // go through all guessed values and compare to their previous values
-            // search for the minimum difference among them
-            // update the values of the saved guessed values
-            int min_diff = -30;
-            for(int k = 1;k <= shoot_vars->newt_n; k++){
+            // checking if we have significant difference in the guessed values
+            // if the least difference is less than the desired MIN_DIFF_POW
+            // our work here is done
+            // if not increase the infinity with INCREASE_COEF of the current infinity
+            // and if fitting is used, increase it using the same method
+            if(
+              minmal_difference( shoot_vars->newt_n, shoot_vars->newt_v, tmp_v ) <= MIN_DIFF_POW
+            ){
+                dvector_copy(tmp_v, shoot_vars->newt_v, shoot_vars->newt_n);
 
-                int tmp_diff = (int)floor( log10( fabs( shoot_vars->newt_v[k] - tmp_v[k] ) ) );
-
-                min_diff = tmp_diff > min_diff ? tmp_diff : min_diff;
-
-                tmp_v[k] = shoot_vars->newt_v[k];
-            }
-
-            // we are not interested in scalar fields with arbitrary low
-            if( floor( log10( fabs( shoot_vars->newt_v[1] ) ) ) <= -5 ){
-                shoot_vars->newt_v[1] = 0;
-                shoot_vars->newt_v[4] = 0;
-            }
-
-            // here we are setting the criteria of min difference we are interested
-            if(min_diff <= -4){
+                arg->x_final = tmp_x_final;
+                shoot_fiting_point = tmp_fitting_point;
                 break;
             }else{
-                arg->x_final += arg->x_final*0.10;
+                // we are not interested in arbitrary small scalar fields
+                // small scalar field is such that has initial value of power less MIN_PHISCAL_POW
+                if( floor( log10( fabs( shoot_vars->newt_v[1] ) ) ) <= MIN_PHISCAL_POW ){
+
+                    shoot_vars->newt_v[1] = 0;
+                    // lets set the derivative of the scalar field to 0
+                    shoot_vars->newt_v[4] = 0;
+
+                    // we shall not keep track of the difference in the guessed values
+                    tmp_v[1] = 0;
+                    tmp_v[4] = 0;
+                }
+
+                // if criteria not met we increase a little bit the infinity
+                // save the old infinities and increase them
+                tmp_x_final = arg->x_final;
+                tmp_fitting_point = shoot_fiting_point;
+
+                arg->x_final += arg->x_final*INCREASE_COEF;
+                shoot_fiting_point += shoot_fiting_point*INCREASE_COEF;
 
                 dvector_copy(
                   shoot_vars->newt_v,
@@ -1343,8 +1434,28 @@ static void ode_phiScal_I_change_central_value(
             shoot_vars->UNknown_right_values[1] = dphiScal_c_dr;
         }
 
-        arg->initial_y_current += \
-          arg->initial_y_step*pow10( floor(log10(arg->initial_y_current))-1 ) ;
+        int current_power = (int)floor(log10(arg->initial_y_current));
+        switch(current_power){
+            case -5:
+                arg->initial_y_current += 2*pow10( current_power - 1 );
+                break;
+            case -4:
+                arg->initial_y_current += 1*pow10( current_power - 1 );
+                break;
+            case -3:
+                arg->initial_y_current += 5*pow10( current_power - 2 );
+                break;
+            case -2:
+                arg->initial_y_current += 5*pow10( current_power - 2 );
+                break;
+            default:
+                printf("ode_phiscal_i line 1372 %d not known terminating", current_power);
+                exit(1376);
+                break;
+        }
+
+        //arg->initial_y_current +=
+          //arg->initial_y_step*pow10( floor(log10(arg->initial_y_current))-1 ) ;
 
         if( arg->initial_y_current > arg->initial_y_end ){
             iterate = 0;
@@ -1355,6 +1466,7 @@ static void ode_phiScal_I_change_central_value(
 
     arg->x_final = ODE_INDEP_FINAL;
     free(tmp_y);
+    free(tmp_v);
 
     return;
 }
@@ -1378,6 +1490,7 @@ void ode_phiScal_I_compute_parameters( ODEsystemStruct *arg ){
     }
     dvector_copy(arg->y, tmp_y ,arg->eqs_count);
 
+    // setting the free parameters of the ODE system
     for(
       int parm_beta = 1;
       parm_beta <= arg->free_parameters_count_each[1];
@@ -1446,6 +1559,8 @@ void ode_phiScal_I_compute_parameters( ODEsystemStruct *arg ){
                   shoot_vars,open_file_to_APPEND_ResultFile(arg)
                 );
 
+                // after the parameters were set we can start calculating
+                // the different stars
                 ode_phiScal_I_change_central_value(arg, shoot_vars);
 
                 eos_free(&eos);

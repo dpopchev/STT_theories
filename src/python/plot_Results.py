@@ -278,6 +278,46 @@ def my_plot_set_params( ax, label_x, label_y, label_fontsize, label_ticksize ):
 
     return
 
+def write_data_Kalin(filename, data):
+
+    data_lines = [ " ".join(map(str,k)) for k in zip (*data["data"]) ]
+
+    data_lines.insert(0," ".join(data["labels"]))
+
+    with open(filename,"w") as f:
+        f.write("\n".join(data_lines))
+
+    return
+
+def execute_write_Kalin():
+
+    from itertools import product
+
+    file_name = "{path:}/"
+    file_name += "{model:}_"
+    file_name += "{eos_name:}_"
+    file_name += "beta{beta:.3e}_"
+    file_name += "m{m:.3e}_"
+    file_name += "lambda{lambdav:.3e}"
+
+    data = {}
+    for i in product(*[
+      parameters["values"]["beta"], parameters["values"]["m"], parameters["values"]["lambda"]
+    ]):
+        current_fnmae = file_name.format(
+          path=file_path,
+          model=file_name_results,
+          eos_name="AkmalPR",
+          beta=i[0],
+          m=i[1],
+          lambdav=i[2]
+        )
+
+        print(current_fnmae)
+
+        load_data(current_fnmae, data)
+        write_data_Kalin(current_fnmae+"_kalin", data)
+
 def my_plot_set_data( ax, x, y, linewidth):
 
     ax.plot(x, y, linewidth = linewidth)
