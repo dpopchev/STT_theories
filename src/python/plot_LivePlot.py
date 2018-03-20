@@ -5,11 +5,23 @@ class LivePlot:
     def __init__(self):
 
         self.path = "/home/dimitar/projects/STT_theories/results"
-        self.name = "live_plot_phiScal_"
+        self.name = "live_plot_"
+
+        self.mapping = {
+            0 : "r",
+            1 : "phiScal",
+            2 : "Q",
+            3 : "p",
+            4 : "LambdaMetr",
+            5 : "rho"
+        }
 
         self.headline = []
         self.data = []
+
         self.filename = self.get_latest(self)
+
+        self.load_full_file(self)
 
         return
 
@@ -33,28 +45,26 @@ class LivePlot:
 
         self.headline.clear()
         self.data.clear()
-
-        print("\n To change the filename edit self.filename \n")
-        print("\n Currently the latest is \n\t {}".format(self.filename))
+        self.filename = ""
 
         return
 
     def reload(self):
 
-        self.headline.clear()
-        self.data.clear()
+        self.clear()
         self.filename = self.get_latest(self)
+
+        self.load_full_file(self)
 
         return
 
+    @staticmethod
     def load_full_file(self):
 
         import itertools
 
         with open( self.filename, "r" ) as f:
             all_data = f.read().split("#")
-
-        self.clear()
 
         for chunk in [ m for m in all_data if len(m) ]:
 
@@ -92,22 +102,13 @@ class LivePlot:
 
     def help_mapping(self):
 
-        mapping = {
-            0 : "r",
-            1 : "phiScal",
-            2 : "Q",
-            3 : "p",
-            4 : "LambdaMetr",
-            5 : "rho"
-        }
-
-        for i in mapping.keys():
-            print("{} -> {}".format(i, mapping[i]))
+        for i in self.mapping.keys():
+            print("{} -> {}".format(i, self.mapping[i]))
 
         return
 
     @staticmethod
-    def set_param(self, ax):
+    def set_param(self, ax, col_x, col_y):
 
         from matplotlib.ticker import FormatStrFormatter
 
@@ -117,11 +118,11 @@ class LivePlot:
         ax.clear()
 
         ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-        ax.set_xlabel("x",fontsize=fontsize)
+        ax.set_xlabel(self.mapping[col_x],fontsize=fontsize)
         ax.xaxis.set_tick_params(labelsize=ticksize)
 
         ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-        ax.set_ylabel("y",fontsize=fontsize)
+        ax.set_ylabel(self.mapping[col_y],fontsize=fontsize)
         ax.yaxis.set_tick_params(labelsize=ticksize)
 
         return
@@ -133,14 +134,11 @@ class LivePlot:
         from matplotlib import pyplot as plt
         from IPython import get_ipython
 
-
         get_ipython().run_line_magic('matplotlib', "qt5")
-
-        self.load_full_file()
 
         fig, ax = self.get_figure(self)
 
-        self.set_param(self, ax)
+        self.set_param(self, ax, col_x, col_y)
 
         for chunk, headline, cnt in zip(self.data, self.headline, itertools.count(0)):
 

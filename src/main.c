@@ -136,7 +136,13 @@ int main( void ){
     //single_shoot_regular();
 
     // iterate through several central pressures
-    iterate_pressure_shoot_regular();
+    //iterate_pressure_shoot_regular();
+
+    //single shoot and iterate the infinity
+    single_shoot_regular_iterate_inf();
+
+    // iterate through central pressure and infinity
+    //iterate_pressure_inf_shoot_regular();
 
     //ODEsystemStruct *ode;
 

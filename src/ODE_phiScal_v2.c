@@ -4,8 +4,16 @@
 #define ODE_NAME "phiScal"
 
 // interval of central pressures to go over through
-#define P_START 1e-5 // 1e-5
-#define P_END 5e-3 // 5e-3
+#define P_START 2.2e-4 // 1e-5
+#define P_END 2e-3 // 5e-3
+
+// value of the infinity to use
+#define R_INF 3.2e1
+
+// parameters of the scalar field
+#define BETA -6
+#define M 2e-2
+#define LAMBDA 10
 
 static double \
   // values to save in the ResultFile
@@ -13,7 +21,9 @@ static double \
   // the parameters of the system
   *GV_PARAMETERS_VALUES,
   // we use this variable to set the central pressure in initial_values_init
-  p_current = 3e-4,
+  p_current = P_START,
+  // set where the infinity should be
+  r_inf = R_INF,
   // tiny parameter for our working pleasure
   tiny = 1e-30;
 
@@ -21,12 +31,14 @@ static EOSmodelInfoStruct *eos;
 
 static int minimal_p_power = -16;
 
+// returns the power of the number n
 static double get_power(double x){
 
     return floor(log10(fabs( x + tiny)));
 
 }
 
+// system to integrate - phiScal + mass
 static void phiScal_foo(double x, double *y, double *dydx){
 
     double \
@@ -105,23 +117,26 @@ static void phiScal_foo(double x, double *y, double *dydx){
     return;
 }
 
+// set the parameters of the scalar field here
 static void phiScal_parameters_init(void){
 
     GV_PARAMETERS_VALUES = dvector(1,3);
 
     // beta
-    GV_PARAMETERS_VALUES[1] = -6;
+    GV_PARAMETERS_VALUES[1] = BETA;
 
     // m
-    GV_PARAMETERS_VALUES[2] = 0;
+    GV_PARAMETERS_VALUES[2] = M;
 
     // lambda
-    GV_PARAMETERS_VALUES[3] = 0;
+    GV_PARAMETERS_VALUES[3] = LAMBDA;
 
     return;
 
 }
 
+// initializes the odeint arrays xp, yp, rhop in which it saves
+// the values at approximately dxsave steps
 static void odeint_point_arrs_init(void){
 
     // how many points we want to be saved, if any
@@ -139,6 +154,7 @@ static void odeint_point_arrs_init(void){
     return;
 }
 
+// frees the arrays
 static void odeint_point_arrs_free(void){
 
     // how many points we want to be saved, if any
@@ -153,6 +169,10 @@ static void odeint_point_arrs_free(void){
     return;
 }
 
+// set the initial values of the system
+// used by all functions below
+// when used for shooting we just substitute by hand
+// the central pressure is set by the static global var p_current
 static double *initial_values_init(void){
 
     double *y0 = dvector(1,COUNT_EQS);
@@ -175,6 +195,9 @@ static double *initial_values_init(void){
     return y0;
 }
 
+// initializes the variables needed for odeint
+// sets the start and end of the interval of integration interest
+// the x_end is set by the static global variable r_inf
 static ODE_struct *ODE_struct_init(void){
 
     ODE_struct *_ode = calloc(1, sizeof(ODE_struct));
@@ -186,11 +209,12 @@ static ODE_struct *ODE_struct_init(void){
     _ode->x_start = 1e-30;
 
     // end of the integration interval
-    _ode->x_end = 1e4;
+    _ode->x_end = r_inf;
 
     return _ode;
 }
 
+// free the ODE_struct
 static void ODE_struct_free( ODE_struct **_ode ){
 
     free((*_ode)->y);
@@ -199,6 +223,8 @@ static void ODE_struct_free( ODE_struct **_ode ){
     return;
 }
 
+// integrate just ones with provided initial values
+// and integration interval
 void single_integrate_phiScal(void){
 
     ODE_struct *_ode = ODE_struct_init();
@@ -259,6 +285,7 @@ void single_integrate_phiScal(void){
     return;
 }
 
+// integration function used by the shooting functions below
 static void integrate_phiScal( ODE_struct *_ode ){
 
     int nok = 0, nbad = 0;
@@ -336,6 +363,7 @@ static void shoot_regular_execute(int n, double *v, double *f){
     return;
 }
 
+// shoot one time with provided initial guess
 void single_shoot_regular(void){
 
     // init the GV_PARAMETERS_VALUES for the scalar field
@@ -357,9 +385,9 @@ void single_shoot_regular(void){
     double *newt_v = dvector(1, newt_n);
 
     // initial guess for the scalar field
-    newt_v[1] = -5e-1;
+    newt_v[1] = -5e-2;
 
-    printf("\n v init: \n");
+    printf("\n p_c = %.3e v init: \n", p_current);
     for(int i=1; i <= newt_n; i++){
         printf("\t v[%d] = %e \n", i, newt_v[i]);
     }
@@ -371,7 +399,7 @@ void single_shoot_regular(void){
         &shoot_regular_execute
     );
 
-    printf("\n v final: \n");
+    printf("\n\t v final: \n");
     for(int i=1; i <= newt_n; i++){
         printf("\t v[%d] = %e \n", i, newt_v[i]);
     }
@@ -383,6 +411,59 @@ void single_shoot_regular(void){
     return;
 }
 
+// check if the achieved central phiScala is greater then the previous one
+// or it is of the power -2
+// to know if we are gonna use it for further shooting
+static void check_achieved_phiScal( double *v_phiScal, double *tmp_phiScal){
+
+    if(fabs(*v_phiScal) > fabs(*tmp_phiScal)){
+        printf(
+          "\n\t\t changing the initial guess from %e to %e \n",
+          *tmp_phiScal,
+          *v_phiScal
+        );
+
+        *tmp_phiScal = *v_phiScal;
+
+    }else if( get_power(*v_phiScal + tiny) >= -2 ){
+        printf(
+          "\n\t\t changing the initial guess from %e to %e \n",
+          *tmp_phiScal,
+          *v_phiScal
+        );
+
+        *tmp_phiScal = *v_phiScal;
+    }
+
+    return;
+}
+
+// here we are setting the desired central pressure power-wise
+// depending of the power it is we increment it with different sized step
+static void change_current_pressure(void){
+
+    int current_power = (int)get_power(p_current);
+        switch(current_power){
+            case -5:
+                p_current += 2*pow10( current_power - 1 );
+                break;
+            case -4:
+                p_current += 1*pow10( current_power - 1 );
+                break;
+            case -3:
+                p_current += 5*pow10( current_power - 2 );
+                break;
+            default:
+                printf("\n %e not known, terminating... \n", p_current);
+                exit(1376);
+                break;
+        }
+
+    return;
+}
+
+// iterate over the central pressure values of interest
+// defined by P_START and P_END
 void iterate_pressure_shoot_regular(void){
 
     // init the GV_PARAMETERS_VALUES for the scalar field
@@ -410,7 +491,7 @@ void iterate_pressure_shoot_regular(void){
       phiScal_c;
 
     p_current = pressure_start;
-    newt_v[1] = -5e-2;
+    newt_v[1] = -3.065399e-02;
     phiScal_c = newt_v[1];
 
     while(iterate){
@@ -439,10 +520,10 @@ void iterate_pressure_shoot_regular(void){
 
         integrate_phiScal(_ode);
 
-        printf("\n v final (newt check -> %d): \n", newt_check);
+        printf("\n\t v final (newt check -> %d): \n", newt_check);
 
         printf(
-          "\t v[%d] = %e --> delta = %e \n", 0, newt_v[1], 0 - _ode->y[1]
+          "\t v[%d] = %e --> delta = %e \n", 1, newt_v[1], 0 - _ode->y[1]
         );
 
         ResultFile_append(
@@ -451,50 +532,31 @@ void iterate_pressure_shoot_regular(void){
           0 - _ode->y[1]
         );
 
+        // stop for further investigation if the boundary condition for the
+        // scalar field is not satisfied
+        // should be connected to the solver_newt, but I prefer to set it here
+        // as the power of -10 by hand
+        if(get_power(0 - _ode->y[1]) > -9){
+            printf("\n scalar field boundary condition not met, terminating...");
+            exit(123);
+        }
+
         ODE_struct_free(&_ode);
 
-        if(fabs(newt_v[1]) > fabs(phiScal_c)){
-            printf(
-              "\n\t\t changing the initial guess from %e to %e \n",
-              phiScal_c,
-              newt_v[1]
-            );
+        // if achieved central scalar field is greater then the previous one - change them
+        // else if it is the first to be of the power of -2 - change it
+        check_achieved_phiScal( &newt_v[1], &phiScal_c);
 
-            phiScal_c = newt_v[1];
+        // increment the central pressure power wise
+        change_current_pressure();
 
-        }else if( get_power(newt_v[1] + tiny) >= -2 ){
-            printf(
-              "\n\t\t changing the initial guess from %e to %e \n",
-              phiScal_c,
-              newt_v[1]
-            );
-
-            phiScal_c = newt_v[1];
-        }
-
-        int current_power = (int)get_power(p_current);
-        switch(current_power){
-            case -5:
-                p_current += 2*pow10( current_power - 1 );
-                break;
-            case -4:
-                p_current += 1*pow10( current_power - 1 );
-                break;
-            case -3:
-                p_current += 5*pow10( current_power - 2 );
-                break;
-            default:
-                printf("\n %e not known, terminating... \n", p_current);
-                exit(1376);
-                break;
-        }
-
+        // if the current central pressure is greater the greatest desired one
+        // just end the loop
         if(p_current > pressure_end){
             iterate = 0;
         }else{
             iterate = 1;
         }
-
     }
 
     free(newt_v);
@@ -504,3 +566,215 @@ void iterate_pressure_shoot_regular(void){
     return;
 }
 
+// shoot one time with provided initial guess
+// also increase the infinity
+void single_shoot_regular_iterate_inf(void){
+
+    // init the GV_PARAMETERS_VALUES for the scalar field
+    // beta, m, lambda
+    phiScal_parameters_init();
+
+    // init the equation of state
+    eos = calloc(1,sizeof(EOSmodelInfoStruct));
+    eos_init(&eos);
+
+    // reset the LivePlot file
+    LivePlot_open(ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES);
+
+    int \
+      newt_n = 1, // the size of the guess values vector v
+      newt_check = 0; // variable to check if we have stumbled in a minimum
+
+    // the guess vector itself with initial guesses
+    double \
+      *newt_v = dvector(1, newt_n),
+      phiScal_c = -2.605183e-02;
+
+    // initial guess for the scalar field
+    newt_v[1] = phiScal_c;
+
+    printf("\n p_c = %.3e \n", p_current);
+
+    int count = 100;
+    while(count--){
+        printf("\n v_%d for inf %e init: \n", count, r_inf);
+        for(int i=1; i <= newt_n; i++){
+            printf("\t v[%d] = %e \n", i, newt_v[i]);
+        }
+
+        newt(
+            newt_v,
+            newt_n,
+            &newt_check,
+            &shoot_regular_execute
+        );
+
+        printf("\n\t v_%d final: \n", count);
+        for(int i=1; i <= newt_n; i++){
+            printf("\t v[%d] = %e \n", i, newt_v[i]);
+        }
+
+        if(get_power(phiScal_c - newt_v[1]) >= -6){
+            r_inf += 0.1*r_inf;
+            phiScal_c = newt_v[1];
+        }else{
+            printf("No significant difference");
+            count = 0;
+        }
+    }
+
+    printf("\n\t\t one final integration to check boundary conditions \n");
+
+    ODE_struct *_ode = ODE_struct_init();
+    _ode->y[1] = newt_v[1];
+
+    integrate_phiScal(_ode);
+
+    printf("\n\t v final (newt check -> %d): \n", newt_check);
+
+    printf(
+      "\t v[%d] = %e --> delta = %e \n", 1, newt_v[1], 0 - _ode->y[1]
+    );
+
+
+    free(newt_v);
+    eos_free(&eos);
+    free(GV_PARAMETERS_VALUES);
+
+    return;
+}
+
+// iterate over the central pressure values of interest
+// defined by P_START and P_END
+// also iterate over the r_inf until no significant difference
+// occurse in the phiScal_c
+void iterate_pressure_inf_shoot_regular(void){
+
+    // init the GV_PARAMETERS_VALUES for the scalar field
+    // beta, m, lambda
+    phiScal_parameters_init();
+
+    // init the equation of state
+    eos = calloc(1,sizeof(EOSmodelInfoStruct));
+    eos_init(&eos);
+
+    // prepare the result file for feeding information
+    ResultFile_open(ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES);
+
+    int \
+      iterate = 1, // control if we have went over all central pressures
+      newt_check = 0, // variable to check if we have stumbled at a minimum
+      newt_n = 1; // the size of the guess size vector
+
+    double \
+      // central pressure values
+      pressure_start = P_START, pressure_end = P_END,
+      // the guess vector itself
+      *newt_v = dvector(1,newt_n),
+      // dummy phiScal var
+      phiScal_c;
+
+    p_current = pressure_start;
+    newt_v[1] = -5e-02;
+    phiScal_c = newt_v[1];
+
+    while(iterate){
+
+        newt_v[1] = phiScal_c;
+
+        printf("\n p_c = %.3e \n", p_current );
+
+        // save how many incrementation of the infinity we have done
+        // also control parameter for increase
+        int count = 1;
+
+        // but of course lets reset the rad coordinate infinity
+        r_inf = R_INF;
+
+        while(++count){
+
+            double phiScal_c_tmp = newt_v[1];
+
+            for(int i=1; i <= newt_n; i++){
+                printf(
+                  "\t for %e v_%d [ %d ] = %e \n",
+                  r_inf, count, i, newt_v[i]
+                );
+            }
+
+            // reset the LivePlot file
+            LivePlot_open(ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES);
+
+            newt(
+              newt_v,
+              newt_n,
+              &newt_check,
+              &shoot_regular_execute
+            );
+
+            printf("\n\t v_%d final: \n", count);
+            for(int i=1; i <= newt_n; i++){
+                printf("\t v[%d] = %e \n", i, newt_v[i]);
+            }
+
+            if(get_power(phiScal_c_tmp - newt_v[1]) >= -6){
+                r_inf += 0.1*r_inf;
+                phiScal_c_tmp = newt_v[1];
+            }else{
+                printf("No significant difference");
+                break;
+            }
+        }
+
+        printf("\n\t\t one final integration to check boundary conditions \n");
+
+        ODE_struct *_ode = ODE_struct_init();
+        _ode->y[1] = newt_v[1];
+
+        integrate_phiScal(_ode);
+
+        printf("\n\t v final (newt check -> %d): \n", newt_check);
+
+        printf(
+          "\t v[%d] = %e --> delta = %e \n", 1, newt_v[1], 0 - _ode->y[1]
+        );
+
+        ResultFile_append(
+          ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES,
+          p_current, newt_v[1], _ode->y[5], AR, rho_c,
+          0 - _ode->y[1]
+        );
+
+        // stop for further investigation if the boundary condition for the
+        // scalar field is not satisfied
+        // should be connected to the solver_newt, but I prefer to set it here
+        // as the power of -10 by hand
+        if(get_power(0 - _ode->y[1]) > -9){
+            printf("\n scalar field boundary condition not met, terminating...");
+            exit(123);
+        }
+
+        ODE_struct_free(&_ode);
+
+        // if achieved central scalar field is greater then the previous one - change them
+        // else if it is the first to be of the power of -2 - change it
+        check_achieved_phiScal( &newt_v[1], &phiScal_c);
+
+        // increment the central pressure power wise
+        change_current_pressure();
+
+        // if the current central pressure is greater the greatest desired one
+        // just end the loop
+        if(p_current > pressure_end){
+            iterate = 0;
+        }else{
+            iterate = 1;
+        }
+    }
+
+    free(newt_v);
+    eos_free(&eos);
+    free(GV_PARAMETERS_VALUES);
+
+    return;
+}

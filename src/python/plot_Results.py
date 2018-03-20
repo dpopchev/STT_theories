@@ -1,363 +1,155 @@
 #!/usr/bin/env python
 
-file_path = "/home/dimitar/projects/STT_theories/results"
-file_name_results = "STT_phiScal_I"
+class PlotResults:
 
-system_names = [ "r", "phiScal", "Q", "p", "LambdaMetr", "m" ]
+    def __init__(self):
 
-parameters = {
-    "names" : [ "beta", "m", "lambda" ],
-    "values" : {
-        "beta" : [ 0, -6, -10 ],
-        "m" : [ 0, 1e-3, 5e-2 ],
-        "lambda" : [ 0, 1e-1, 1, 10, 100 ]
-    }
-}
+        self.path = "/home/dimitar/projects/STT_theories/results"
+        self.name = "STT_"
 
-eos_names = [ "EOSII", "AkmalPR" ]
-
-def my_ploting(ax, label_x, x, label_y, y):
-
-    label_fontsize = 12
-    ticks_label_size = 10
-
-    ax.clear()
-
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_xlabel(label_x, fontsize=label_fontsize)
-    ax.xaxis.set_tick_params(labelsize=ticks_label_size)
-
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_ylabel(label_y, fontsize=label_fontsize)
-    ax.yaxis.set_tick_params(labelsize=ticks_label_size)
-
-    try:
-        ax.plot(
-          x, y,
-          linewidth=1.5
-        )
-    except ValueError:
-        pass
-
-def animate():
-
-    import glob
-    import os
-
-    all_files = glob.glob(file_path + file_name_results + "*")
-    while not len(all_files):
-        all_files = glob.glob(file_path + file_name_results + "*")
-
-    file_to_use = max(all_files, key=os.path.getctime)
-
-    with open(file_to_use,'r') as f:
-        graph_data = f.read()
-
-    graph_data = [ k.split("\n") for k in graph_data.split("# ") if len(k) > 1 ][1]
-
-    plot_labels = graph_data.pop(0).split(" ")
-
-    plots_all = [ [] for k in range(len(plot_labels)) ]
-
-    try:
-        for single_line in graph_data:
-            if len(single_line) > 1:
-                tmp = [ j for j in single_line.split(" ") if len(j) > 1 ]
-                for m,n in zip(plots_all, tmp):
-                    m.append(float(n))
-    except ValueError:
-        graph_data = []
-        plot_labels = []
-        plots_all = []
-        pass
-
-    my_ploting(
-      ax_phiScal,
-      plot_labels[0], plots_all[0],
-      plot_labels[1], plots_all[1],
-    )
-
-    my_ploting(
-      ax_mR,
-      plot_labels[3], plots_all[3],
-      plot_labels[2], plots_all[2],
-    )
-
-    #ax_phiScal.set_title(file_to_use.split("_")[3:])
-    plt.suptitle(file_to_use.split("_")[3:], fontsize=16, y=1.001)
-
-    graph_data = []
-    plot_labels = []
-    plots_all = []
-
-def get_parm_order():
-
-    all_choices = {
-        1 : {
-            "change" : parameters["names"][0],
-            "fixed" : [ parameters["names"][1], parameters["names"][2] ],
-            "file" : "{f_name:}_{eos_name:}_beta{change:.3e}_m{fix1:.3e}_lambda{fix2:.3e}"
-        },
-
-        2 : {
-            "change" : parameters["names"][1],
-            "fixed" : [ parameters["names"][0], parameters["names"][2] ],
-            "file" : "{f_name:}_{eos_name:}_beta{fix1:.3e}_m{change:.3e}_lambda{fix2:.3e}"
-        },
-
-        3 : {
-            "change" : parameters["names"][2],
-            "fixed" : [ parameters["names"][0], parameters["names"][1] ],
-            "file" : "{f_name:}_{eos_name:}_beta{fix1:.3e}_m{fix2.3e}_lambda{change:.3e}"
+        self.mapping = {
+            0 : "p_c",
+            1 : "phiScal_c",
+            2 : "M",
+            3 : "AR",
+            4 : "rho_c",
+            5 : "delta_phiScal"
         }
-    }
 
-    print("\n Choose graph type: \n")
-    for i in all_choices.keys():
-        print(
-          "{}. change {}; \t fixed {} and {}".format(
-            i, all_choices[i]["change"],
-            all_choices[i]["fixed"][0], all_choices[i]["fixed"][1]
+        self.data = []
+
+        self.filename = self.get_latest(self)
+
+        self.load_full_file(self)
+
+        return
+
+    @staticmethod
+    def get_latest(self):
+
+        import glob
+        import os
+
+        filename = \
+          max(
+            glob.glob(self.path + "/" + self.name + "*"),
+            key = os.path.getctime
           )
-        )
 
-    while True:
-        try:
-            choice = int(input("\n Type index of parameter order:... "))
+        print("\n latest file: \n\t {} \n".format(filename))
 
-        except ValueError:
-            print("{} not valid, try again... \n".format(choice))
-            continue
+        return filename
 
-        else:
-            if choice > 3 or choice < 1:
-                print("{} not valid, try again... \n".format(choice))
-                continue
-            else:
-                return all_choices[choice]
+    def clear(self):
 
-def set_fix_parm(fix_parm_name):
+        self.data.clear()
+        self.filename = ""
 
-    print("\n Set parameter {}: \n".format(fix_parm_name))
-    for i, value in enumerate(parameters["values"][fix_parm_name]):
-        print(
-          "\t {}. {:.3e}".format(i, value)
-        )
+        return
 
-    while True:
-        try:
-            choice = int(input("\n Type index of value:... "))
+    def reload(self):
 
-        except ValueError:
-            print("{} not valid, try again... \n".format(choice))
-            continue
+        self.clear()
+        self.filename = self.get_latest(self)
 
-        else:
-            if choice > len(parameters["values"][fix_parm_name]) or choice < 0:
-                print("{} not valid, try again... \n".format(choice))
-                continue
-            else:
-                return {
-                  "name" : fix_parm_name,
-                  "value" : parameters["values"][fix_parm_name][choice]
-                }
+        self.load_full_file(self)
 
-def set_change_parm(change_parm_name):
+        return
 
-    print("\n Choose parameter range {}: \n".format(change_parm_name))
-    for i, value in enumerate(parameters["values"][change_parm_name]):
-        print(
-          "\t {}. {:.3e}".format(i, value)
-        )
+    @staticmethod
+    def load_full_file(self):
 
-    while True:
-        try:
-            choice1 = int(input("\n Start value index:... "))
+        import itertools
 
-        except ValueError:
-            print("{} not valid, try again... \n".format(choice1))
-            continue
+        with open( self.filename, "r" ) as f:
+            all_data = f.read().split("#")
 
-        else:
-            if choice1 > len(parameters["values"][change_parm_name]) or choice1 < 0:
-                print("{} not valid, try again... \n".format(choice1))
-                continue
-            else:
-                break
+        headline = []
+        for chunk in [ m for m in all_data if len(m) ]:
 
-    while True:
-        try:
-            choice2 = int(input("\n End value index:... "))
+            headline.append(chunk.split("\n")[0])
 
-        except ValueError:
-            print("{} not valid, try again... \n".format(choice2))
-            continue
+        self.data = [ [] for i in range(len(headline)) ]
 
-        else:
-            if choice2 > len(parameters["values"][change_parm_name]) or choice2 < 0:
-                print("{} not valid, try again... \n".format(choice1))
-            else:
-                break
+        for my_chunk, block_data, cnt in zip( self.data, [ m for m in all_data if len(m) ], itertools.count(0) ):
 
-    return {
-      "name" : change_parm_name,
-       "value" : parameters["values"][change_parm_name][choice1 : choice2+1]
-    }
+            block_data = block_data.split("\n")[1:]
 
-def set_eos_name():
+            self.data[cnt] = [ [] for k in block_data[0].split(" ") if len(k) ]
 
-    print("\n Choose EOS name: \n")
-    for i, value in enumerate(eos_names):
-        print(
-          "\t {}. {}".format(i, value)
-        )
+            for line in block_data:
+                for i,j in zip(self.data[cnt], [ float(k) for k in line.split(" ") if len(k) ]):
 
-    while True:
-        try:
-            choice = int(input("\n EOS name:... "))
+                    i.append(j)
 
-        except ValueError:
-            print("{} not valid, try again... \n".format(choice))
-            continue
+        return
 
-        else:
-            if choice > len(eos_names) or choice < 0:
-                print("{} not valid, try again... \n".format(choice))
-                continue
-            else:
-                return \
-                  { "name" : eos_names[choice] }
+    @staticmethod
+    def get_figure(self):
 
-def load_data(filename, data = {}):
+        from matplotlib import pyplot as plt
+        from matplotlib import style
+        from matplotlib.gridspec import GridSpec
 
-    data.clear()
+        style.use("seaborn-poster")
+        gs = GridSpec(nrows=1,ncols=1)
 
-    with open(filename, "r") as f:
-        tmp_data = f.read()
+        fig = plt.figure()
+        fig.set_tight_layout(True)
 
-    tmp_data = tmp_data.split("#")[1].split("\n")
+        return fig, fig.add_subplot(gs[:])
 
-    data["labels"] = [ k for k in tmp_data.pop(0).split(" ") if len(k) ]
+    def help_mapping(self):
 
-    data["data"] = [ [] for k in range(len(data["labels"])) ]
+        for i in self.mapping.keys():
+            print("{} -> {}".format(i, self.mapping[i]))
 
-    for i in tmp_data:
-        for m, n in zip( i.split(" "), data["data"] ):
-            if len(m):
-                n.append(float(m))
+        return
 
-    return
+    @staticmethod
+    def set_param(self, ax, col_x, col_y):
 
-def get_figure_phiScal_mR():
+        from matplotlib.ticker import FormatStrFormatter
 
-    from matplotlib import style
-    from matplotlib.gridspec import GridSpec
+        fontsize = 12
+        ticksize = 10
 
-    style.use("seaborn-poster")
-    gs = GridSpec(nrows=1,ncols=2)
+        ax.clear()
 
-    fig = plt.figure()
-    fig.set_tight_layout(True)
+        ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
+        ax.set_xlabel(self.mapping[col_x],fontsize=fontsize)
+        ax.xaxis.set_tick_params(labelsize=ticksize)
 
-    ax_phiScal = fig.add_subplot(gs[0,0])
-    ax_mR = fig.add_subplot(gs[0,1])
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
+        ax.set_ylabel(self.mapping[col_y],fontsize=fontsize)
+        ax.yaxis.set_tick_params(labelsize=ticksize)
 
-    return ax_phiScal, ax_mR
+        return
 
-def my_plot_set_params( ax, label_x, label_y, label_fontsize, label_ticksize ):
+    def plot_it(self, col_x, col_y):
 
-    from matplotlib.ticker import FormatStrFormatter
+        import itertools
 
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_xlabel(label_x, fontsize=label_fontsize)
-    ax.xaxis.set_tick_params(labelsize=label_ticksize)
+        from matplotlib import pyplot as plt
+        from IPython import get_ipython
 
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-    ax.set_ylabel(label_y, fontsize=label_fontsize)
-    ax.yaxis.set_tick_params(labelsize=label_ticksize)
+        get_ipython().run_line_magic('matplotlib', "qt5")
 
-    return
+        fig, ax = self.get_figure(self)
 
-def write_data_Kalin(filename, data):
+        self.set_param(self, ax, col_x, col_y)
 
-    data_lines = [ " ".join(map(str,k)) for k in zip (*data["data"]) ]
+        for cnt, chunk in enumerate(self.data):
 
-    data_lines.insert(0," ".join(data["labels"]))
+            ax.plot(
+              chunk[col_x], chunk[col_y],
+              linewidth = 1.5
+            )
 
-    with open(filename,"w") as f:
-        f.write("\n".join(data_lines))
+        plt.show()
 
-    return
-
-def execute_write_Kalin():
-
-    from itertools import product
-
-    file_name = "{path:}/"
-    file_name += "{model:}_"
-    file_name += "{eos_name:}_"
-    file_name += "beta{beta:.3e}_"
-    file_name += "m{m:.3e}_"
-    file_name += "lambda{lambdav:.3e}"
-
-    data = {}
-    for i in product(*[
-      parameters["values"]["beta"], parameters["values"]["m"], parameters["values"]["lambda"]
-    ]):
-        current_fnmae = file_name.format(
-          path=file_path,
-          model=file_name_results,
-          eos_name="AkmalPR",
-          beta=i[0],
-          m=i[1],
-          lambdav=i[2]
-        )
-
-        print(current_fnmae)
-
-        load_data(current_fnmae, data)
-        write_data_Kalin(current_fnmae+"_kalin", data)
-
-def my_plot_set_data( ax, x, y, linewidth):
-
-    ax.plot(x, y, linewidth = linewidth)
+        return
 
 if __name__ == "__main__":
 
-    from matplotlib import pyplot as plt
-
-    parm_order = get_parm_order()
-
-    fix_parm_1 = set_fix_parm(parm_order["fixed"][0])
-
-    fix_parm_2 = set_fix_parm(parm_order["fixed"][1])
-
-    change_parm = set_change_parm(parm_order["change"])
-
-    eos_name_val = set_eos_name()["name"]
-
-    f_name_val = file_name_results
-    fix1_val = fix_parm_1["value"]
-    fix2_val = fix_parm_2["value"]
-
-    ax_phiScal, ax_mR = get_figure_phiScal_mR()
-
-    data = {}
-    for change_val in change_parm["value"]:
-
-        current_file = parm_order["file"].format(
-          f_name = f_name_val, eos_name = eos_name_val,
-          fix1 = fix1_val, fix2 = fix2_val, change = change_val
-        )
-
-        print( current_file )
-        load_data(file_path + "/" +current_file, data)
-
-        my_plot_set_params(ax_phiScal, data["labels"][0], data["labels"][1], 12, 10)
-        my_plot_set_params(ax_mR, data["labels"][5], data["labels"][4], 12, 10)
-
-        my_plot_set_data( ax_phiScal, data["data"][0], data["data"][1], 1.5)
-        my_plot_set_data( ax_mR, data["data"][5], data["data"][4], 1.5)
-
-
-    plt.show()
+    print("\n Hello world \n")

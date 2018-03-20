@@ -84,4 +84,6 @@
     );
     extern void single_shoot_regular(void);
     extern void iterate_pressure_shoot_regular(void);
+    extern void single_shoot_regular_iterate_inf(void);
+    extern void iterate_pressure_inf_shoot_regular(void);
 #endif
