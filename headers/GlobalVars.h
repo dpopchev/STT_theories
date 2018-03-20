@@ -29,8 +29,8 @@
 
     // odeint vars and touches
     // they are included inside ODEsystemStruct
-    extern int kmax, kount, *did_it_go_boom;
-    extern double *xp, **yp, dxsav, *rhop, rho_tmp, *where_it_went_boom;
+    extern int kmax, kount, did_it_go_boom;
+    extern double *xp, **yp, dxsav, *rhop, rho_tmp, where_it_went_boom;
     extern void odeint(
         double ystart[], int nvar, double x1, double x2, int *nok, int *nbad,
         void (*derivs)(double, double [], double [])
@@ -72,4 +72,16 @@
     extern void EOSeq( EOSmodelInfoStruct *eos, double pressure );
 
     extern double pow10(double);
+
+    extern void single_integrate_phiScal(void);
+    extern void LivePlot_open(const char *ode_name, char *eos_name, double *pars);
+    extern void LivePlot_append(const char *ode_name, char *eos_name, double *pars, double R,  int n);
+    extern void ResultFile_open(const char *ode_name, char *eos_name, double *pars);
+    extern void ResultFile_append(
+      const char *ode_name, char *eos_name, double *pars,
+      double p_c, double phiScal_c, double M, double AR, double rho_c,
+      double delta_phiScal
+    );
+    extern void single_shoot_regular(void);
+    extern void iterate_pressure_shoot_regular(void);
 #endif

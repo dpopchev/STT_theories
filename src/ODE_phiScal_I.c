@@ -52,7 +52,7 @@
 
 // the interval for the independent variable
 #define ODE_INDEP_INIT 1e-30
-#define ODE_INDEP_FINAL 1e4
+#define ODE_INDEP_FINAL 1e2
 
 // if we are to change vary any of the initial values of the ODE
 // index, start and end value, also the step to achieve it
@@ -66,16 +66,22 @@
 // if the guessed value for scalar field is less than -8 the re is no point in trying
 #define MIN_PHISCAL_POW -3
 // the coefficient to increase the infinity
-#define INCREASE_COEF 0.1
+#define INCREASE_COEF 0.3
 
 // how many 1/m we will try the fitting
-#define FITTING_MASSIVE_COEF 5
+#define FITTING_MASSIVE_COEF 1
 
 static double *GV_PARAMETERS_VALUES, AR, R, tiny = 1e-30, rho_c;
 static EOSmodelInfoStruct *eos;
 static int too_small_to_count_pressure_pow = -16, pressure_index = 3;
 
 static void ode_phiScal_I_foo(double x, double *y, double *dydx){
+
+    //for(int i=1; i <= 9; i++){
+        //if(!isfinite(dydx[i])){
+            //printf("\n at %e y[ %d ] not finite ---> %e \n", x,i, y[i]);
+        //}
+    //}
 
     double \
         beta_phiScal = GV_PARAMETERS_VALUES[1],
@@ -170,6 +176,12 @@ static void ode_phiScal_I_foo(double x, double *y, double *dydx){
     dydx[7] = Z_dr;
     dydx[8] = Omega_dr;
     dydx[9] = J_dr;
+
+    //for(int i=1; i <= 9; i++){
+        //if(!isfinite(dydx[i])){
+            //printf("\n at %e dydx[ %d ] not finite ---> %e \n", x,i, dydx[i]);
+        //}
+    //}
 
     return;
 }
@@ -838,8 +850,8 @@ static void ode_phiScal_I_integrate( ODEsystemStruct *arg ){
     arg->did_it_go_boom = 0;
     arg->where_it_went_boom = 0;
 
-    did_it_go_boom = &arg->did_it_go_boom;
-    where_it_went_boom = &arg->where_it_went_boom;
+    //did_it_go_boom = &arg->did_it_go_boom;
+    //where_it_went_boom = &arg->where_it_went_boom;
 
     odeint(
       arg->y, arg->eqs_count,
@@ -911,7 +923,6 @@ static void ode_phiScal_I_shooting_phiScal_I_regular(int n, double *v, double *f
       guess_right_indexes
     );
 
-    //guess_to_integrate->phiScal_inf = guess_to_integrate->x_final;
     ode_phiScal_I_integrate(guess_to_integrate);
 
     dvector_copy_to_index_opps(
@@ -924,8 +935,6 @@ static void ode_phiScal_I_shooting_phiScal_I_regular(int n, double *v, double *f
     for(int i=1; i <= n; i++){
         f[i] = known_right_values[i] - tmp_f1[i];
     }
-
-    //ode_phiScal_I_LivePlot_append_solver( guess_to_integrate );
 
     dvector_copy(tmp_y, guess_to_integrate->y ,guess_to_integrate->eqs_count);
     free(tmp_y);
@@ -960,7 +969,7 @@ static void ode_phiScal_I_shoot_regular_execute(
       shoot_vars->newt_n
     );
 
-    ode_phiScal_I_LivePlot_open_solver(arg);
+    //ode_phiScal_I_LivePlot_open_solver(arg);
 
     int newt_checker;
     newt(
@@ -977,7 +986,7 @@ static void ode_phiScal_I_shoot_regular_execute(
       guess_left_indexes
     );
 
-    //ode_phiScal_I_integrate(arg);
+    ode_phiScal_I_integrate(arg);
 
     printf(
       "\n REGULAR try p_c = %.3e; \t phi_c = %.3e -> phi_g = %.3e \t newt_check %d",
@@ -987,7 +996,7 @@ static void ode_phiScal_I_shoot_regular_execute(
       newt_checker
     );
 
-    ode_phiScal_I_ResultFile_append_shootregular(arg,shoot_vars);
+    //ode_phiScal_I_ResultFile_append_shootregular(arg,shoot_vars);
 
     guess_left_indexes = NULL;
     guess_right_indexes = NULL;
@@ -1105,20 +1114,20 @@ static void ode_phiScal_I_shooting_phiScal_I_fitting(int n, double *v, double *f
 
         // we will try to get rid of any mass or lambda in the scalar field
         // in the right to left integration
-        double \
-          tmp_beta = GV_PARAMETERS_VALUES[1],
-          tmp_m = GV_PARAMETERS_VALUES[2],
-          tmp_lambda = GV_PARAMETERS_VALUES[3];
+        //double \
+          //tmp_beta = GV_PARAMETERS_VALUES[1],
+          //tmp_m = GV_PARAMETERS_VALUES[2],
+          //tmp_lambda = GV_PARAMETERS_VALUES[3];
 
         //GV_PARAMETERS_VALUES[1] = 0;
-        GV_PARAMETERS_VALUES[2] = 0;
-        GV_PARAMETERS_VALUES[3] = 0;
+        //GV_PARAMETERS_VALUES[2] = 0;
+        //GV_PARAMETERS_VALUES[3] = 0;
 
         ode_phiScal_I_integrate(guess_to_integrate);
 
         //GV_PARAMETERS_VALUES[1] = tmp_beta;
-        GV_PARAMETERS_VALUES[2] = tmp_m;
-        GV_PARAMETERS_VALUES[3] = tmp_lambda;
+        //GV_PARAMETERS_VALUES[2] = tmp_m;
+        //GV_PARAMETERS_VALUES[3] = tmp_lambda;
 
         // append only if we are not calculating fadj in the solver
         if(!GV_fadj_switch){
@@ -1219,6 +1228,83 @@ static void ode_phiScal_I_shoot_fitting_execute(
       &ode_phiScal_I_shooting_phiScal_I_fitting
     );
 
+    //// I tried to make regular shoot to fine tune the guessing values
+    // but it turns out that the method on its own is good enough
+    // the thing which is problematic is when nan or inf is present
+    // and will eventually break the methods used
+
+    dvector_copy_to_index(
+      shoot_vars->newt_v,
+      arg->y,
+      guess_left_n,
+      guess_left_indexes
+    );
+
+    dvector_copy_to_index(
+      known_left_values,
+      arg->y,
+      guess_right_n,
+      guess_right_indexes
+    );
+
+    //printf("\n\n\n v");
+    //for(int i=1; i <= shoot_vars->newt_n; i++){
+        //printf(" %e ", shoot_vars->newt_v[i]);
+    //}
+
+    //printf("\n y");
+    //for(int i=1; i <= arg->eqs_count; i++){
+        //printf(" %e ", arg->y[i]);
+    //}
+
+    newt(
+      shoot_vars->newt_v,
+      guess_left_n,
+      newt_check,
+      &ode_phiScal_I_shooting_phiScal_I_regular
+    );
+
+    //printf("\n y");
+
+    //for(int i=1; i <= arg->eqs_count; i++){
+        //printf(" %e ", arg->y[i]);
+    //}
+
+    dvector_copy_to_index(
+      shoot_vars->newt_v,
+      arg->y,
+      guess_left_n,
+      guess_left_indexes
+    );
+
+    dvector_copy_to_index(
+      known_left_values,
+      arg->y,
+      guess_right_n,
+      guess_right_indexes
+    );
+
+    //printf("\n v");
+    //for(int i=1; i <= shoot_vars->newt_n; i++){
+        //printf(" %e ", shoot_vars->newt_v[i]);
+    //}
+
+    ode_phiScal_I_integrate(guess_to_integrate);
+
+    dvector_copy_to_index_opps(
+      arg->y,
+      &shoot_vars->newt_v[guess_left_n],
+      guess_right_n,
+      guess_right_indexes
+    );
+
+    //printf("\n v");
+    //for(int i=1; i <= shoot_vars->newt_n; i++){
+        //printf(" %e ", shoot_vars->newt_v[i]);
+    //}
+
+    //sleep(1);
+
     guess_left_indexes = NULL;
     guess_right_indexes = NULL;
     shoot_free_indexes = NULL;
@@ -1247,6 +1333,19 @@ static int minmal_difference(int newt_n, double *newt_v, double *tmp_v){
     }
     return diff;
 }
+
+static int boundary_check(double *y, ShootingVarsStruct *shoot_vars){
+
+    for(int i = 1; i <= shoot_vars->UNknown_left_n; i++){
+        if( fabs(y[shoot_vars->UNknown_left_indexes[i]] - shoot_vars->known_right_values[i]) > 1e-8 ){
+            printf("\n %d %e %d %e \n",shoot_vars->UNknown_left_indexes[i], y[shoot_vars->UNknown_left_indexes[i]], i, shoot_vars->known_right_values[i]);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 
 static void ode_phiScal_I_change_central_value(
     ODEsystemStruct *arg, ShootingVarsStruct *shoot_vars
@@ -1355,12 +1454,23 @@ static void ode_phiScal_I_change_central_value(
               shoot_vars->newt_v[1]
             );
 
+            // at the end of ode_phiScal_I_shoot_fitting_execute
+            // we integrate to check if using the guessed values on left side
+            // will produce the wanted values on the right
+            // if not most probably there was some nan or inf, so we need to reduce
+            // the fitting and infinity
+            if( !boundary_check(arg->y, shoot_vars) ){
+                printf("\n Boundary problem !!! \n");
+
+                shoot_fiting_point = tmp_fitting_point;
+                //exit(123);
+
             // checking if we have significant difference in the guessed values
             // if the least difference is less than the desired MIN_DIFF_POW
             // our work here is done
             // if not increase the infinity with INCREASE_COEF of the current infinity
             // and if fitting is used, increase it using the same method
-            if(
+            }else if(
               minmal_difference( shoot_vars->newt_n, shoot_vars->newt_v, tmp_v ) <= MIN_DIFF_POW
             ){
                 dvector_copy(tmp_v, shoot_vars->newt_v, shoot_vars->newt_n);

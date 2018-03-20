@@ -3,7 +3,7 @@
 #define DEBUGGING 0
 
 // 0 - ode logistics, for test purposes
-#define ODE_SYSTEM_INDEX 2
+#define ODE_SYSTEM_INDEX 1
 
 // the constants of nature
 double \
@@ -129,97 +129,106 @@ int main( void ){
     calculate_gv_units();
     get_machine_eps();
 
-    ODEsystemStruct *ode;
+    // single integration of the phiScal
+    //single_integrate_phiScal();
 
-    switch(ODE_index){
+    // single shooting of for the phiScal
+    //single_shoot_regular();
 
-        case 1:
-            if(DEBUGGING){
-                printf(
-                    "%s %s ODE_index = %d to init, %s \n", \
-                    identation,\
-                    function_path,\
-                    ODE_index,\
-                    ODE_equtions_list[ODE_index] \
-                );
-            }
+    // iterate through several central pressures
+    iterate_pressure_shoot_regular();
 
-            ode_phiScal_init( &ode );
+    //ODEsystemStruct *ode;
 
-            ode_phiScal_compute_parameters(ode);
+    //switch(ODE_index){
 
-            break;
+        //case 1:
+            //if(DEBUGGING){
+                //printf(
+                    //"%s %s ODE_index = %d to init, %s \n",
+                    //identation,
+                    //function_path,
+                    //ODE_index,
+                    //ODE_equtions_list[ODE_index]
+                //);
+            //}
 
-        case 2:
-            if(DEBUGGING){
-                printf(
-                    "%s %s ODE_index = %d to init, %s \n", \
-                    identation,\
-                    function_path,\
-                    ODE_index,\
-                    ODE_equtions_list[ODE_index] \
-                );
-            }
+            //ode_phiScal_init( &ode );
 
-            ode_phiScal_I_init( &ode );
+            //ode_phiScal_compute_parameters(ode);
 
-            ode_phiScal_I_compute_parameters(ode);
+            //break;
 
-            break;
+        //case 2:
+            //if(DEBUGGING){
+                //printf(
+                    //"%s %s ODE_index = %d to init, %s \n",
+                    //identation,
+                    //function_path,
+                    //ODE_index,
+                    //ODE_equtions_list[ODE_index]
+                //);
+            //}
 
-        default:
-            printf(
-                "%s %s ODE_index = %d UNKNOWN, exiting.., line 153 \n", \
-                identation,\
-                function_path,\
-                ODE_index \
-            );
-            exit(153);
-    }
+            //ode_phiScal_I_init( &ode );
 
-    if(DEBUGGING){
-        printf("%s %s ending \n", identation, function_path);
-    }
+            //ode_phiScal_I_compute_parameters(ode);
 
-    switch(ODE_index){
+            //break;
 
-        case 1 :
-            if(DEBUGGING){
-                printf(
-                    "%s %s ODE_index = %d to free, %s \n", \
-                    identation,\
-                    function_path,\
-                    ODE_index,\
-                    ODE_equtions_list[ODE_index] \
-                );
-            }
+        //default:
+            //printf(
+                //"%s %s ODE_index = %d UNKNOWN, exiting.., line 153 \n",
+                //identation,
+                //function_path,
+                //ODE_index
+            //);
+            //exit(153);
+    //}
 
-            ode_phiScal_free( &ode );
-            break;
+    //if(DEBUGGING){
+        //printf("%s %s ending \n", identation, function_path);
+    //}
 
-        case 2 :
-            if(DEBUGGING){
-                printf(
-                    "%s %s ODE_index = %d to free, %s \n", \
-                    identation,\
-                    function_path,\
-                    ODE_index,\
-                    ODE_equtions_list[ODE_index] \
-                );
-            }
+    //switch(ODE_index){
 
-            ode_phiScal_I_free( &ode );
-            break;
+        //case 1 :
+            //if(DEBUGGING){
+                //printf(
+                    //"%s %s ODE_index = %d to free, %s \n",
+                    //identation,
+                    //function_path,
+                    //ODE_index,
+                    //ODE_equtions_list[ODE_index]
+                //);
+            //}
 
-        default :
-            printf(
-                "%s %s ODE_index = %d UNKNOWN, exiting.. , line 183\n", \
-                identation,\
-                function_path,\
-                ODE_index \
-            );
-            exit(183);
-    }
+            //ode_phiScal_free( &ode );
+            //break;
+
+        //case 2 :
+            //if(DEBUGGING){
+                //printf(
+                    //"%s %s ODE_index = %d to free, %s \n",
+                    //identation,
+                    //function_path,
+                    //ODE_index,
+                    //ODE_equtions_list[ODE_index]
+                //);
+            //}
+
+            //ode_phiScal_I_free( &ode );
+            //break;
+
+        //default :
+            //printf(
+                //"%s %s ODE_index = %d UNKNOWN, exiting.. , line 183\n",
+                //identation,
+                //function_path,
+                //ODE_index
+            //);
+            //exit(183);
+    //}
 
     return 0;
 }

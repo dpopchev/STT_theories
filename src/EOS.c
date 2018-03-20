@@ -206,6 +206,7 @@ void eos_print_info_ResultFile( EOSmodelInfoStruct *eos, FILE *fp ){
 
 void eos_free(EOSmodelInfoStruct **eos){
 
+    free((*eos)->model_name);
     free((*eos)->PieceWise_K);
     free((*eos)->PieceWise_Gamma);
     free((*eos)->PieceWise_a);

@@ -38,7 +38,7 @@ static const char *ODEINT_SCALING_METHOD_DESCRIPTION[] = \
         \
         "[3], \
          stiff integrator recommends scaling to constant value, try 2, \
-         yscal[i]=FMAX(fabs(y[i]), EPS*1e-1);", \
+         yscal[i]=FMAX(fabs(y[i]), EPS*1e-2);", \
         \
         "[4], \
          stiff integrator recommends scaling to constant value, try 3, \
@@ -122,8 +122,8 @@ void odeint_info_print_ResultFile(FILE *fp){
 
 // odeint global variables
 // TODO place dxsav value in ODEsystemStruct
-int kmax,kount, *did_it_go_boom;
-double *xp,**yp, dxsav = 1e-1, *rhop, rho_tmp, *where_it_went_boom;
+int kmax,kount, did_it_go_boom;
+double *xp,**yp, dxsav, *rhop, rho_tmp, where_it_went_boom;
 
 // rkck code
 static void rkck(\
@@ -239,7 +239,7 @@ static void rkqs(\
         xnew=(*x)+h;
         if (xnew == *x){
             //nrerror("stepsize underflow in rkqs");
-            *did_it_go_boom = 1;
+            did_it_go_boom = 1;
             return;
         }
     }
@@ -283,7 +283,7 @@ void odeint(
                     yscal[i]=FMAX(fabs(eps*dydx[i]*h), EPS*1e-1);
                     break;
                 case 3:
-                    yscal[i]=FMAX(fabs(y[i]), EPS*1e-1);
+                    yscal[i]=FMAX(fabs(y[i]), EPS*1e-2);
                     break;
                 case 4:
                     yscal[i]=FMAX(fabs(y[i])+fabs(dydx[i]*h)+TINY, EPS*1e-1);
@@ -307,8 +307,8 @@ void odeint(
         if ((x+h-x2)*(x+h-x1) > 0.0) h=x2-x;
         (*rkqs)(y,dydx,nvar,&x,h,eps,yscal,&hdid,&hnext,derivs);
 
-        if(*did_it_go_boom){
-            *where_it_went_boom = x;
+        if(did_it_go_boom){
+            where_it_went_boom = x;
             xp[++kount]=x;
             for (i=1;i<=nvar;i++) yp[i][kount]=y[i];
             rhop[kount] = rho_tmp;
@@ -330,8 +330,8 @@ void odeint(
         }
         if (fabs(hnext) <= hmin){
             //nrerror("Step size too small in odeint");
-            *did_it_go_boom = 1;
-            *where_it_went_boom = x;
+            did_it_go_boom = 1;
+            where_it_went_boom = x;
             xp[++kount]=x;
             for (i=1;i<=nvar;i++) yp[i][kount]=y[i];
             rhop[kount] = rho_tmp;

@@ -347,6 +347,200 @@ FILE* open_file_to_APPEND_LivePlot_solver( ODEsystemStruct *arg ){
     }
 }
 
+void LivePlot_open(const char *ode_name, char *eos_name, double *pars){
+
+    char \
+      path[256] = "/home/dimitar/projects/STT_theories/results/live_plot_",
+      beta[16], m[16], lambda[16];
+
+    strcat(path, ode_name);
+    strcat(path, "_");
+    strcat(path, eos_name);
+
+    strcat(path, "_beta");
+    sprintf( beta,"%.3e", pars[1] );
+    strcat(path, beta);
+
+    strcat(path, "_m");
+    sprintf( m,"%.3e", pars[2] );
+    strcat(path, m);
+
+    strcat(path, "_lambda");
+    sprintf( lambda,"%.3e", pars[3] );
+    strcat(path, lambda);
+
+    FILE *fp = fopen(path,"w");
+
+    if( fp == NULL ){
+        printf(
+          "\n\n ERROR LivePlot_open oppenning file:\n\n \
+          %s ERROR line 178\n\n",
+          path
+        );
+        perror("Error");
+
+        exit(178);
+    }else{
+        fclose(fp);
+        return;
+    }
+}
+
+void LivePlot_append(
+  const char *ode_name, char *eos_name, double *pars, double R, int n
+){
+
+    char \
+      path[256] = "/home/dimitar/projects/STT_theories/results/live_plot_",
+      beta[16], m[16], lambda[16];
+
+    strcat(path, ode_name);
+    strcat(path, "_");
+    strcat(path, eos_name);
+
+    strcat(path, "_beta");
+    sprintf( beta,"%.3e", pars[1] );
+    strcat(path, beta);
+
+    strcat(path, "_m");
+    sprintf( m,"%.3e", pars[2] );
+    strcat(path, m);
+
+    strcat(path, "_lambda");
+    sprintf( lambda,"%.3e", pars[3] );
+    strcat(path, lambda);
+
+    FILE *fp = fopen(path,"a");
+
+    if( fp == NULL ){
+        printf(
+          "\n\n ERROR LivePlot_open oppenning file:\n\n \
+          %s ERROR line 178\n\n",
+          path
+        );
+        perror("Error");
+
+        exit(178);
+    }else{
+
+        if(kmax){
+            fprintf(
+              fp,
+              "# phiScal_c = %e, R = %e \n",
+              yp[1][1], R
+            );
+
+            for(int i=1; i <= kmax && xp[i]; i++){
+                fprintf(fp,"%e ", xp[i]);
+                xp[i] = 0;
+                for(int k=1; k <= n; k++){
+                    fprintf(fp,"%e ", yp[k][i]);
+                    yp[k][i] = 0;
+                }
+
+                fprintf(fp,"%e \n", rhop[i]);
+                rhop[i] = 0;
+            }
+
+        }else{
+            fprintf(fp,"# NO POINTS OOOO");
+        }
+
+        fclose(fp);
+    }
+}
+
+void ResultFile_open(const char *ode_name, char *eos_name, double *pars){
+
+    char \
+      path[256] = "/home/dimitar/projects/STT_theories/results/STT_",
+      beta[16], m[16], lambda[16];
+
+    strcat(path, ode_name);
+    strcat(path, "_");
+    strcat(path, eos_name);
+
+    strcat(path, "_beta");
+    sprintf( beta,"%.3e", pars[1] );
+    strcat(path, beta);
+
+    strcat(path, "_m");
+    sprintf( m,"%.3e", pars[2] );
+    strcat(path, m);
+
+    strcat(path, "_lambda");
+    sprintf( lambda,"%.3e", pars[3] );
+    strcat(path, lambda);
+
+    FILE *fp = fopen(path,"w");
+
+    if( fp == NULL ){
+        printf(
+          "\n\n ERROR ResultFile_open oppenning file:\n\n \
+          %s ERROR line 178\n\n",
+          path
+        );
+        perror("Error");
+
+        exit(178);
+    }else{
+
+        fprintf(fp,"# p_c phiScal_c M AR rho_c delta_phiScal \n");
+
+        fclose(fp);
+        return;
+    }
+}
+
+void ResultFile_append(
+  const char *ode_name, char *eos_name, double *pars,
+  double p_c, double phiScal_c, double M, double AR, double rho_c,
+  double delta_phiScal
+){
+
+    char \
+      path[256] = "/home/dimitar/projects/STT_theories/results/STT_",
+      beta[16], m[16], lambda[16];
+
+    strcat(path, ode_name);
+    strcat(path, "_");
+    strcat(path, eos_name);
+
+    strcat(path, "_beta");
+    sprintf( beta,"%.3e", pars[1] );
+    strcat(path, beta);
+
+    strcat(path, "_m");
+    sprintf( m,"%.3e", pars[2] );
+    strcat(path, m);
+
+    strcat(path, "_lambda");
+    sprintf( lambda,"%.3e", pars[3] );
+    strcat(path, lambda);
+
+    FILE *fp = fopen(path,"a");
+
+    if( fp == NULL ){
+        printf(
+          "\n\n ERROR LivePlot_open oppenning file:\n\n \
+          %s ERROR line 178\n\n",
+          path
+        );
+        perror("Error");
+
+        exit(178);
+    }else{
+
+        fprintf(
+          fp,
+          "%e %e %e %e %e %e\n",
+          p_c, phiScal_c, M, AR, rho_c, delta_phiScal
+        );
+
+        fclose(fp);
+    }
+}
+
 #undef PARAM_VAL_CHAR_LENG
 #undef DEBUGGING_dvector_copy
 #undef DEBUGGING_OPEN_WRITE_RESULT

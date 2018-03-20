@@ -146,5 +146,10 @@
 
     } EOSmodelInfoStruct;
 
+    typedef struct ODE_struct{
+
+        double *y, x_start, x_end;
+
+    } ODE_struct;
 
 #endif

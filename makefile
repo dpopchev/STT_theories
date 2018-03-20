@@ -75,7 +75,7 @@ $(BIN_DIR):
 .PHONY: run
 run: | $(BIN_NAME)
 	@echo Executing $(BIN_NAME)
-	./src/python/live_plot_Results.py &
+#	./src/python/live_plot_Results.py &
 #	./src/python/live_plot_J.py &
 #	./src/python/live_plot_phiScal.py &
 #	./src/python/live_plot_Metr.py &
