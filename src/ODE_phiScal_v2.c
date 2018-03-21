@@ -25,7 +25,10 @@ static double \
   // set where the infinity should be
   r_inf = R_INF,
   // tiny parameter for our working pleasure
-  tiny = 1e-30;
+  tiny = 1e-30,
+  // switch to control if we are just getting the central scalar field
+  // if we do, we dont want to save anything
+  GV_GET_PHISCAL = 0;
 
 static EOSmodelInfoStruct *eos;
 
@@ -42,23 +45,23 @@ static double get_power(double x){
 static void phiScal_foo(double x, double *y, double *dydx){
 
     double \
-        beta_phiScal = GV_PARAMETERS_VALUES[1], \
-        m_phiScal = GV_PARAMETERS_VALUES[2], \
-        lambda_phiScal = GV_PARAMETERS_VALUES[3], \
-        r = x, \
-        phiScal = y[1], \
-        Q = y[2], \
-        p = y[3], \
-        LambdaMetr = y[4], \
-        m = y[5], \
+        beta_phiScal = GV_PARAMETERS_VALUES[1],
+        m_phiScal = GV_PARAMETERS_VALUES[2],
+        lambda_phiScal = GV_PARAMETERS_VALUES[3],
+        r = x,
+        phiScal = y[1],
+        Q = y[2],
+        p = y[3],
+        LambdaMetr = y[4],
+        m = y[5],
         \
-        Vhat = 2*pow(m_phiScal,2)*pow(phiScal,2) + lambda_phiScal*pow(phiScal,4), \
-        Vhat_dphiScal = 4*pow(m_phiScal,2)*phiScal + 4*lambda_phiScal*pow(phiScal,3), \
-        alpha = beta_phiScal*phiScal, \
-        A = exp(1.0/2 * beta_phiScal * pow(phiScal,2)), \
-        exp_2LambdaMetr = exp(2*LambdaMetr ), \
+        Vhat = 2*pow(m_phiScal,2)*pow(phiScal,2) + lambda_phiScal*pow(phiScal,4),
+        Vhat_dphiScal = 4*pow(m_phiScal,2)*phiScal + 4*lambda_phiScal*pow(phiScal,3),
+        alpha = beta_phiScal*phiScal,
+        A = exp(1.0/2 * beta_phiScal * pow(phiScal,2)),
+        exp_2LambdaMetr = exp(2*LambdaMetr ),
         \
-        step4_A = pow(A,4), \
+        step4_A = pow(A,4),
         rho;
 
     if( !R && p &&  get_power(p) <= minimal_p_power ){
@@ -331,7 +334,7 @@ static void integrate_phiScal( ODE_struct *_ode ){
     }
 
     // if this is part of fadj in solver_newt do not append it to the LivePlot
-    if(!GV_fadj_switch){
+    if(!GV_fadj_switch && !GV_GET_PHISCAL){
         LivePlot_append(
           ODE_NAME,
           eos->model_name,
@@ -520,6 +523,15 @@ void iterate_pressure_shoot_regular(void){
 
         integrate_phiScal(_ode);
 
+        // stop for further investigation if the boundary condition for the
+        // scalar field is not satisfied
+        // should be connected to the solver_newt, but I prefer to set it here
+        // as the power of -10 by hand
+        if(get_power(0 - _ode->y[1]) > -9){
+            printf("\n scalar field boundary condition not met, terminating...");
+            exit(123);
+        }
+
         printf("\n\t v final (newt check -> %d): \n", newt_check);
 
         printf(
@@ -567,7 +579,9 @@ void iterate_pressure_shoot_regular(void){
 }
 
 // shoot one time with provided initial guess
-// also increase the infinity
+// also increase the infinity until significant changes disappear
+// use the centra phiScal and integrate to first inf
+// after that set phiScal and its derivative as 0 and continue integrating
 void single_shoot_regular_iterate_inf(void){
 
     // init the GV_PARAMETERS_VALUES for the scalar field
@@ -625,10 +639,21 @@ void single_shoot_regular_iterate_inf(void){
 
     printf("\n\t\t one final integration to check boundary conditions \n");
 
+    LivePlot_open(ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES);
+
     ODE_struct *_ode = ODE_struct_init();
     _ode->y[1] = newt_v[1];
 
     integrate_phiScal(_ode);
+
+    // stop for further investigation if the boundary condition for the
+    // scalar field is not satisfied
+    // should be connected to the solver_newt, but I prefer to set it here
+    // as the power of -10 by hand
+    if(get_power(0 - _ode->y[1]) > -9){
+        printf("\n scalar field boundary condition not met, terminating...");
+        exit(123);
+    }
 
     printf("\n\t v final (newt check -> %d): \n", newt_check);
 
@@ -636,7 +661,14 @@ void single_shoot_regular_iterate_inf(void){
       "\t v[%d] = %e --> delta = %e \n", 1, newt_v[1], 0 - _ode->y[1]
     );
 
+    _ode->y[1] = 0;
+    _ode->y[2] = 0;
+    _ode->x_start = _ode->x_end;
+    _ode->x_end = 1e5;
 
+    integrate_phiScal(_ode);
+
+    ODE_struct_free(&_ode);
     free(newt_v);
     eos_free(&eos);
     free(GV_PARAMETERS_VALUES);
@@ -733,6 +765,15 @@ void iterate_pressure_inf_shoot_regular(void){
 
         integrate_phiScal(_ode);
 
+        // stop for further investigation if the boundary condition for the
+        // scalar field is not satisfied
+        // should be connected to the solver_newt, but I prefer to set it here
+        // as the power of -10 by hand
+        if(get_power(0 - _ode->y[1]) > -9){
+            printf("\n scalar field boundary condition not met, terminating...");
+            exit(123);
+        }
+
         printf("\n\t v final (newt check -> %d): \n", newt_check);
 
         printf(
@@ -775,6 +816,105 @@ void iterate_pressure_inf_shoot_regular(void){
     free(newt_v);
     eos_free(&eos);
     free(GV_PARAMETERS_VALUES);
+
+    return;
+}
+
+// fitting point execution procedure
+// if needed will stay here
+static void shoot_fitting_execute(int n, double *v, double *f){
+
+    double r_fit;
+
+    // set the initial data left to right through fitting
+    ODE_struct *_ode1 = ODE_struct_init();
+
+    _ode1->y[1] = v[1];
+    _ode1->x_end = r_fit;
+
+    integrate_phiScal(_ode1);
+
+    // set the initial data right to left through fitting
+    ODE_struct *_ode2 = ODE_struct_init();
+
+    _ode2->y[1] = 0;
+    _ode2->y[2] = 0;
+    _ode2->y[3] = 0;
+    _ode2->y[4] = v[2];
+    _ode2->y[5] = v[3];
+    _ode2->x_end = r_fit;
+    _ode2->x_start = r_inf;
+
+    integrate_phiScal(_ode2);
+
+    // on the left side we want scalar field to be 0
+    f[1] = _ode1->y[1] - _ode2->y[1];
+    f[2] = _ode1->y[4] - _ode2->y[4];
+    f[3] = _ode1->y[5] - _ode2->y[5];
+
+    ODE_struct_free(&_ode1);
+    ODE_struct_free(&_ode2);
+
+    return;
+}
+
+// the equations for slow rotation depend on those for phiScal but not vice verse
+// for provided GV_PARAMETERS_VALUES, pressure and Equation of State
+// override the given phiScal and inf
+void get_phiScal_cVal_infVal(
+  double *parm_vals, double pressure, EOSmodelInfoStruct *_eos,
+  double *phiScal, double *inf
+){
+
+    GV_GET_PHISCAL = 1;
+
+    GV_PARAMETERS_VALUES = parm_vals;
+
+    eos = _eos;
+
+    int \
+      newt_n = 1, // the size of the guess values vector v
+      newt_check = 0; // variable to check if we have stumbled in a minimum
+
+    // the guess vector itself with initial guesses
+    double \
+      *newt_v = dvector(1, newt_n),
+      phiScal_c = *phiScal;
+
+    // initial guess for the scalar field
+    newt_v[1] = phiScal_c;
+
+    r_inf = *inf;
+    int count = 0;
+    while(++count){
+
+        printf(
+          "\n\t\t v_%d = %e for inf %e \n",
+          count, newt_v[1], r_inf
+        );
+
+        newt(
+            newt_v,
+            newt_n,
+            &newt_check,
+            &shoot_regular_execute
+        );
+
+        if(get_power(phiScal_c - newt_v[1]) >= -6){
+            r_inf += 0.1*r_inf;
+            phiScal_c = newt_v[1];
+        }else{
+            printf("\n\t\t No significant difference \n");
+            break;
+        }
+    }
+
+    *phiScal = newt_v[1];
+    *inf = r_inf;
+
+    GV_GET_PHISCAL = 0;
+
+    free(newt_v);
 
     return;
 }

@@ -13,7 +13,7 @@ class LivePlot:
             2 : "Q",
             3 : "p",
             4 : "LambdaMetr",
-            5 : "rho"
+            -1 : "rho"
         }
 
         self.headline = []

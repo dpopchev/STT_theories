@@ -139,10 +139,13 @@ int main( void ){
     //iterate_pressure_shoot_regular();
 
     //single shoot and iterate the infinity
-    single_shoot_regular_iterate_inf();
+    //single_shoot_regular_iterate_inf();
 
     // iterate through central pressure and infinity
     //iterate_pressure_inf_shoot_regular();
+
+    // start using the phiScal to calculate the Omega
+    single_shoot_regular_phiScal_J();
 
     //ODEsystemStruct *ode;
 

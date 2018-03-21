@@ -86,4 +86,12 @@
     extern void iterate_pressure_shoot_regular(void);
     extern void single_shoot_regular_iterate_inf(void);
     extern void iterate_pressure_inf_shoot_regular(void);
+    extern void get_phiScal_cVal_infVal(
+      double *parm_vals, double pressure, EOSmodelInfoStruct *_eos, double *phiScal, double *inf
+    );
+
+    extern void single_shoot_regular_phiScal_J(void);
+    extern void LivePlot_phiScal_J_open(const char *ode_name, char *eos_name, double *pars);
+    extern void LivePlot_phiScal_J_append(const char *ode_name, char *eos_name, double *pars, double R,  int n);
+
 #endif
