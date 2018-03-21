@@ -149,7 +149,12 @@ int main( void ){
 
     // start using the phiScal to calculate the Omega
     // as above but with iteration for the inf
-    single_shoot_regular_phiScal_J_iterate_inf();
+    //single_shoot_regular_phiScal_J_iterate_inf();
+
+    // start using the phiScal to calculate the Omega
+    // as above but with iteration for the inf
+    // iterating over pressures
+    single_shoot_regular_phiScal_J_iterate_inf_iterpres();
 
     //ODEsystemStruct *ode;
 

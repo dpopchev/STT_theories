@@ -94,5 +94,13 @@
     extern void LivePlot_phiScal_J_open(const char *ode_name, char *eos_name, double *pars);
     extern void LivePlot_phiScal_J_append(const char *ode_name, char *eos_name, double *pars, double R,  int n);
     extern void single_shoot_regular_phiScal_J_iterate_inf(void);
+    extern void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void);
+    extern void ResultFile_phiScal_J_open(const char *ode_name, char *eos_name, double *pars);
+    extern void ResultFile_phiScal_J_append(
+        const char *ode_name, char *eos_name, double *pars,
+        double p_c, double phiScal_c, double M, double AR, double rho_c, double J,
+        double delta_phiScal, double delta_PhiMetr, double delta_Omega
+    );
+
 
 #endif

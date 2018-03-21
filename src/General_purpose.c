@@ -644,6 +644,97 @@ void LivePlot_phiScal_J_append(
     }
 }
 
+void ResultFile_phiScal_J_open(const char *ode_name, char *eos_name, double *pars){
+
+    char \
+      path[256] = "/home/dimitar/projects/STT_theories/results/STT_",
+      beta[16], m[16], lambda[16];
+
+    strcat(path, ode_name);
+    strcat(path, "_");
+    strcat(path, eos_name);
+
+    strcat(path, "_beta");
+    sprintf( beta,"%.3e", pars[1] );
+    strcat(path, beta);
+
+    strcat(path, "_m");
+    sprintf( m,"%.3e", pars[2] );
+    strcat(path, m);
+
+    strcat(path, "_lambda");
+    sprintf( lambda,"%.3e", pars[3] );
+    strcat(path, lambda);
+
+    FILE *fp = fopen(path,"w");
+
+    if( fp == NULL ){
+        printf(
+          "\n\n ERROR ResultFile_open oppenning file:\n\n \
+          %s ERROR line 178\n\n",
+          path
+        );
+        perror("Error");
+
+        exit(178);
+    }else{
+
+        fprintf(fp,"# p_c phiScal_c M AR rho_c delta_phiScal delta_PhiMetr delta_Omega \n");
+
+        fclose(fp);
+        return;
+    }
+}
+
+void ResultFile_phiScal_J_append(
+  const char *ode_name, char *eos_name, double *pars,
+  double p_c, double phiScal_c, double M, double AR, double rho_c, double J,
+  double delta_phiScal, double delta_PhiMetr, double delta_Omega
+){
+
+    char \
+      path[256] = "/home/dimitar/projects/STT_theories/results/STT_",
+      beta[16], m[16], lambda[16];
+
+    strcat(path, ode_name);
+    strcat(path, "_");
+    strcat(path, eos_name);
+
+    strcat(path, "_beta");
+    sprintf( beta,"%.3e", pars[1] );
+    strcat(path, beta);
+
+    strcat(path, "_m");
+    sprintf( m,"%.3e", pars[2] );
+    strcat(path, m);
+
+    strcat(path, "_lambda");
+    sprintf( lambda,"%.3e", pars[3] );
+    strcat(path, lambda);
+
+    FILE *fp = fopen(path,"a");
+
+    if( fp == NULL ){
+        printf(
+          "\n\n ERROR LivePlot_open oppenning file:\n\n \
+          %s ERROR line 178\n\n",
+          path
+        );
+        perror("Error");
+
+        exit(178);
+    }else{
+
+        fprintf(
+          fp,
+          "%e %e %e %e %e %e %e %e %e\n",
+          p_c, phiScal_c, M, AR, rho_c, J, delta_phiScal, delta_PhiMetr, delta_Omega
+        );
+
+        fclose(fp);
+    }
+}
+
 #undef PARAM_VAL_CHAR_LENG
 #undef DEBUGGING_dvector_copy
 #undef DEBUGGING_OPEN_WRITE_RESULT

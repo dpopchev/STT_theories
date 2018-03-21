@@ -8,7 +8,7 @@
 #define P_END 2e-3 // 5e-3
 
 // value of the infinity to use
-#define R_INF 3.2e1
+#define R_INF 50
 
 // parameters of the scalar field
 #define BETA -6
@@ -872,6 +872,8 @@ void get_phiScal_cVal_infVal(
 
     eos = _eos;
 
+    p_current = pressure;
+
     int \
       newt_n = 1, // the size of the guess values vector v
       newt_check = 0; // variable to check if we have stumbled in a minimum
@@ -900,7 +902,7 @@ void get_phiScal_cVal_infVal(
             &shoot_regular_execute
         );
 
-        if(get_power(phiScal_c - newt_v[1]) >= -6){
+        if(get_power(phiScal_c - newt_v[1]) > -6){
             r_inf += 0.1*r_inf;
             phiScal_c = newt_v[1];
         }else{
@@ -909,11 +911,26 @@ void get_phiScal_cVal_infVal(
         }
     }
 
+    ODE_struct *_ode = ODE_struct_init();
+    _ode->y[1] = newt_v[1];
+
+    integrate_phiScal(_ode);
+
+    // stop for further investigation if the boundary condition for the
+    // scalar field is not satisfied
+    // should be connected to the solver_newt, but I prefer to set it here
+    // as the power of -10 by hand
+    if(get_power(0 - _ode->y[1]) > -9){
+        printf("\n get_phiScal_cVal_infVal scalar field boundary condition not met, terminating...");
+        exit(123);
+    }
+
     *phiScal = newt_v[1];
     *inf = r_inf;
 
     GV_GET_PHISCAL = 0;
 
+    ODE_struct_free(&_ode);
     free(newt_v);
 
     return;
