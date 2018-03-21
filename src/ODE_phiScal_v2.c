@@ -753,7 +753,7 @@ void iterate_pressure_inf_shoot_regular(void){
                 r_inf += 0.1*r_inf;
                 phiScal_c_tmp = newt_v[1];
             }else{
-                printf("No significant difference");
+                printf("No significant difference \n");
                 break;
             }
         }

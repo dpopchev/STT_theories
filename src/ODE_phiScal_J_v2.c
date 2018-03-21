@@ -609,3 +609,114 @@ void single_shoot_regular_phiScal_J(void){
 
     return;
 }
+
+// single shoot to provide the appropriate phiscal central value  and phiScal inf
+// make another shoot to adjust the other PhiMetr inf and its central value
+// it will increase the infinity until no significant change occurs in
+// PhiMetr_c and Omega_c
+void single_shoot_regular_phiScal_J_iterate_inf(void){
+
+    // init the GV_PARAMETERS_VALUES for the scalar field
+    // beta, m, lambda
+    phiScal_parameters_init();
+
+    // init the equation of state
+    eos = calloc(1,sizeof(EOSmodelInfoStruct));
+    eos_init(&eos);
+
+    double v_phiScal_J = -5e-2;
+
+    printf(
+      "\n p_c = %.3e \n\n\t v_phiScal init %e \t with inf %e \n",
+      p_current, v_phiScal_J, r_inf_phiscal
+    );
+
+    // lets find the interval with maximum difference
+    // and the corresponding central value for the scalar field
+    get_phiScal_cVal_infVal(
+      GV_PARAMETERS_VALUES, p_current, eos, &v_phiScal_J, &r_inf_phiscal
+    );
+
+    printf(
+      "\n\t got \t v_phiScal init %e \t with inf %e \n",
+      v_phiScal_J, r_inf_phiscal
+    );
+
+    int newt_check = 0, newt_n = 3;
+
+    // lets shoot for the additional indexes 6 and 8
+    // in the same interval
+    double *v1 = dvector(1,3);
+
+    v1[1] = v_phiScal_J;
+    v1[2] = -4e-1;
+    v1[3] = 6e-1;
+
+    r_inf = r_inf_phiscal;
+
+    newt(
+        v1,
+        newt_n,
+        &newt_check,
+        &shoot_regular_execute
+    );
+
+    printf(
+      "\n\n letst try to make them better with one above %e: \t %e %e %e \n",
+      r_inf, v1[1], v1[2], v1[3]
+    );
+
+    newt_n = 2;
+    double \
+      *v2 = dvector(1,newt_n),
+      PhiMetr_c = v1[2],
+      Omega_c = v1[3];
+
+    phiScal_gv = v1[1];
+    v2[1] = PhiMetr_c;
+    v2[2] = Omega_c;
+    r_inf = 1e4;
+
+    int count = 0;
+    while(++count){
+
+        newt(
+            v2,
+            newt_n,
+            &newt_check,
+            &shoot_regular_execute_modif
+        );
+
+        printf("\n\t iteration %d: %e %e for inf %e \n", count, v2[1], v2[2], r_inf);
+
+        if(get_power(PhiMetr_c - v2[1]) >= -6 || get_power(Omega_c - v2[2]) >= -6 ){
+            PhiMetr_c = v2[1];
+            Omega_c = v2[2];
+            r_inf += 0.2*r_inf;
+        }else{
+            printf("\n no sig diff \n");
+            break;
+        }
+    }
+
+    printf(
+      "\n\n New %e: \t %e %e \n",
+      r_inf, v2[1], v2[2]
+    );
+
+    LivePlot_phiScal_J_open(ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES);
+
+    ODE_struct *_ode = ODE_struct_init_modif();
+    _ode->y[6] = v2[1];
+    _ode->y[8] = v2[2];
+
+    integrate_phiScal_J_modif(_ode);
+
+    ODE_struct_free(&_ode);
+    free(v1);
+    free(v2);
+    eos_free(&eos);
+    free(GV_PARAMETERS_VALUES);
+
+    return;
+}
