@@ -4,16 +4,16 @@
 #define ODE_NAME "phiScal_J"
 
 // interval of central pressures to go over through
-#define P_START 2.2e-4 // 1e-5
+#define P_START 1e-4 // 1e-5
 #define P_END 2e-3 // 5e-3
 
 // value of the infinity to use
-#define R_INF_PHISCAL 3e1
-#define R_INF 5e5
+#define R_INF_PHISCAL 2.5e1
+#define R_INF 1e9
 
 // parameters of the scalar field
 #define BETA -6
-#define M 2e-2
+#define M 5e-2
 #define LAMBDA 10
 
 static double \
@@ -29,11 +29,12 @@ static double \
   // to use this var to set after we know the central val for phiScal
   phiScal_gv,
   // tiny parameter for our working pleasure
-  tiny = 1e-30;
+  tiny = 1e-30,
+  GV_J, GV_M;
 
 static EOSmodelInfoStruct *eos;
 
-static int minimal_p_power = -16;
+static int minimal_p_power = -17;
 
 // returns the power of the number n
 static double get_power(double x){
@@ -475,6 +476,9 @@ static void integrate_phiScal_J_modif( ODE_struct *_ode ){
         );
     }
 
+    GV_M = _ode->y[5];
+    GV_J = _ode->y[9];
+
     odeint_point_arrs_free();
 
     return;
@@ -548,8 +552,9 @@ void single_shoot_regular_phiScal_J(void){
     // lets find the interval with maximum difference
     // and the corresponding central value for the scalar field
     get_phiScal_cVal_infVal(
-      GV_PARAMETERS_VALUES, p_current, eos, &v_phiScal_J, &r_inf_phiscal
-    );
+          GV_PARAMETERS_VALUES, p_current, eos, &v_phiScal_J,
+          &r_inf_phiscal, minimal_p_power
+        );
 
     printf(
       "\n\t got \t v_phiScal init %e \t with inf %e \n",
@@ -634,8 +639,9 @@ void single_shoot_regular_phiScal_J_iterate_inf(void){
     // lets find the interval with maximum difference
     // and the corresponding central value for the scalar field
     get_phiScal_cVal_infVal(
-      GV_PARAMETERS_VALUES, p_current, eos, &v_phiScal_J, &r_inf_phiscal
-    );
+          GV_PARAMETERS_VALUES, p_current, eos, &v_phiScal_J,
+          &r_inf_phiscal, minimal_p_power
+        );
 
     printf(
       "\n\t got \t v_phiScal init %e \t with inf %e \n",
@@ -754,6 +760,33 @@ static void change_current_pressure(void){
     return;
 }
 
+// check if the achieved central phiScala is greater then the previous one
+// or it is of the power -2
+// to know if we are gonna use it for further shooting
+static void check_achieved_phiScal( double *v_phiScal, double *tmp_phiScal){
+
+    if(fabs(*v_phiScal) > fabs(*tmp_phiScal)){
+        printf(
+          "\n\t\t changing the initial guess from %e to %e \n",
+          *tmp_phiScal,
+          *v_phiScal
+        );
+
+        *tmp_phiScal = *v_phiScal;
+
+    }else if( get_power(*v_phiScal + tiny) > -2 ){
+        printf(
+          "\n\t\t changing the initial guess from %e to %e \n",
+          *tmp_phiScal,
+          *v_phiScal
+        );
+
+        *tmp_phiScal = *v_phiScal;
+    }
+
+    return;
+}
+
 // iterate over the pressures
 // single shoot to provide the appropriate phiscal central value  and phiScal inf
 // make another shoot to adjust the other PhiMetr inf and its central value
@@ -770,7 +803,9 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
     eos_init(&eos);
 
     double \
+      // initial guessed values
       v_phiScal_J = -5e-2,
+      v_phiScal_J_tmp = v_phiScal_J,
       PhiMetr_c = -4e-1,
       Omega_c = 6e-1,
       // central pressure values
@@ -778,41 +813,57 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
 
     p_current = pressure_start;
 
+    // resetting the result file
     ResultFile_phiScal_J_open(ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES);
 
+    // start going over the pressures starting with
+    // P_START until reaching the P_END
+    // and changing it in a specific way in change_current_pressure()
     int iterate = 1;
     while(iterate){
 
+        // reset the file for live plotting
         LivePlot_phiScal_J_open(ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES);
 
+        // set initial guess for the infinity for the scalar field
         r_inf_phiscal = R_INF_PHISCAL;
 
         printf("\n p_c = %.3e \n",p_current);
-
+        v_phiScal_J = v_phiScal_J_tmp;
         printf(
-          "\n\t get v_phiScal = %e and phiScal_inf = %e \n",
+          "\n\t scalar field shoot with initial"
+          "v_phiScal = %e and phiScal_inf = %e \n",
           v_phiScal_J, r_inf_phiscal
         );
 
         // lets find the interval with maximum difference
         // and the corresponding central value for the scalar field
         get_phiScal_cVal_infVal(
-          GV_PARAMETERS_VALUES, p_current, eos, &v_phiScal_J, &r_inf_phiscal
+          GV_PARAMETERS_VALUES, p_current, eos, &v_phiScal_J,
+          &r_inf_phiscal, minimal_p_power
         );
 
         printf(
-          "\n\t change v_phiScal = %e and phiScal_inf = %e \n",
+          "\n\t setting v_phiScal = %e and phiScal_inf = %e \n",
           v_phiScal_J, r_inf_phiscal
         );
+
         int newt_check = 0;
         // lets shoot for the additional indexes 6 and 8
-        // in the same interval
+        // in the same interval in which no significant difference
+        // occurs in the initial scalar field
         double *v1 = dvector(1,3);
         v1[1] = v_phiScal_J;
         v1[2] = PhiMetr_c;
         v1[3] = Omega_c;
 
         r_inf = r_inf_phiscal;
+
+        printf(
+            "\n\t fine shoot for inf %e \n"
+            "\n\t\t ( %e %e %e ) ---> ",
+            r_inf_phiscal, v1[1], v1[2], v1[3]
+        );
 
         newt(
             v1,
@@ -822,15 +873,20 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
         );
 
         printf(
-          "\n\t fine shooted for inf %e; got \t %e %e %e \n",
-          r_inf, v1[1], v1[2], v1[3]
+            " ( %e %e %e ); R = %e \n",
+            v1[1], v1[2], v1[3], R
         );
 
         v_phiScal_J = v1[1];
         PhiMetr_c = v1[2];
         Omega_c = v1[3];
-        double *v2 = dvector(1,2);
+        double *v2 = dvector(1,2), inftmp = R_INF;
 
+        // set the guesses in the second integrator who
+        // changes the scalar field and its derivative to 0
+        // when it reaches the r_inf_phiscal
+        // and it shoots for the PhiMetr and Omega_c with increasing r_inf
+        // until no significant difference occurs
         phiScal_gv = v1[1];
         v2[1] = PhiMetr_c;
         v2[2] = Omega_c;
@@ -846,63 +902,51 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
                 &shoot_regular_execute_modif
             );
 
-            printf("\n\t iteration %d: %e %e for inf %e \n", count, v2[1], v2[2], r_inf);
+            printf(
+                "\n\t v_%d ---> for inf %e ( R = %e )"
+                "\n\t\t %e ---> %e  \n"
+                "\n\t\t %e ---> %e  \n",
+                count, r_inf, R,
+                PhiMetr_c, v2[1],
+                Omega_c, v2[2]
+            );
 
-            if(get_power(PhiMetr_c - v2[1]) >= -6 || get_power(Omega_c - v2[2]) >= -6 ){
+            // check whether there is any significant difference
+            // in the now and previous shooted central values in
+            // the PhiMetr_c and Omega_c
+            if((
+                get_power(PhiMetr_c - v2[1]) > -10 || \
+                get_power(Omega_c - v2[2]) > -10
+            )){
                 PhiMetr_c = v2[1];
                 Omega_c = v2[2];
+                inftmp = r_inf;
                 r_inf += 0.2*r_inf;
             }else{
-                printf("\n no sig diff \n");
+                printf(
+                    "\n\t No sig diff in with \n\t\t %e %e and inf %e \n",
+                    v2[1], v2[2], r_inf
+                );
                 break;
             }
         }
 
-        printf(
-          "\n\t Finished with inf %e and %e %e, final integration \n",
-          r_inf, v2[1], v2[2]
-        );
-        LivePlot_phiScal_J_open(ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES);
-
-        ODE_struct *_ode = ODE_struct_init();
-        _ode->y[1] = v_phiScal_J;
-        _ode->y[6] = v2[1];
-        _ode->y[8] = v2[2];
-        _ode->x_end = r_inf_phiscal;
-
-        integrate_phiScal_J(_ode);
-
-        double dummy_phiScal = _ode->y[1], dummy_AR = AR, dummy_rho_c = rho_c;
-        if(get_power(0 - _ode->y[1]) > -9){
-            printf("\n scalar field boundary condition not met, terminating...");
-            exit(123);
-        }
-
-        _ode->y[1] = 0;
-        _ode->y[2] = 0;
-        _ode->x_start = r_inf_phiscal;
-        _ode->x_end = r_inf;
-
-        integrate_phiScal_J(_ode);
-
-        // stop for further investigation if the boundary condition for the
-        // scalar field is not satisfied
-        // should be connected to the solver_newt, but I prefer to set it here
-        // as the power of -10 by hand
-        if( get_power(0 - _ode->y[6]) > -9 || get_power(1 - _ode->y[8]) > -9 ){
-            printf("\n other two boundary condition not met, terminating...");
-            exit(123);
-        }
-
+        // after all this effort append the results
+        // the mass and inertial moment are saved at
+        // integrate_phiScal_J_modif()
         ResultFile_phiScal_J_append(
           ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES,
-          p_current, phiScal_gv, _ode->y[5], dummy_AR, dummy_rho_c, _ode->y[9],
-          0 - dummy_phiScal, 0 - _ode->y[6], 1 - _ode->y[8]
+          p_current, v_phiScal_J, GV_M,
+          AR,
+          rho_c, GV_J
         );
 
-        ODE_struct_free(&_ode);
         free(v1);
         free(v2);
+
+        // check if there is some scalarsization or not
+        // to carry the guessed value or not
+        check_achieved_phiScal(&v_phiScal_J, &v_phiScal_J_tmp);
 
         // increment the central pressure power wise
         change_current_pressure();
@@ -913,6 +957,86 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
         }else{
             iterate = 1;
         }
+
+        // some integrations at the end to take data
+        // and make profiles
+        // but due to the stiffnes it did not worked well
+        // thus commeting out and maybe getting rid of it
+        // after some commit
+        //ODE_struct *_ode2 = ODE_struct_init();
+        //_ode2->y[1] = v_phiScal_J;
+        //_ode2->y[6] = v2[1];
+        //_ode2->y[8] = v2[2];
+        //_ode2->x_end = R - 1e-6*R;
+
+        //double tmpAR = AR, small_step = 1e-7;
+        //integrate_phiScal_J(_ode2);
+
+        // lets try to find the radii by hand
+        //while(get_power(_ode2->y[3]) > minimal_p_power){
+            //_ode2->x_start = _ode2->x_end;
+            //_ode2->x_end += small_step;
+            //integrate_phiScal_J(_ode2);
+            //printf("\n %.7e --- %.7e \n",_ode2->x_end, _ode2->y[3]);
+        //}
+
+        //LivePlot_phiScal_J_open(ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES);
+
+        //ODE_struct *_ode = ODE_struct_init();
+        //_ode->y[1] = v_phiScal_J;
+        //_ode->y[6] = v2[1];
+        //_ode->y[8] = v2[2];
+        //_ode->x_end = r_inf_phiscal;
+
+        //printf(
+            //"\n\t\t final integr with \n\t inf %e \t %e %e %e \n",
+            //_ode->x_end, _ode->y[1], _ode->y[6], _ode->y[8]
+        //);
+
+        //integrate_phiScal_J(_ode);
+
+        //if(get_power(0 - _ode->y[1]) > -10){
+            //printf("\n scalar field boundary condition not met, terminating...");
+            //exit(123);
+        //}
+
+        //_ode->y[1] = 0;
+        //_ode->y[2] = 0;
+        //_ode->x_start = r_inf_phiscal;
+        //_ode->x_end = r_inf;
+
+        //printf(
+            //"\n\t\t final integr with \n\t inf %e \t %e %e %e \n",
+            //_ode->x_end, _ode->y[1], _ode->y[6], _ode->y[8]
+        //);
+
+        //integrate_phiScal_J(_ode);
+
+        // stop for further investigation if the boundary condition for the
+        // scalar field is not satisfied
+        // should be connected to the solver_newt, but I prefer to set it here
+        // as the power of -10 by hand
+        //if( get_power(0 - _ode->y[6]) > -10 || get_power(1 - _ode->y[8]) > -10 ){
+            //printf("\n other two boundary condition not met, terminating...");
+            //exit(123);
+        //}
+
+        //ODE_struct_free(&_ode);
+        //ODE_struct_free(&_ode2);
+        //free(v1);
+        //free(v2);
+
+        //check_achieved_phiScal(&v_phiScal_J, &v_phiScal_J_tmp);
+
+        // increment the central pressure power wise
+        //change_current_pressure();
+        // if the current central pressure is greater the greatest desired one
+        // just end the loop
+        //if(p_current > pressure_end){
+            //iterate = 0;
+        //}else{
+            //iterate = 1;
+        //}
     }
 
     eos_free(&eos);

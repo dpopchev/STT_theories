@@ -87,7 +87,8 @@
     extern void single_shoot_regular_iterate_inf(void);
     extern void iterate_pressure_inf_shoot_regular(void);
     extern void get_phiScal_cVal_infVal(
-      double *parm_vals, double pressure, EOSmodelInfoStruct *_eos, double *phiScal, double *inf
+      double *parm_vals, double pressure, EOSmodelInfoStruct *_eos,
+      double *phiScal, double *inf, int _minimal_p_power
     );
 
     extern void single_shoot_regular_phiScal_J(void);
@@ -98,8 +99,7 @@
     extern void ResultFile_phiScal_J_open(const char *ode_name, char *eos_name, double *pars);
     extern void ResultFile_phiScal_J_append(
         const char *ode_name, char *eos_name, double *pars,
-        double p_c, double phiScal_c, double M, double AR, double rho_c, double J,
-        double delta_phiScal, double delta_PhiMetr, double delta_Omega
+        double p_c, double phiScal_c, double M, double AR, double rho_c, double J
     );
 
 

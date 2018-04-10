@@ -1114,7 +1114,7 @@ static void ode_phiScal_I_shooting_phiScal_I_fitting(int n, double *v, double *f
 
         // we will try to get rid of any mass or lambda in the scalar field
         // in the right to left integration
-        //double \
+        //double
           //tmp_beta = GV_PARAMETERS_VALUES[1],
           //tmp_m = GV_PARAMETERS_VALUES[2],
           //tmp_lambda = GV_PARAMETERS_VALUES[3];

@@ -679,7 +679,7 @@ void ResultFile_phiScal_J_open(const char *ode_name, char *eos_name, double *par
         exit(178);
     }else{
 
-        fprintf(fp,"# p_c phiScal_c M AR rho_c delta_phiScal delta_PhiMetr delta_Omega \n");
+        fprintf(fp,"# p_c phiScal_c M AR rho_c J delta_phiScal delta_PhiMetr delta_Omega \n");
 
         fclose(fp);
         return;
@@ -688,8 +688,7 @@ void ResultFile_phiScal_J_open(const char *ode_name, char *eos_name, double *par
 
 void ResultFile_phiScal_J_append(
   const char *ode_name, char *eos_name, double *pars,
-  double p_c, double phiScal_c, double M, double AR, double rho_c, double J,
-  double delta_phiScal, double delta_PhiMetr, double delta_Omega
+  double p_c, double phiScal_c, double M, double AR, double rho_c, double J
 ){
 
     char \
@@ -727,8 +726,8 @@ void ResultFile_phiScal_J_append(
 
         fprintf(
           fp,
-          "%e %e %e %e %e %e %e %e %e\n",
-          p_c, phiScal_c, M, AR, rho_c, J, delta_phiScal, delta_PhiMetr, delta_Omega
+          "%e %e %e %e %e %e \n",
+          p_c, phiScal_c, M, AR, rho_c, J
         );
 
         fclose(fp);
