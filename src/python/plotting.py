@@ -903,7 +903,11 @@ class plot_result:
 
         #~ if we start it in jupyter qtconsole
         #~ this will force open it in new window not inside
-        get_ipython().run_line_magic('matplotlib', "qt5")
+        get_ipython().run_line_magic("matplotlib", "qt5")
+
+        #~ lets check if we have anything to plot
+        if not self.data_res
+            self.load_ResultFile_latest()
 
         index_x, index_y = self._get_xy_current_file(
             self.headline_res[-1]
@@ -951,6 +955,10 @@ class plot_result:
         #~ this will force open it in new window not inside
         get_ipython().run_line_magic('matplotlib', "qt5")
 
+        #~ lets check if we have anything to plot
+        if not self.data_res
+            self.load_ResultFile()
+
         index_x, index_y = self._get_xy_current_file(
             self.headline_res[-1]
         )
@@ -984,6 +992,13 @@ class plot_result:
         from IPython import get_ipython
 
         get_ipython().run_line_magic('matplotlib', "qt5")
+
+        #~ lets check if we have anything to plot
+        if not self.data_res
+            self.load_ResultFile()
+
+        if not self.data_daniela
+            self.load_DanielaFile()
 
         index_x, index_y = self._get_xy_current_file(self.headline_res[-1])
 
@@ -1029,6 +1044,16 @@ class plot_result:
         from IPython import get_ipython
 
         get_ipython().run_line_magic('matplotlib', "qt5")
+
+        #~ lets check if we have anything to plot
+        if not self.data_res
+            self.load_ResultFile()
+
+        if not self.data_daniela
+            self.load_DanielaFile()
+
+        if not self.data_kalin
+            self.load_KalinFile()
 
         index_x, index_y = self._get_xy_current_file( self.headline_res[-1] )
 
@@ -1088,6 +1113,13 @@ class plot_result:
         from IPython import get_ipython
 
         get_ipython().run_line_magic('matplotlib', "qt5")
+
+        #~ lets check if we have anything to plot
+        if not self.data_res
+            self.load_ResultFile()
+
+        if not self.data_kalin
+            self.load_KalinFile()
 
         index_x, index_y = self._get_xy_current_file(self.headline_res[-1])
 

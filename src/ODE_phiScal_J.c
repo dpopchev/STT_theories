@@ -8,13 +8,13 @@
 #define P_END 2e-3 // 5e-3
 
 // value of the infinity to use
-#define R_INF_PHISCAL 2.5e1
+#define R_INF_PHISCAL 3.5e2
 #define R_INF 1e9
 
 // parameters of the scalar field
 #define BETA -6
-#define M 5e-2
-#define LAMBDA 10
+#define M 1e-3
+#define LAMBDA 1
 
 static double \
   // values to save in the ResultFile
