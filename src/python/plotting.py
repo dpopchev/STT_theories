@@ -1,31 +1,34 @@
 #!/usr/bin/env python
 
+import os
+import glob
+import shutil
+import itertools
+
+from matplotlib import pyplot as plt
+from IPython import get_ipython
+from matplotlib import style
+from matplotlib.gridspec import GridSpec
+
+get_ipython().run_line_magic("matplotlib", "qt5")
 
 class plot_result:
 
     def __init__(self):
 
-        self.data_res = []
-        self.headline_res = []
-        self.label_res = []
+        self.my_ResPath = None
+        self.my_EOSname = None
+        self.my_fname_starts = None
+        self_my_file = None
+        self.my_headline = None
+        self.my_data = None
+        self.my_label = None
 
-        self.data_daniela = []
-        self.headline_daniela = []
-        self.label_daniela = []
-
-        self.daniela_mapping = {
-            "rho_c": 0,
-            "AR": 1,
-            "M": 2,
-            "J": 3,
-            "phiScal_c": 4,
-            "p_c": 5
-        }
-
-        self.data_kalin = []
-        self.headline_kalin = []
-        self.label_kalin = []
-
+        self.kalin_path = None
+        self.kalin_file = None
+        self.kalin_headline = None
+        self.kalin_data = None
+        self.kalin_label = None
         self.kalin_mapping = {
             "rho_c": 0,
             "AR": 1,
@@ -37,9 +40,473 @@ class plot_result:
 
         self.units = self._units_coef_clac()
 
-        self._set_default_paths()
+        #~ self.data_daniela = []
+        #~ self.headline_daniela = []
+        #~ self.label_daniela = []
+
+        #~ self.daniela_mapping = {
+            #~ "rho_c": 0,
+            #~ "AR": 1,
+            #~ "M": 2,
+            #~ "J": 3,
+            #~ "phiScal_c": 4,
+            #~ "p_c": 5
+        #~ }
+
+        #~ self.data_kalin = []
+        #~ self.headline_kalin = []
+        #~ self.label_kalin = []
+
+        #~ self._set_default_paths()
 
         return
+
+    def set_my_ResPath(
+        self,
+        my_ResPath = "~/projects/STT_theories/results"
+    ):
+        """
+        path to the results of the shootings
+        """
+
+        self.my_ResPath = os.path.expanduser(my_ResPath)
+
+        return
+
+    def get_my_ResPath(self):
+
+        return self.my_ResPath
+
+    def set_my_EOSname(self, EOS_name):
+        """
+        set the name of EOS to be plotted, as it is a directory in my_ResPath
+        """
+        self.my_EOSname = EOS_name
+
+        return
+
+    def get_my_EOSname(self):
+
+        return self.my_EOSname
+
+    def get_my_latests_res(self, fname = "STT_phiScal_J_"):
+        """
+        return the latest result file in my_ResPath
+        """
+
+        try:
+            return max(
+                glob.glob(os.path.join(self.my_ResPath, fname + "*")),
+                key = os.path.getctime
+            )
+
+        except ValueError:
+
+            return None
+
+    def move_my_latest_res(self):
+        """
+        move the latest result file from my_ResPath to the EOS_model name dir
+        """
+
+        full_latest_res = self.get_my_latests_res()
+        if full_latest_res:
+            latest_result = os.path.basename(full_latest_res)
+        else:
+            print("\n No latest result at \n\t {} \n".format(
+                    self.my_ResPath
+                )
+            )
+            return
+
+        src = os.path.join( self.my_ResPath, latest_result )
+        dst = os.path.join( self.my_ResPath, self.my_EOSname, latest_result)
+
+        print(
+            "\n moving \n\t from {} \n\t to {} \n".format(
+                src,
+                dst
+            )
+        )
+
+        shutil.move(src, dst)
+
+        return
+
+    def get_resEOSname_data(self, fpath):
+        """
+        get the following data form fpath, which is the full path to file
+            label - the name of the file as string
+            headline - the name for each column, as a list
+            data - the data itself as a list, each sublist is different column
+        """
+
+        with open(fpath, "r") as f:
+            all_data = f.readlines()
+
+        label = os.path.basename(fpath)
+
+        headline = [
+            _.strip() for _ in all_data.pop(0).strip().split(" ")
+            if
+            "#" not in _ and
+            len(_.strip())
+        ]
+
+        data = [
+            [] for _ in all_data[0].strip().split(" ") if len(_.strip())
+        ]
+
+        for line in all_data:
+
+            for d, n in zip(
+                data, [ float(_) for _ in line.strip().split(" ") if len(_.strip()) ]
+            ):
+                d.append(n)
+
+        return label, headline, data
+
+    def get_my_latests_resEOSname_file(self, fname = "STT_phiScal_J_"):
+        """
+        return the latest result file in my_ResPath for current EOS
+        """
+
+        try:
+            return max(
+                glob.glob(os.path.join(
+                        self.my_ResPath, self.my_EOSname, fname + "*"
+                ) ),
+                key = os.path.getctime
+            )
+
+        except ValueError:
+
+            return None
+
+    def plot_my_latest_resEOSname(self):
+
+        label, headline, data = self.get_resEOSname_data(
+            self.get_my_latests_resEOSname_file()
+        )
+
+        fig, all_axes = self._get_figure(2,2, self._4by4_grid_placement)
+
+        ax_M_AR = all_axes[0]
+        ax_J_M = all_axes[1]
+        ax_phiScal_c_p_c = all_axes[2]
+        ax_rho_c_p_c = all_axes[3]
+
+        self._set_parms( ax_M_AR, "AR", "M" )
+        self._set_parms( ax_J_M, "M", "J" )
+        self._set_parms( ax_phiScal_c_p_c, "$p_c$", "$\\varphi_c$" )
+        self._set_parms( ax_rho_c_p_c, "$p_c$", "$\\rho_c$" )
+
+        ax_M_AR.plot(data[3], data[2], linewidth=1.5)
+        ax_J_M.plot(data[2], data[5], linewidth=1.5)
+        ax_phiScal_c_p_c.plot(data[0], data[1], linewidth=1.5)
+        ax_rho_c_p_c.plot(data[0], data[4], linewidth=1.5)
+
+        val_beta, val_m, val_lambda = self._get_parameter_values(label)
+
+        plt.suptitle(
+            "EOS = {}; beta = {}; m = {}; lambda = {}".format(
+                self.my_EOSname, val_beta, val_m, val_lambda
+            ),
+            fontsize=10, y=0.99
+        )
+
+        plt.show()
+
+        return
+
+    def get_severalEOS_data(
+        self,
+        severalEOS = [ "SLy4", "APR4", "FPS", "WFF2" ],
+        severalBeta = [ 0 ],
+        severalM = [ 0 ],
+        severalLambda = [ 0 ],
+        fname = "STT_phiScal_J"
+    ):
+        """
+        for provided list <severalEOS> with provided list <severalBeta>,
+        <severalM>, <severalLambda>, will returned nested lists with
+        labels, headlines(name of each file) and data in correspondence
+
+        GR values are default
+        """
+
+        all_label = []
+        all_headline = []
+        all_data = []
+
+        for EOS in severalEOS:
+
+            for parms in itertools.product(severalBeta, severalM, severalLambda):
+
+                EOSname = "_".join( [
+                    fname,
+                    EOS,
+                    "beta{:.3e}".format(parms[0]),
+                    "m{:.3e}".format(parms[1]),
+                    "lambda{:.3e}".format(parms[2])
+                ] )
+
+                EOSpath = os.path.join(
+                    self.my_ResPath, EOS, EOSname
+                )
+
+                _label, _headline, _data = self.get_resEOSname_data(EOSpath)
+
+                all_label.append(_label)
+                all_headline.append(_headline)
+                all_data.append(_data)
+
+        return all_label, all_headline, all_data
+
+    def plot_my_GR_all_EOS_MvsR(self):
+
+        all_label, all_headline, all_data = self.get_severalEOS_data()
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "R [km]", "M")
+
+        marker_style = ["o", "v", "s", "x"]
+        line_style = ["--", "--", "--", "--"]
+        color_style = ["b", "k", "g", "r"]
+        EOS_list = [ "SLy4", "APR4", "FPS", "WFF2" ]
+
+        for label, data, ms, ls, c in zip(
+            all_label, all_data, marker_style, line_style, color_style
+        ):
+            data[3] = [ _*self.units["R"] for _ in data[3] ]
+
+            l = ""
+            for _ in EOS_list:
+                if _ in label:
+                    l = _
+                    break
+
+            ax.plot(
+                data[3],
+                data[2],
+                label = l,
+                color = c,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = c,
+                markersize = 6,
+                linewidth = 1.5,
+                markevery = abs((data[2][-1] - data[2][0])/40)
+            )
+
+        ax.set_xlim(8,15)
+        ax.set_ylim(0.25,2.5)
+
+        ax.legend(loc="best", fontsize=8)
+        plt.show()
+
+        return
+
+    @staticmethod
+    def _get_figure(nrows, ncols, grid_placement):
+        """
+        create Figure and assign specific subplot geometry defined by
+        <nrows> amount of rows and <ncols> amount of columns
+        defined using the function <grid_placement>
+
+        Parameters
+        ----------
+        nrows: int
+            amount of rows the figure will have
+
+        ncols: int
+            amount of columns the figure will have
+
+        grid_placement: class
+            function to define the placement of the subplots in the
+            figure using <nrows> and <ncols> and return
+            list of axes
+
+        Returns
+        -------
+        fig: Figure
+            the figure itself
+
+        : list
+            the list of axes which are associated with the subplot
+            placement defined by <grid_placement> function using
+            GridSpec class
+        """
+
+        #~ style.use("seaborn-poster")
+        gs = GridSpec(nrows=nrows, ncols=ncols)
+        plt.rc('text', usetex=True)
+        plt.rc('text', usetex=True)
+
+        fig = plt.figure()
+        fig.set_tight_layout(True)
+
+        return fig, grid_placement(fig, gs)
+
+    @staticmethod
+    def _4by4_grid_placement(fig, gs):
+        """
+        create grid which looks like
+
+        +---------------------------------+
+        |                  |              |
+        |       Y0 vs X0   |   Y1 vs X1   |
+        |       ax[0]      |   ax[1]      |
+        |------------------+--------------|
+        |                  |              |
+        |  Y2 vs X2        |   Y3 vs X3   |
+        |  ax[2]           |   ax[3]      |
+        +---------------------------------+
+        """
+        return [
+            fig.add_subplot( gs[0,0]),
+            fig.add_subplot( gs[0,1]),
+            fig.add_subplot( gs[1,0]),
+            fig.add_subplot( gs[1,1]),
+        ]
+
+    @staticmethod
+    def _1by1_grid_placement(fig, gs):
+        """
+        create grid which looks like
+
+        +----------------------+
+        |                      |
+        |       Y0 vs X0       |
+        |                      |
+        +----------------------+
+        """
+        return [
+            fig.add_subplot(gs[:]),
+        ]
+
+    @staticmethod
+    def _set_parms(ax, label_x, label_y):
+        """
+        set the parameters of the provided axes <ax>; it will modify to
+        specific size the fonts and tick of the ax; also sets the
+        format of the numbers on each axis and the labels using <label_x> and
+        <label_y>
+
+        Parameter
+        ---------
+        <ax>: class
+            the specific ax whos parameters will be set
+
+        <label_x>: string
+            the abscissa label
+
+        <label_y>: string
+            the ordinate label
+
+        Return
+        ------
+
+        """
+
+        from matplotlib.ticker import FormatStrFormatter
+
+        fontsize = 10
+        ticksize = 8
+
+        ax.clear()
+
+        ax.xaxis.set_major_formatter(FormatStrFormatter('%.1e'))
+        ax.set_xlabel(label_x, fontsize=fontsize)
+        ax.xaxis.set_tick_params(labelsize=ticksize)
+
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.1e'))
+        ax.set_ylabel(label_y, fontsize=fontsize)
+        ax.yaxis.set_tick_params(labelsize=ticksize)
+
+        return
+
+    @staticmethod
+    def _get_parameter_values(label):
+
+        val_beta = 0
+        val_m = 0
+        val_lambda = 0
+
+        for _ in label.split("_"):
+
+            if "beta" in _:
+                val_beta = _.replace("beta", "")
+            elif "m" in _:
+                val_m = _.replace("m", "")
+            elif "lambda" in _:
+                val_lambda = _.replace("lambda", "")
+
+        return val_beta, val_m, val_lambda
+
+    @staticmethod
+    def _units_coef_clac():
+        """
+        Calculates the unit coefficients
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        : dictionary
+            "density" in (double) g cm^-3
+            "pressure" in (double) dyns cm^-3
+            "r" in (double) km
+            "j" in (double) m^2 kg
+        """
+
+        # mas of sun in kg
+        const_msun = 1.9891e30
+        # gravitational const in m^3kg^-1s^-2
+        const_g = 6.67384e-11
+        # speed of light in ms^-1
+        const_c = 299792458
+
+        units = {}
+
+        # units of density in g cm^-3
+        units["density"] = 1e-3 * const_c**6 / (const_g**3 * const_msun**2)
+
+        # units of pressure in dyns cm^-3
+        units["pressure"] = const_c**8 / (const_g**3 * const_msun**2) * 10
+
+        # units of rad coordinate in km
+        units["R"] = 1e-3 * const_g * const_msun / const_c**2
+
+        # units of moment of inertia
+        units["J"] = 1e7 * const_g**2 * const_msun**3 / const_c**4
+
+        return units
+
+#################################################################################
+##### PAST VERSION TO BE DELETED ################################################
+#################################################################################
+    @staticmethod
+    def _check_if_StrNotBlank(string):
+        """
+        check if a sting is blank/empty
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        : boolean
+            True if string is not blank/empty
+            False if string is blank/empty
+        """
+
+        return bool(string and string.strip())
+
 
     @staticmethod
     def _get_max_xy_coord(x, y):
@@ -146,63 +613,6 @@ class plot_result:
         return cycle(product(styles_line, styles_colours))
 
     @staticmethod
-    def _units_coef_clac():
-        """
-        Calculates the unit coefficients
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        : dictionary
-            "density" in (double) g cm^-3
-            "pressure" in (double) dyns cm^-3
-            "r" in (double) km
-            "j" in (double) m^2 kg
-        """
-
-        # mas of sun in kg
-        const_msun = 1.9891e30
-        # gravitational const in m^3kg^-1s^-2
-        const_g = 6.67384e-11
-        # speed of light in ms^-1
-        const_c = 299792458
-
-        units = {}
-
-        # units of density in g cm^-3
-        units["density"] = 1e-3 * const_c**6 / (const_g**3 * const_msun**2)
-
-        # units of pressure in dyns cm^-3
-        units["pressure"] = const_c**8 / (const_g**3 * const_msun**2) * 10
-
-        # units of rad coordinate in km
-        units["rad"] = 1e-3 * const_g * const_msun / const_c**2
-
-        # units of moment of inertia
-        units["j"] = 1e7 * const_g**2 * const_msun**3 / const_c**4
-
-        return units
-
-    @staticmethod
-    def _check_if_StrNotBlank(string):
-        """
-        check if a sting is blank/empty
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        : boolean
-            True if string is not blank/empty
-            False if string is blank/empty
-        """
-
-        return bool(string and string.strip())
-
-    @staticmethod
     def _set_single_grid_placement(fig, gs):
         """
         create single axes in <fig> using GridSpec <gs>
@@ -227,90 +637,6 @@ class plot_result:
         all_ax.append(fig.add_subplot(gs[:]))
 
         return all_ax
-
-    @staticmethod
-    def _set_parms(ax, label_x, label_y):
-        """
-        set the parameters of the provided axes <ax>; it will modify to
-        specific size the fonts and tick of the ax; also sets the
-        format of the numbers on each axis and the labels using <label_x> and
-        <label_y>
-
-        Parameter
-        ---------
-        <ax>: class
-            the specific ax whos parameters will be set
-
-        <label_x>: string
-            the abscissa label
-
-        <label_y>: string
-            the ordinate label
-
-        Return
-        ------
-
-        """
-
-        from matplotlib.ticker import FormatStrFormatter
-
-        fontsize = 12
-        ticksize = 10
-
-        ax.clear()
-
-        ax.xaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-        ax.set_xlabel(label_x, fontsize=fontsize)
-        ax.xaxis.set_tick_params(labelsize=ticksize)
-
-        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2e'))
-        ax.set_ylabel(label_y, fontsize=fontsize)
-        ax.yaxis.set_tick_params(labelsize=ticksize)
-
-        return
-
-    @staticmethod
-    def _get_figure(nrows, ncols, grid_placement):
-        """
-        create Figure and assign specific subplot geometry defined by
-        <nrows> amount of rows and <ncols> amount of columns
-        defined using the function <grid_placement>
-
-        Parameters
-        ----------
-        nrows: int
-            amount of rows the figure will have
-
-        ncols: int
-            amount of columns the figure will have
-
-        grid_placement: class
-            function to define the placement of the subplots in the
-            figure using <nrows> and <ncols> and return
-            list of axes
-
-        Returns
-        -------
-        fig: Figure
-            the figure itself
-
-        : list
-            the list of axes which are associated with the subplot
-            placement defined by <grid_placement> function using
-            GridSpec class
-        """
-
-        from matplotlib import pyplot as plt
-        from matplotlib import style
-        from matplotlib.gridspec import GridSpec
-
-        style.use("seaborn-poster")
-        gs = GridSpec(nrows=nrows, ncols=ncols)
-
-        fig = plt.figure()
-        fig.set_tight_layout(True)
-
-        return fig, grid_placement(fig, gs)
 
     @staticmethod
     def _get_index(max_index):
@@ -906,7 +1232,7 @@ class plot_result:
         get_ipython().run_line_magic("matplotlib", "qt5")
 
         #~ lets check if we have anything to plot
-        if not self.data_res
+        if not self.data_res:
             self.load_ResultFile_latest()
 
         index_x, index_y = self._get_xy_current_file(
@@ -956,7 +1282,7 @@ class plot_result:
         get_ipython().run_line_magic('matplotlib', "qt5")
 
         #~ lets check if we have anything to plot
-        if not self.data_res
+        if not self.data_res:
             self.load_ResultFile()
 
         index_x, index_y = self._get_xy_current_file(
@@ -994,10 +1320,10 @@ class plot_result:
         get_ipython().run_line_magic('matplotlib', "qt5")
 
         #~ lets check if we have anything to plot
-        if not self.data_res
+        if not self.data_res:
             self.load_ResultFile()
 
-        if not self.data_daniela
+        if not self.data_daniela:
             self.load_DanielaFile()
 
         index_x, index_y = self._get_xy_current_file(self.headline_res[-1])
@@ -1046,13 +1372,13 @@ class plot_result:
         get_ipython().run_line_magic('matplotlib', "qt5")
 
         #~ lets check if we have anything to plot
-        if not self.data_res
+        if not self.data_res:
             self.load_ResultFile()
 
-        if not self.data_daniela
+        if not self.data_daniela:
             self.load_DanielaFile()
 
-        if not self.data_kalin
+        if not self.data_kalin:
             self.load_KalinFile()
 
         index_x, index_y = self._get_xy_current_file( self.headline_res[-1] )
@@ -1115,10 +1441,10 @@ class plot_result:
         get_ipython().run_line_magic('matplotlib', "qt5")
 
         #~ lets check if we have anything to plot
-        if not self.data_res
+        if not self.data_res:
             self.load_ResultFile()
 
-        if not self.data_kalin
+        if not self.data_kalin:
             self.load_KalinFile()
 
         index_x, index_y = self._get_xy_current_file(self.headline_res[-1])
@@ -1191,6 +1517,10 @@ class plot_result:
 
 if __name__ == "__main__":
 
-    import sys
-
-    print("\n Hello from {} \n", sys.argv[0])
+    print("\n asd \n")
+#~ imp.reload(myplt_M)
+#~ myplt = myplt_M.plot_result()
+#~ myplt.set_my_ResPath()
+#~ myplt.set_my_EOSname("APR4")
+#~ myplt.move_my_latest_res()
+#~ myplt.plot_my_latest_resEOSname()

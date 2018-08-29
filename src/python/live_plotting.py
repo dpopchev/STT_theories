@@ -1,13 +1,41 @@
 #!/usr/bin/env python
 
-DEF_RES_PATH = "/home/dimitar/projects/STT_theories/results"
-DEF_RES_KALIN = "/home/dimitar/Documents/Teaching_Materials/University/" \
-  + "Uvod.Fizika.Cherni.Dupki/Doktorant/Kalin_Static_NS_SlowRot_Massive_Lambda/" \
-  + "beta-6/"
+DEF_RES_PATH = "/home/dimitar/projects/STT_theories/results/APR4"
 
-KALIN_BETA = "beta-6_"
-KALIN_LAMBDA = "lambda1_"
-KALIN_M = "m1e-3"
+PREVIUS_FILE_BETA = 0
+PREVIUS_FILE_M = 0
+PREVIUS_FILE_LAMBDA = 0
+
+#~ DEF_RES_PATH_PREV = "/home/dimitar/projects/STT_theories/results/" \
+    #~ + "Results_Statia_1/" \
+    #~ + "beta{:.0f}/".format(PREVIUS_FILE_BETA) \
+    #~ + "lambda{:.0e}".format(PREVIUS_FILE_LAMBDA)
+
+#~ DEF_RES_FNAME_PREV = "STT_phiScal_J_AkmalPR_" \
+    #~ + "beta{:.3e}_".format(PREVIUS_FILE_BETA) \
+    #~ + "m{:.3e}_".format(PREVIUS_FILE_M) \
+    #~ + "lambda{:.3e}".format(PREVIUS_FILE_LAMBDA)
+
+DEF_RES_PATH_PREV = "/home/dimitar/projects/STT_theories/results/APR4" \
+    + "" \
+    + "" \
+    + ""
+
+DEF_RES_FNAME_PREV = "STT_phiScal_J_APR4_" \
+    + "beta{:.3e}_".format(PREVIUS_FILE_BETA) \
+    + "m{:.3e}_".format(PREVIUS_FILE_M) \
+    + "lambda{:.3e}".format(PREVIUS_FILE_LAMBDA)
+
+
+_kalin_beta = "beta-6"
+
+DEF_RES_KALIN = "/home/dimitar/Documents/Teaching_Materials/University/" \
+  + "Uvod.Fizika.Cherni.Dupki/Doktorant/Moi_Statii_Prezentacii/Statia_3/Kalin_data/" \
+  + _kalin_beta + "/"
+
+KALIN_BETA = _kalin_beta
+KALIN_LAMBDA = "lambda{}_".format(PREVIUS_FILE_LAMBDA)
+KALIN_M = "m{}".format(PREVIUS_FILE_M)
 
 def _check_if_StrNotBlank(string):
         """
@@ -272,6 +300,86 @@ def _load_GR(
 
     return { "data": data[-1], "headline": headline[-1], "label": label[-1] }
 
+def _load_previus_data(
+    data = [],headline = [], label = [],
+    path = DEF_RES_PATH_PREV,
+    filename = DEF_RES_FNAME_PREV
+):
+    """
+    load the data from <filename> in <path> by appending them to
+    <data>, append the headline (the name of each column) in
+    <headline> and the name of the file in <label>
+
+    Parameters
+    ----------
+    path: string
+        the path to the directory containing the file with data
+    filename: string
+        the name of the file which will be loaded
+    data: list
+        the loaded data will be appended here
+    headline: list
+        the name of each column will be appended here as a list
+    label: list
+        the name of the file will be apended here
+
+    Returns
+    -------
+    : dictionary
+        dictionary with entries
+            { "data" : data, "headline": headline, "label": label }
+    """
+
+    data.clear()
+    headline.clear()
+    label.clear()
+
+    if not(_check_if_StrNotBlank(path) and
+           _check_if_StrNotBlank(filename)):
+
+        print(
+            "\n from where to load a file!!! \n\t {} /{} \n".format(
+                path, filename
+            )
+        )
+
+    try:
+        with open(path + "/" + filename, "r") as f:
+            all_data = f.readlines()
+
+    except FileNotFoundError:
+        print(path + "/" + filename," MISSING !!! ")
+        return {  }
+
+    headline.append(
+        [
+            i.strip() for i in
+            all_data.pop(0).strip().split(" ")
+            if
+            "#" not in i and
+            len(i.strip())
+        ]
+    )
+
+    label.append(filename.split("/")[-1][-41:])
+
+    data.append(
+        [
+            [] for i in all_data[0].strip().split(" ") if len(i.strip())
+        ]
+    )
+
+    for cnt, line in enumerate(all_data):
+
+        for apnd, num in zip(
+            data[-1], [
+                float(i) for i in line.strip().split(" ") if len(i.strip())
+            ]
+        ):
+            apnd.append(num)
+
+    return { "data": data[-1], "headline": headline[-1], "label": label[-1] }
+
 def _load_file(
     filename = "", data = [], headline = [], label = [], path = DEF_RES_PATH
 ):
@@ -329,11 +437,14 @@ def _load_file(
 
     label.append(filename.split("/")[-1][-41:])
 
-    data.append(
-        [
-            [] for i in all_data[0].strip().split(" ") if len(i.strip())
-        ]
-    )
+    try:
+        data.append(
+            [
+                [] for i in all_data[0].strip().split(" ") if len(i.strip())
+            ]
+        )
+    except IndexError:
+        pass
 
     for cnt, line in enumerate(all_data):
 
@@ -344,7 +455,11 @@ def _load_file(
         ):
             apnd.append(num)
 
-    return { "data": data[-1], "headline": headline[-1], "label": label[-1] }
+    try:
+        return { "data": data[-1], "headline": headline[-1], "label": label[-1] }
+
+    except IndexError:
+        return { "data": [], "headline": [], "label": [] }
 
 def _set_parms(ax, label_x, label_y):
     """
@@ -511,7 +626,7 @@ def _set_parms_PhiScalMARJ(ax):
 
     return
 
-def _plot_PhiScalMARJ(ax, data, data_GR, data_Kalin):
+def _plot_PhiScalMARJ(ax, data, data_GR, data_Kalin, data_previus):
     """
     function which specificity sets the <data> to each axis in the <ax>
         p_c vs phiScal_c, AR vs M, M vs J
@@ -538,42 +653,74 @@ def _plot_PhiScalMARJ(ax, data, data_GR, data_Kalin):
 
     parms = _create_plot_parms_dict()
 
-    parms["linestyle"] = "-"
-    parms["linewidth"] = 1.5
-    parms["label"] = "GR"
-    parms["marker"] = ""
-    parms["markersize"] = 0
-    parms["alpha"] = 1
+    if data_GR["data"]:
 
-    _plot_data(
-        ax_phiScal_c,
-        data_GR["data"][mapping["p_c"]],
-        data_GR["data"][mapping["phiScal_c"]],
-        parms
-    )
+        parms["linestyle"] = "-"
+        parms["linewidth"] = 1.5
+        parms["label"] = "GR"
+        parms["marker"] = ""
+        parms["markersize"] = 0
+        parms["alpha"] = 1
 
-    _plot_data(
-        ax_M_AR,
-        data_GR["data"][mapping["AR"]],
-        data_GR["data"][mapping["M"]],
-        parms
-    )
+        _plot_data(
+            ax_phiScal_c,
+            data_GR["data"][mapping["p_c"]],
+            data_GR["data"][mapping["phiScal_c"]],
+            parms
+        )
 
-    _plot_data(
-        ax_J_M,
-        data_GR["data"][mapping["M"]],
-        data_GR["data"][mapping["J"]],
-        parms
-    )
+        _plot_data(
+            ax_M_AR,
+            data_GR["data"][mapping["AR"]],
+            data_GR["data"][mapping["M"]],
+            parms
+        )
 
-    parms["linestyle"] = "-"
-    parms["linewidth"] = 1.5
-    parms["label"] = data_Kalin["label"]
-    parms["marker"] = ""
-    parms["markersize"] = 0
-    parms["alpha"] = 1
+        _plot_data(
+            ax_J_M,
+            data_GR["data"][mapping["M"]],
+            data_GR["data"][mapping["J"]],
+            parms
+        )
 
-    if data_Kalin["data"][-1]:
+    if data_previus:
+
+        parms["linestyle"] = "-"
+        parms["linewidth"] = 1.5
+        parms["label"] = DEF_RES_FNAME_PREV
+        parms["marker"] = ""
+        parms["markersize"] = 0
+        parms["alpha"] = 1
+
+        _plot_data(
+            ax_phiScal_c,
+            data_previus["data"][mapping["p_c"]],
+            data_previus["data"][mapping["phiScal_c"]],
+            parms
+        )
+
+        _plot_data(
+            ax_M_AR,
+            data_previus["data"][mapping["AR"]],
+            data_previus["data"][mapping["M"]],
+            parms
+        )
+
+        _plot_data(
+            ax_J_M,
+            data_previus["data"][mapping["M"]],
+            data_previus["data"][mapping["J"]],
+            parms
+        )
+
+    if data_Kalin:
+
+        parms["linestyle"] = "-"
+        parms["linewidth"] = 1.5
+        parms["label"] = data_Kalin["label"]
+        parms["marker"] = ""
+        parms["markersize"] = 0
+        parms["alpha"] = 1
 
         _plot_data(
             ax_phiScal_c,
@@ -596,33 +743,37 @@ def _plot_PhiScalMARJ(ax, data, data_GR, data_Kalin):
             parms
         )
 
-    parms["linestyle"] = "--"
-    parms["linewidth"] = 1
-    parms["label"] = data["label"]
-    parms["marker"] = "o"
-    parms["markersize"] = 5
-    parms["alpha"] = 0.5
+    if data["data"]:
 
-    _plot_data(
-        ax_phiScal_c,
-        data["data"][mapping["p_c"]],
-        data["data"][mapping["phiScal_c"]],
-        parms
-    )
+        parms["linestyle"] = "--"
+        parms["linewidth"] = 1
+        parms["label"] = data["label"]
+        parms["marker"] = "o"
+        parms["markersize"] = 5
+        parms["alpha"] = 0.5
 
-    _plot_data(
-        ax_M_AR,
-        data["data"][mapping["AR"]],
-        data["data"][mapping["M"]],
-        parms
-    )
+        _plot_data(
+            ax_phiScal_c,
+            data["data"][mapping["p_c"]],
+            data["data"][mapping["phiScal_c"]],
+            parms
+        )
 
-    _plot_data(
-        ax_J_M,
-        data["data"][mapping["M"]],
-        data["data"][mapping["J"]],
-        parms
-    )
+        _plot_data(
+            ax_M_AR,
+            data["data"][mapping["AR"]],
+            data["data"][mapping["M"]],
+            parms
+        )
+
+        _plot_data(
+            ax_J_M,
+            data["data"][mapping["M"]],
+            data["data"][mapping["J"]],
+            parms
+        )
+    else:
+        pass
 
     ax_phiScal_c.legend(loc="best",fontsize=8)
     ax_M_AR.legend(loc="best",fontsize=8)
@@ -712,7 +863,7 @@ def _get_figure(nrows, ncols, grid_placement):
 
     return fig, grid_placement(fig, gs)
 
-def update(frame, ax, set_parms, plot_me, data_GR, data_Kalin):
+def update(frame, ax, set_parms, plot_me, data_GR, data_Kalin, data_previus):
     """
     the function which will clear the all axes ax_*
     will place the GR reference
@@ -744,7 +895,7 @@ def update(frame, ax, set_parms, plot_me, data_GR, data_Kalin):
 
     set_parms(ax)
 
-    plot_me(ax, frame, data_GR, data_Kalin)
+    plot_me(ax, frame, data_GR, data_Kalin, data_previus)
 
     return
 
@@ -758,10 +909,15 @@ if __name__ == "__main__":
     from matplotlib.animation import FuncAnimation
 
     data_GR = _load_GR(
-        filename = "GR_data"
+        filename = "STT_phiScal_J_APR4_beta0.000e+00_m0.000e+00_lambda0.000e+00"
     )
 
     data_Kalin = _load_kalin_file()
+    #~ do not want kalin data now
+    data_Kalin.clear()
+
+    data_previus = _load_previus_data()
+    #~ data_previus.clear()
 
     fig, ax = _get_figure(
         nrows=2,
@@ -770,12 +926,16 @@ if __name__ == "__main__":
     )
 
     animation_live = FuncAnimation(
-      fig = fig,
-      func = update,
-      fargs = (ax, _set_parms_PhiScalMARJ, _plot_PhiScalMARJ, data_GR, data_Kalin),
-      frames = update_data,
-      interval = 500,
-      save_count = 0
+        fig = fig,
+        func = update,
+        fargs = (
+          ax, _set_parms_PhiScalMARJ, _plot_PhiScalMARJ,
+          data_GR, data_Kalin, data_previus
+        ),
+        frames = update_data,
+        interval = 500,
+        save_count = 0,
+        repeat=False
     )
 
     plt.show()
