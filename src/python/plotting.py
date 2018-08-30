@@ -6,10 +6,13 @@ import shutil
 import itertools
 import random
 
+import numpy as np
+
 from matplotlib import pyplot as plt
 from IPython import get_ipython
 from matplotlib import style
 from matplotlib.gridspec import GridSpec
+from numpy.polynomial.polynomial import polyfit
 
 get_ipython().run_line_magic("matplotlib", "qt5")
 
@@ -25,7 +28,7 @@ class plot_result:
         self.my_data = None
         self.my_label = None
 
-        self.amount_of_points = 20
+        self.amount_of_points = 10
 
         self.kalin_path = None
         self.kalin_file = None
@@ -781,7 +784,32 @@ class plot_result:
                 markevery = abs((data[1][-1] - data[1][0])/self.amount_of_points)
             )
 
-        ax.legend(loc="best", fontsize=8)
+        coef = polyfit(
+            x = [ __ for _ in all_data for __ in _[1] ],
+            y = [ __ for _ in all_data for __ in _[-1] ],
+            deg = [ 0, 1, 4 ],
+        )
+
+        #~ print(coef)
+
+        p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
+
+        p_x = np.linspace(ax.get_xlim()[0], ax.get_xlim()[-1], 100)
+        p_y = [ p(_) for _ in p_x ]
+
+        ax.plot(
+            p_x,
+            p_y,
+            label = "poly fit, $\chi^2$"
+                "\n\t {:.3f} + {:.3f}x + {:.3f}$x^4$".format(
+                coef[0], coef[1], coef[4]
+            ),
+            color = "m",
+            linestyle = "-",
+            linewidth = 2
+        )
+
+        ax.legend(loc="best", fontsize=10)
         plt.show()
 
         return
@@ -982,8 +1010,11 @@ class plot_result:
             ":", "-.", "--", "-"
         ]
 
+        #~ colors = [
+            #~ "b", "g", "r", "c", "m", "y", "k"
+        #~ ]
         colors = [
-            "b", "g", "r", "c", "m", "y", "k"
+            "b", "g", "r", "c", "y", "k"
         ]
 
         return random.sample(
@@ -2029,3 +2060,7 @@ if __name__ == "__main__":
 #~ myplt.set_my_EOSname("APR4")
 #~ myplt.move_my_latest_res()
 #~ myplt.plot_my_latest_resEOSname()
+#~ imp.reload(myplt_M)
+#~ myplt = myplt_M.plot_result()
+#~ myplt.set_my_ResPath()
+#~ myplt.plot_severalEOSs_uniTildeI(severalEOSs)
