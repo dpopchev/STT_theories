@@ -4,6 +4,7 @@ import os
 import glob
 import shutil
 import itertools
+import random
 
 from matplotlib import pyplot as plt
 from IPython import get_ipython
@@ -23,6 +24,8 @@ class plot_result:
         self.my_headline = None
         self.my_data = None
         self.my_label = None
+
+        self.amount_of_points = 20
 
         self.kalin_path = None
         self.kalin_file = None
@@ -101,7 +104,6 @@ class plot_result:
             )
 
         except ValueError:
-
             return None
 
     def move_my_latest_res(self):
@@ -120,7 +122,7 @@ class plot_result:
             return
 
         src = os.path.join( self.my_ResPath, latest_result )
-        dst = os.path.join( self.my_ResPath, self.my_EOSname, latest_result)
+        dst = os.path.join( self.my_ResPath, self.my_EOSname, latest_result )
 
         print(
             "\n moving \n\t from {} \n\t to {} \n".format(
@@ -132,39 +134,6 @@ class plot_result:
         shutil.move(src, dst)
 
         return
-
-    def get_resEOSname_data(self, fpath):
-        """
-        get the following data form fpath, which is the full path to file
-            label - the name of the file as string
-            headline - the name for each column, as a list
-            data - the data itself as a list, each sublist is different column
-        """
-
-        with open(fpath, "r") as f:
-            all_data = f.readlines()
-
-        label = os.path.basename(fpath)
-
-        headline = [
-            _.strip() for _ in all_data.pop(0).strip().split(" ")
-            if
-            "#" not in _ and
-            len(_.strip())
-        ]
-
-        data = [
-            [] for _ in all_data[0].strip().split(" ") if len(_.strip())
-        ]
-
-        for line in all_data:
-
-            for d, n in zip(
-                data, [ float(_) for _ in line.strip().split(" ") if len(_.strip()) ]
-            ):
-                d.append(n)
-
-        return label, headline, data
 
     def get_my_latests_resEOSname_file(self, fname = "STT_phiScal_J_"):
         """
@@ -209,7 +178,7 @@ class plot_result:
         val_beta, val_m, val_lambda = self._get_parameter_values(label)
 
         plt.suptitle(
-            "EOS = {}; beta = {}; m = {}; lambda = {}".format(
+            "EOS = {}; beta = {:.1f}; m = {:.1e}; lambda = {:.1e}".format(
                 self.my_EOSname, val_beta, val_m, val_lambda
             ),
             fontsize=10, y=0.99
@@ -219,96 +188,604 @@ class plot_result:
 
         return
 
+    def get_resEOSname_data(self, fpath):
+        """
+        get the following data form fpath, which is the full path to file
+            label - the name of the file as string
+            headline - the name for each column, as a list
+            data - the data itself as a list, each sublist is different column
+        """
+
+        with open(fpath, "r") as f:
+            all_data = f.readlines()
+
+        label = os.path.basename(fpath)
+
+        headline = [
+            _.strip() for _ in all_data.pop(0).strip().split(" ")
+            if
+            "#" not in _ and
+            len(_.strip())
+        ]
+
+        data = [
+            [] for _ in all_data[0].strip().split(" ") if len(_.strip())
+        ]
+
+        for line in all_data:
+
+            for d, n in zip(
+                data, [ float(_) for _ in line.strip().split(" ") if len(_.strip()) ]
+            ):
+                d.append(n)
+
+        return label, headline, data
+
     def get_severalEOS_data(
         self,
-        severalEOS = [ "SLy4", "APR4", "FPS", "WFF2" ],
-        severalBeta = [ 0 ],
-        severalM = [ 0 ],
-        severalLambda = [ 0 ],
+        severalEOSs,
         fname = "STT_phiScal_J"
     ):
         """
-        for provided list <severalEOS> with provided list <severalBeta>,
-        <severalM>, <severalLambda>, will returned nested lists with
-        labels, headlines(name of each file) and data in correspondence
-
-        GR values are default
+        for provided list of dictionaries called severalEOSs get the data
+        the dict has following structure
+        {
+            "name": EOSname_string,
+            "beta": Value_Beta,
+            "m": Value_M,
+            "lambda": Value_lambda
+        }
         """
 
         all_label = []
         all_headline = []
         all_data = []
 
-        for EOS in severalEOS:
+        for eos in severalEOSs:
 
-            for parms in itertools.product(severalBeta, severalM, severalLambda):
+            EOSname = "_".join( [
+                fname,
+                eos["name"],
+                "beta{:.3e}".format(eos["beta"]),
+                "m{:.3e}".format(eos["m"]),
+                "lambda{:.3e}".format(eos["lambda"])
+            ] )
 
-                EOSname = "_".join( [
-                    fname,
-                    EOS,
-                    "beta{:.3e}".format(parms[0]),
-                    "m{:.3e}".format(parms[1]),
-                    "lambda{:.3e}".format(parms[2])
-                ] )
+            EOSpath = os.path.join( self.my_ResPath, eos["name"], EOSname)
 
-                EOSpath = os.path.join(
-                    self.my_ResPath, EOS, EOSname
-                )
+            _label, _headline, _data = self.get_resEOSname_data(EOSpath)
 
-                _label, _headline, _data = self.get_resEOSname_data(EOSpath)
-
-                all_label.append(_label)
-                all_headline.append(_headline)
-                all_data.append(_data)
+            all_label.append(_label)
+            all_headline.append(_headline)
+            all_data.append(_data)
 
         return all_label, all_headline, all_data
 
-    def plot_my_GR_all_EOS_MvsR(self):
+    def get_uniEOSname_data_uniI(self, fpath):
+        """
+        for provided filepaths to tilde I return the entries as nested list
+        labels and headline
+        """
 
-        all_label, all_headline, all_data = self.get_severalEOS_data()
+        with open(fpath, "r") as f:
+            all_data = f.readlines()
+
+        label = os.path.basename(fpath)
+
+        headline = [
+            _.strip() for _ in all_data.pop(0).strip().split(" ")
+            if
+            "#" not in _ and
+            len(_.strip())
+        ]
+
+        data = [
+            [] for _ in all_data[0].strip().split(" ") if len(_.strip())
+        ]
+
+        for line in all_data:
+
+            for d, n in zip(
+                data, [ float(_) for _ in line.strip().split(" ") if len(_.strip()) ]
+            ):
+                d.append(n)
+
+        return label, headline, data
+
+    def get_severalEOS_uniTildeI_data(
+        self,
+        severalEOSs,
+        fname = "STT_phiScal_J"
+    ):
+        """
+        for provided list of dictionaries called severalEOSs get the data for
+        universal I, which are in the "Fitting" directory of each EOS
+
+        one of the is *_tildeI for tilde I
+        other is *_barI for bar I
+
+        for each entyr in severalEOS return two nested lists barI and tildeI
+
+        {
+            "name": EOSname_string,
+            "beta": Value_Beta,
+            "m": Value_M,
+            "lambda": Value_lambda
+        }
+        """
+
+        all_label = []
+        all_headline = []
+        all_data = []
+
+        for eos in severalEOSs:
+
+            EOSname_tildeI = "_".join( [
+                fname,
+                eos["name"],
+                "beta{:.3e}".format(eos["beta"]),
+                "m{:.3e}".format(eos["m"]),
+                "lambda{:.3e}".format(eos["lambda"]),
+                "tildeI"
+            ] )
+
+            EOSpath_tildeI = os.path.join(
+                self.my_ResPath, eos["name"], "Fitting", EOSname_tildeI
+            )
+
+            _label, _headline, _data = self.get_uniEOSname_data_uniI(EOSpath_tildeI)
+
+            all_label.append(_label)
+            all_headline.append(_headline)
+            all_data.append(_data)
+
+        return all_label, all_headline, all_data
+
+    def plot_severalEOSs_MvsR(self, severalEOSs):
+        """
+        plot several EOSs by listing them in <severalEOSs> with dictionaries
+        see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_data(severalEOSs)
 
         fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
 
         ax = all_axes[0]
 
-        self._set_parms(ax, "R [km]", "M")
+        self._set_parms(ax, "R [km]", "$M/M_{\odot}$")
 
-        marker_style = ["o", "v", "s", "x"]
-        line_style = ["--", "--", "--", "--"]
-        color_style = ["b", "k", "g", "r"]
-        EOS_list = [ "SLy4", "APR4", "FPS", "WFF2" ]
-
-        for label, data, ms, ls, c in zip(
-            all_label, all_data, marker_style, line_style, color_style
-        ):
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
             data[3] = [ _*self.units["R"] for _ in data[3] ]
 
-            l = ""
-            for _ in EOS_list:
-                if _ in label:
-                    l = _
-                    break
+            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
 
             ax.plot(
                 data[3],
                 data[2],
-                label = l,
-                color = c,
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
                 linestyle = ls,
                 marker = ms,
-                markerfacecolor = c,
-                markersize = 6,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[2][-1] - data[2][0])/40)
+                markevery = abs((data[2][-1] - data[2][0])/self.amount_of_points)
             )
-
-        ax.set_xlim(8,15)
-        ax.set_ylim(0.25,2.5)
 
         ax.legend(loc="best", fontsize=8)
         plt.show()
 
         return
+
+    def plot_severalEOSs_phiScal_cVSp_c(self, severalEOSs):
+        """
+        plot several EOSs by listing them in <severalEOSs> with dictionaries
+        see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_data(severalEOSs)
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "$p_c$", "$\\varphi_c$")
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+
+            ax.plot(
+                data[0],
+                data[1],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 0,
+                linewidth = 1.5,
+                markevery = abs((data[2][-1] - data[2][0])/self.amount_of_points)
+            )
+
+        ax.legend(loc="best", fontsize=8)
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_phiScal_cvsrho_c(self, severalEOSs):
+        """
+        plot several EOSs by listing them in <severalEOSs> with dictionaries
+        see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_data(severalEOSs)
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "$\\rho_c [g/cm^3]$", "$\\varphi_c$")
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            data[-2] = [ _*self.units["density"] for _ in data[-2] ]
+
+            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+
+            ax.plot(
+                data[-2],
+                data[1],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 0,
+                linewidth = 1.5,
+                markevery = abs((data[2][-1] - data[2][0])/self.amount_of_points)
+            )
+
+        ax.legend(loc="best", fontsize=8)
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_Mvsrho_c(self, severalEOSs):
+        """
+        plot several EOSs by listing them in <severalEOSs> with dictionaries
+        see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_data(severalEOSs)
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "$\\rho_c [g/cm^3]$", "$M/M_{\odot}$")
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            data[-2] = [ _*self.units["density"] for _ in data[-2] ]
+
+            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+
+            ax.plot(
+                data[-2],
+                data[2],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 0,
+                linewidth = 1.5,
+                markevery = abs((data[2][-1] - data[2][0])/self.amount_of_points)
+            )
+
+        ax.legend(loc="best", fontsize=8)
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_JvsM(self, severalEOSs):
+        """
+        plot several EOSs by listing them in <severalEOSs> with dictionaries
+        see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_data(severalEOSs)
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "$M/M_{\odot}$", "$J 10^{45} [g cm^3]$")
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            data[-1] = [ _*self.units["J"]*1e-45 for _ in data[-1] ]
+
+            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+
+            ax.plot(
+                data[2],
+                data[-1],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 0,
+                linewidth = 1.5,
+                markevery = abs((data[2][-1] - data[2][0])/self.amount_of_points)
+            )
+
+        ax.legend(loc="best", fontsize=8)
+        plt.show()
+
+        return
+
+    def convert_to_fitting(self, severalEOSs, fname = "STT_phiScal_J"):
+        """
+        for the provided list EOSs go over their results and create, by
+        appending [name of result]_tildeI and [name of result]_barI, the
+        neaceassery ceofficients for the fitting
+
+        IT WILL OVERWRITE EXISTING !!!!
+        """
+
+        for eos in severalEOSs:
+
+            for result in glob.glob(os.path.join(self.my_ResPath, eos, fname + "*")):
+
+                with open(result, "r") as f:
+                    src_data_lines = f.readlines()
+
+                #~ first line is just headline
+                src_data_lines.pop(0)
+
+                current_convert = "_tildeI"
+
+                target = os.path.join(
+                    self.my_ResPath, eos, "Fitting",
+                    os.path.basename(result) + current_convert
+                )
+
+                print(
+                    "\n will convert \n\t from {} \n\t to {} \n\t as {}".format(
+                        result, target, current_convert
+                    )
+                )
+
+                with open( target, "w" ) as f:
+
+                    f.write("# x0(1) x1(M/R) x2((M/R)**4) y(I/(MR**3)) \n")
+
+                    for line in src_data_lines:
+
+                        tmp = [
+                            float(_) for _ in line.strip().split(" ") if len(_.strip())
+                        ]
+
+                        f.write(
+                            "{:.6e} {:.6e} {:.6e} {:.6e} \n".format(
+                                1, tmp[2]/tmp[3], (tmp[2]/tmp[3])**4,
+                                tmp[-1]/(tmp[2]*tmp[3]**3)
+                            )
+                        )
+
+                current_convert = "_barI"
+
+                target = os.path.join(
+                    self.my_ResPath, eos, "Fitting",
+                    os.path.basename(result) + current_convert
+                )
+
+                print(
+                    "\n will convert \n\t from {} \n\t to {} \n\t as {}".format(
+                        result, target, current_convert
+                    )
+                )
+
+                with open( target, "w" ) as f:
+
+                    f.write("# x0(R/M) x1((R/M)**2) x2((R/M)**3) x3((R/M)**4 y(I/(M)**3) \n")
+
+                    for line in src_data_lines:
+
+                        tmp = [
+                            float(_) for _ in line.strip().split(" ") if len(_.strip())
+                        ]
+
+                        f.write(
+                            "{:.6e} {:.6e} {:.6e} {:.6e} {:.6e} \n".format(
+                                tmp[3]/tmp[2], (tmp[3]/tmp[2])**2,
+                                (tmp[3]/tmp[2])**3, (tmp[3]/tmp[2])**4,
+                                tmp[-1]/(tmp[2]**3)
+                            )
+                        )
+
+        return
+
+    def plot_severalEOSs_uniTildeI(self, severalEOSs ):
+        """
+        plot severalEOS unifersal Tilde I relationships
+        <severalEOSs> with dictionaries see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_uniTildeI_data(severalEOSs)
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "M/R", "$I/(MR^2)$")
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+
+            data[-1] = [ _ for _ in data[-1] ]
+
+            ax.plot(
+                data[1],
+                data[-1],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 5.5,
+                linewidth = 1.5,
+                markevery = abs((data[1][-1] - data[1][0])/self.amount_of_points)
+            )
+
+        ax.legend(loc="best", fontsize=8)
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_uniTildeI_polyFit(self, severalEOSs ):
+        """
+        plot severalEOS unifersal Tilde I relationships
+        <severalEOSs> with dictionaries see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_uniTildeI_data(severalEOSs)
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "M/R", "$I/(MR^2)$")
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+
+            data[-1] = [ _ for _ in data[-1] ]
+
+            ax.plot(
+                data[1],
+                data[-1],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 5.5,
+                linewidth = 1.5,
+                markevery = abs((data[1][-1] - data[1][0])/self.amount_of_points)
+            )
+
+        ax.legend(loc="best", fontsize=8)
+        plt.show()
+
+        return
+
 
     @staticmethod
     def _get_figure(nrows, ncols, grid_placement):
@@ -439,11 +916,11 @@ class plot_result:
         for _ in label.split("_"):
 
             if "beta" in _:
-                val_beta = _.replace("beta", "")
-            elif "m" in _:
-                val_m = _.replace("m", "")
+                val_beta = float(_.replace("beta", ""))
             elif "lambda" in _:
-                val_lambda = _.replace("lambda", "")
+                val_lambda = float(_.replace("lambda", ""))
+            elif "m" in _:
+                val_m = float(_.replace("m", ""))
 
         return val_beta, val_m, val_lambda
 
@@ -486,6 +963,34 @@ class plot_result:
         units["J"] = 1e7 * const_g**2 * const_msun**3 / const_c**4
 
         return units
+
+    @staticmethod
+    def _get_ls_lc_ms_mc():
+        """
+        get tuple for
+            ls ---> line style
+            lc ---> line color
+            ms ---> marker style
+            mc----> marker color
+        """
+
+        markerstyles = [
+            "s", ">", "<", "^", "v", "o", "x", "P", "d", "D", "H", "*", "p",
+        ]
+
+        linestyles = [
+            ":", "-.", "--", "-"
+        ]
+
+        colors = [
+            "b", "g", "r", "c", "m", "y", "k"
+        ]
+
+        return random.sample(
+            set(
+                itertools.product(linestyles,colors,markerstyles, colors)
+            ), 1
+        )[0]
 
 #################################################################################
 ##### PAST VERSION TO BE DELETED ################################################

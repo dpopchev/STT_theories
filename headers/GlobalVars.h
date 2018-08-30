@@ -86,7 +86,11 @@
     extern void iterate_pressure_shoot_regular(void);
     extern void single_shoot_regular_iterate_inf(void);
     extern void iterate_pressure_inf_shoot_regular(void);
-    extern void get_phiScal_cVal_infVal(
+    extern void get_phiScal_cVal_infVal_regShoot(
+      double *parm_vals, double pressure, EOSmodelInfoStruct *_eos,
+      double *phiScal, double *inf, int _minimal_p_power
+    );
+    extern void get_phiScal_cVal_infVal_fitShoot(
       double *parm_vals, double pressure, EOSmodelInfoStruct *_eos,
       double *phiScal, double *inf, int _minimal_p_power
     );

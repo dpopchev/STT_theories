@@ -829,7 +829,12 @@ static void shoot_fitting_execute(int n, double *v, double *f){
     // set the initial data left to right through fitting
     ODE_struct *_ode1 = ODE_struct_init();
 
+    r_fit = (_ode1->x_start + _ode1->x_end) * 0.75;
+
     _ode1->y[1] = v[1];
+    _ode1->y[2] = 0;
+    _ode1->y[4] = 0;
+
     _ode1->x_end = r_fit;
 
     integrate_phiScal(_ode1);
@@ -838,19 +843,18 @@ static void shoot_fitting_execute(int n, double *v, double *f){
     ODE_struct *_ode2 = ODE_struct_init();
 
     _ode2->y[1] = 0;
-    _ode2->y[2] = 0;
+    _ode2->y[2] = v[2];
     _ode2->y[3] = 0;
-    _ode2->y[4] = v[2];
-    _ode2->y[5] = v[3];
-    _ode2->x_end = r_fit;
+    _ode2->y[4] = v[3];
+    _ode2->y[5] = 0;
     _ode2->x_start = r_inf;
 
     integrate_phiScal(_ode2);
 
     // on the left side we want scalar field to be 0
     f[1] = _ode1->y[1] - _ode2->y[1];
-    f[2] = _ode1->y[4] - _ode2->y[4];
-    f[3] = _ode1->y[5] - _ode2->y[5];
+    f[2] = _ode1->y[2] - _ode2->y[2];
+    f[3] = _ode1->y[4] - _ode2->y[4];
 
     ODE_struct_free(&_ode1);
     ODE_struct_free(&_ode2);
@@ -861,7 +865,8 @@ static void shoot_fitting_execute(int n, double *v, double *f){
 // the equations for slow rotation depend on those for phiScal but not vice verse
 // for provided GV_PARAMETERS_VALUES, pressure and Equation of State
 // override the given phiScal and inf
-void get_phiScal_cVal_infVal(
+// it uses the regular shooting method
+void get_phiScal_cVal_infVal_regShoot(
   double *parm_vals, double pressure, EOSmodelInfoStruct *_eos,
   double *phiScal, double *inf, int _minimal_p_power
 ){
@@ -908,6 +913,94 @@ void get_phiScal_cVal_infVal(
             newt_n,
             &newt_check,
             &shoot_regular_execute
+        );
+
+        printf(
+          "\n\t\t v_%d = %e ----> v_%d = %e ( R = %e )\n"
+          "\n\t\t count = %d with inf = %e\n\n",
+          count - 1, phiScal_c, count, newt_v[1], R,
+          count, r_inf
+        );
+
+        // criteria for the difference in the previous and now
+        // central value of the scalar field
+        if(get_power(phiScal_c - newt_v[1]) > -6 ){
+            tmpinf = r_inf;
+            phiScal_c = newt_v[1];
+            r_inf += 0.1*r_inf;
+        }else{
+            printf(
+                "\n\t\t No significant difference assume \n\t\t\t %e and inf %e \n",
+                newt_v[1], r_inf
+            );
+            break;
+        }
+    }
+
+    *phiScal = newt_v[1];
+    *inf = r_inf;
+
+    free(newt_v);
+
+    // reset the minimal power of this function
+    minimal_p_power = tmp_minimal_p_power;
+
+    return;
+}
+
+// the equations for slow rotation depend on those for phiScal but not vice verse
+// for provided GV_PARAMETERS_VALUES, pressure and Equation of State
+// override the given phiScal and inf
+// it uses the shooting through a fitting point
+void get_phiScal_cVal_infVal_fitShoot(
+  double *parm_vals, double pressure, EOSmodelInfoStruct *_eos,
+  double *phiScal, double *inf, int _minimal_p_power
+){
+
+    GV_PARAMETERS_VALUES = parm_vals;
+
+    eos = _eos;
+
+    p_current = pressure;
+
+    int \
+      newt_n = 3, // the size of the guess values vector v
+      newt_check = 0; // variable to check if we have stumbled in a minimum
+
+    // the guess vector itself with initial guesses
+    double \
+      *newt_v = dvector(1, newt_n),
+      phiScal_c = *phiScal,
+      tmpinf = r_inf;
+
+
+    // the wanted minimal power of the pressure may be different in the
+    // mother function, so adopt it
+    int tmp_minimal_p_power = minimal_p_power;
+
+    minimal_p_power = _minimal_p_power;
+
+    // initial guess for the scalar field
+    newt_v[1] = phiScal_c;
+    newt_v[2] = -1e-8;
+    newt_v[3] = 2e-5;
+    r_inf = *inf;
+
+    // increase the infinity several times until
+    // the shooted central value of the scalar field becomes
+    // less and less different
+    // also print how many attempts we are doing and so on
+    int count = 0;
+    while(++count){
+
+        // reset the file with live plotting values
+        LivePlot_open(ODE_NAME, eos->model_name, GV_PARAMETERS_VALUES);
+
+        newt(
+            newt_v,
+            newt_n,
+            &newt_check,
+            &shoot_fitting_execute
         );
 
         printf(

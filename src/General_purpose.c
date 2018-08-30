@@ -679,7 +679,7 @@ void ResultFile_phiScal_J_open(const char *ode_name, char *eos_name, double *par
         exit(178);
     }else{
 
-        fprintf(fp,"# p_c phiScal_c M AR rho_c J delta_phiScal delta_PhiMetr delta_Omega \n");
+        fprintf(fp,"# p_c phiScal_c M AR rho_c J \n");
 
         fclose(fp);
         return;

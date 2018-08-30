@@ -3,17 +3,17 @@
 #define DEBUGGING_EOS_INIT 0
 
 // the total amount of eos we have
-#define DEF_TOTAL_EOS_NAME_COUNT 4
+#define DEF_TOTAL_EOS_NAME_COUNT 5
 
 // which model we will use
-#define DEF_EOS_MODEL_NUM 3
+#define DEF_EOS_MODEL_NUM 2
 
 // if we will use splines, the dimensions of the vector
 #define DEF_EOS_PICEWISE_VECTORS_DIM 7
 
 const char \
     *default_eos_names[] = {
-      "", "EOSII", "Sly4", "AkmalPR", "piecewAPR4"
+      "", "EOSII", "SLy4", "APR4", "FPS", "WFF2"
     };
 
 static void picewise_EOS_load(
@@ -114,16 +114,16 @@ void eos_init(EOSmodelInfoStruct **eos){
 
     (*eos)->model_num = DEF_EOS_MODEL_NUM;
 
-    if(
-      (*eos)->model_num == 2 || (*eos)->model_num == 4  || (*eos)->model_num > 4
-    ){
-        printf(
-          "\n eos number %d not working yet, eos.c eos_init, exitting line 127 \n",
-          (*eos)->model_num
-        );
+    //~ if(
+      //~ (*eos)->model_num == 2 || (*eos)->model_num == 4  || (*eos)->model_num > 4
+    //~ ){
+        //~ printf(
+          //~ "\n eos number %d not working yet, eos.c eos_init, exitting line 127 \n",
+          //~ (*eos)->model_num
+        //~ );
 
-        exit(127);
-    }
+        //~ exit(127);
+    //~ }
 
     (*eos)->model_name = calloc(32,sizeof(char));
     strcpy( (*eos)->model_name, default_eos_names[(*eos)->model_num]);
@@ -143,12 +143,72 @@ void eos_init(EOSmodelInfoStruct **eos){
 
             break;
 
+        case 2:
+
+            tmp_log_p1 = 34.384;
+            tmp_Gamma1 = 3.005;
+            tmp_Gamma2 = 2.988;
+            tmp_Gamma3 = 2.851;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+              tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
         case 3:
 
             tmp_log_p1 = 34.269;
             tmp_Gamma1 = 2.830;
             tmp_Gamma2 = 3.445;
             tmp_Gamma3 = 3.348;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+              tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 4:
+
+            tmp_log_p1 = 34.283;
+            tmp_Gamma1 = 2.985;
+            tmp_Gamma2 = 2.863;
+            tmp_Gamma3 = 2.600;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+              tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 5:
+
+            tmp_log_p1 = 34.233;
+            tmp_Gamma1 = 2.888;
+            tmp_Gamma2 = 3.475;
+            tmp_Gamma3 = 3.517;
 
             (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
             (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
@@ -231,7 +291,64 @@ void EOSeq( EOSmodelInfoStruct *eos, double pressure ){
             return;
             break;
 
-        }case 3:
+        }case 2:{
+
+            pressure *= GV_PRESSURE_UNITS;
+            int i = 1;
+            double LV_C = 2.9979e10;
+
+            while( pressure > eos->PieceWise_presure[i] ){
+                i++;
+            }
+
+            double eps =  \
+              ( 1.0 + eos->PieceWise_a[i] ) \
+              * pow( pressure / eos->PieceWise_K[i],1.0 / eos->PieceWise_Gamma[i])\
+              + pressure/pow( LV_C, 2 ) / ( eos->PieceWise_Gamma[i] - 1.0 );
+
+            eos->current = eps/GV_DENSITY_UNITS;
+
+            return;
+            break;
+        }case 3:{
+
+            pressure *= GV_PRESSURE_UNITS;
+            int i = 1;
+            double LV_C = 2.9979e10;
+
+            while( pressure > eos->PieceWise_presure[i] ){
+                i++;
+            }
+
+            double eps =  \
+              ( 1.0 + eos->PieceWise_a[i] ) \
+              * pow( pressure / eos->PieceWise_K[i],1.0 / eos->PieceWise_Gamma[i])\
+              + pressure/pow( LV_C, 2 ) / ( eos->PieceWise_Gamma[i] - 1.0 );
+
+            eos->current = eps/GV_DENSITY_UNITS;
+
+            return;
+            break;
+        }case 4:{
+
+            pressure *= GV_PRESSURE_UNITS;
+            int i = 1;
+            double LV_C = 2.9979e10;
+
+            while( pressure > eos->PieceWise_presure[i] ){
+                i++;
+            }
+
+            double eps =  \
+              ( 1.0 + eos->PieceWise_a[i] ) \
+              * pow( pressure / eos->PieceWise_K[i],1.0 / eos->PieceWise_Gamma[i])\
+              + pressure/pow( LV_C, 2 ) / ( eos->PieceWise_Gamma[i] - 1.0 );
+
+            eos->current = eps/GV_DENSITY_UNITS;
+
+            return;
+            break;
+        }case 5:{
 
             pressure *= GV_PRESSURE_UNITS;
             int i = 1;
@@ -251,7 +368,7 @@ void EOSeq( EOSmodelInfoStruct *eos, double pressure ){
             return;
             break;
 
-        default:
+        }default:
             printf(
               "\n EOS.c eos_init %d unknown, exiting... line 260\n", eos->model_num
             );
