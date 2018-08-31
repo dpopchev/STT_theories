@@ -344,6 +344,55 @@ class plot_result:
 
         return all_label, all_headline, all_data
 
+    def get_severalEOS_uniBarI_data(
+        self,
+        severalEOSs,
+        fname = "STT_phiScal_J"
+    ):
+        """
+        for provided list of dictionaries called severalEOSs get the data for
+        universal I, which are in the "Fitting" directory of each EOS
+
+        one of the is *_tildeI for tilde I
+        other is *_barI for bar I
+
+        for each entyr in severalEOS return two nested lists barI and tildeI
+
+        {
+            "name": EOSname_string,
+            "beta": Value_Beta,
+            "m": Value_M,
+            "lambda": Value_lambda
+        }
+        """
+
+        all_label = []
+        all_headline = []
+        all_data = []
+
+        for eos in severalEOSs:
+
+            EOSname_barI = "_".join( [
+                fname,
+                eos["name"],
+                "beta{:.3e}".format(eos["beta"]),
+                "m{:.3e}".format(eos["m"]),
+                "lambda{:.3e}".format(eos["lambda"]),
+                "barI"
+            ] )
+
+            EOSpath_tildeI = os.path.join(
+                self.my_ResPath, eos["name"], "Fitting", EOSname_barI
+            )
+
+            _label, _headline, _data = self.get_uniEOSname_data_uniI(EOSpath_tildeI)
+
+            all_label.append(_label)
+            all_headline.append(_headline)
+            all_data.append(_data)
+
+        return all_label, all_headline, all_data
+
     def plot_severalEOSs_MvsR(self, severalEOSs):
         """
         plot several EOSs by listing them in <severalEOSs> with dictionaries
@@ -603,14 +652,22 @@ class plot_result:
 
     def convert_to_fitting(self, severalEOSs, fname = "STT_phiScal_J"):
         """
-        for the provided list EOSs go over their results and create, by
+        for the provided list of dics of EOSs go over their results and create, by
         appending [name of result]_tildeI and [name of result]_barI, the
         neaceassery ceofficients for the fitting
 
         IT WILL OVERWRITE EXISTING !!!!
+
+        EXAMPLE
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
         """
 
-        for eos in severalEOSs:
+        for eos in [ _["name"] for _ in severalEOSs ]:
 
             for result in glob.glob(os.path.join(self.my_ResPath, eos, fname + "*")):
 
@@ -635,7 +692,7 @@ class plot_result:
 
                 with open( target, "w" ) as f:
 
-                    f.write("# x0(1) x1(M/R) x2((M/R)**4) y(I/(MR**3)) \n")
+                    f.write("# M/R I/(MR**3) \n")
 
                     for line in src_data_lines:
 
@@ -644,9 +701,8 @@ class plot_result:
                         ]
 
                         f.write(
-                            "{:.6e} {:.6e} {:.6e} {:.6e} \n".format(
-                                1, tmp[2]/tmp[3], (tmp[2]/tmp[3])**4,
-                                tmp[-1]/(tmp[2]*tmp[3]**3)
+                            "{:.6e} {:.6e} \n".format(
+                                tmp[2]/tmp[3], tmp[5]/(tmp[2]*tmp[3]**3)
                             )
                         )
 
@@ -665,7 +721,7 @@ class plot_result:
 
                 with open( target, "w" ) as f:
 
-                    f.write("# x0(R/M) x1((R/M)**2) x2((R/M)**3) x3((R/M)**4 y(I/(M)**3) \n")
+                    f.write("# (M/R)**-1 I/M**3 \n")
 
                     for line in src_data_lines:
 
@@ -674,10 +730,8 @@ class plot_result:
                         ]
 
                         f.write(
-                            "{:.6e} {:.6e} {:.6e} {:.6e} {:.6e} \n".format(
-                                tmp[3]/tmp[2], (tmp[3]/tmp[2])**2,
-                                (tmp[3]/tmp[2])**3, (tmp[3]/tmp[2])**4,
-                                tmp[-1]/(tmp[2]**3)
+                            "{:.6e} {:.6e} \n".format(
+                                tmp[2]/tmp[3], tmp[5]/(tmp[2]**3)
                             )
                         )
 
@@ -710,11 +764,9 @@ class plot_result:
 
             ls, lc, ms, mc = self._get_ls_lc_ms_mc()
 
-            data[-1] = [ _ for _ in data[-1] ]
-
             ax.plot(
+                data[0],
                 data[1],
-                data[-1],
                 label = "{}"
                     "\n\t $\\beta$ = {:.1f}"
                     "\n\t m = {:.1e}"
@@ -728,7 +780,7 @@ class plot_result:
                 markeredgecolor = mc,
                 markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[1][-1] - data[1][0])/self.amount_of_points)
+                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
             )
 
         ax.legend(loc="best", fontsize=8)
@@ -753,21 +805,142 @@ class plot_result:
 
         all_label, all_headline, all_data = self.get_severalEOS_uniTildeI_data(severalEOSs)
 
+        #~ fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+        fig, all_axes  = self._get_figure(
+            2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
+        )
+
+        ax_up = all_axes[0]
+        ax_down = all_axes[1]
+
+        #~ self._set_parms(ax_up, "M/R", "$I/(MR^3)$")
+        self._set_parms(ax_up, "", r"$I/(MR^3)$")
+
+        max_x = 0
+        min_x = 1e9
+
+        all_colors = []
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            all_colors.append(self._get_ls_lc_ms_mc())
+
+            if max(data[0]) > max_x:
+                max_x = max(data[0])
+
+            if min(data[0]) < min_x:
+                min_x = min(data[0])
+
+            ax_up.plot(
+                data[0],
+                data[1],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = all_colors[-1][1],
+                linestyle = all_colors[-1][0],
+                marker = all_colors[-1][2],
+                markerfacecolor = all_colors[-1][3],
+                markeredgecolor = all_colors[-1][3],
+                markersize = 5.5,
+                linewidth = 1.5,
+                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
+            )
+
+        coef = polyfit(
+            x = [ __ for _ in all_data for __ in _[0] ],
+            y = [ __ for _ in all_data for __ in _[1] ],
+            deg = [ 0, 1, 4 ],
+        ).tolist()
+
+        #~ print(coef)
+
+        p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
+
+        p_x = np.linspace(min_x, max_x, 100)
+        p_y = [ p(_) for _ in p_x ]
+
+        ax_up.plot(
+            p_x,
+            p_y,
+            label = "poly fit, $\chi^2$"
+                "\n\t {:.3f} + {:.3f}x + {:.3f}$x^4$".format(
+                coef[0], coef[1], coef[4]
+            ),
+            color = "m",
+            linestyle = "-",
+            linewidth = 2
+        )
+
+        ax_up.get_shared_x_axes().join(ax_up, ax_down)
+        ax_up.set_xticklabels([])
+
+        ax_down.set_yscale("log")
+        self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
+
+        for label, data, eos, ac in zip( all_label, all_data, severalEOSs, all_colors ):
+
+            _data = [
+                abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+            ]
+
+            ax_down.plot(
+                data[0],
+                _data,
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = ac[1],
+                linestyle = ac[0],
+                marker = ac[2],
+                markerfacecolor = ac[3],
+                markeredgecolor = ac[3],
+                markersize = 3,
+                linewidth = 0,
+                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
+            )
+
+        ax_up.legend(loc="best", fontsize=8)
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_uniBarI(self, severalEOSs ):
+        """
+        plot severalEOS unifersal Tilde I relationships
+        <severalEOSs> with dictionaries see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_uniBarI_data(severalEOSs)
+
         fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
 
         ax = all_axes[0]
 
-        self._set_parms(ax, "M/R", "$I/(MR^2)$")
+        self._set_parms(ax, "M/R", "$I/(M^3)$")
 
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
             ls, lc, ms, mc = self._get_ls_lc_ms_mc()
 
-            data[-1] = [ _ for _ in data[-1] ]
-
             ax.plot(
+                data[0],
                 data[1],
-                data[-1],
                 label = "{}"
                     "\n\t $\\beta$ = {:.1f}"
                     "\n\t m = {:.1e}"
@@ -781,42 +954,136 @@ class plot_result:
                 markeredgecolor = mc,
                 markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[1][-1] - data[1][0])/self.amount_of_points)
+                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
+            )
+
+        ax.legend(loc="best", fontsize=8)
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_uniBarI_polyFit(self, severalEOSs ):
+        """
+        plot severalEOS unifersal Tilde I relationships
+        <severalEOSs> with dictionaries see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_uniBarI_data(severalEOSs)
+
+        #~ fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+        fig, all_axes  = self._get_figure(
+            2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
+        )
+
+        ax_up = all_axes[0]
+        ax_down = all_axes[1]
+
+        self._set_parms(ax_up, "", "$I/(M^3)$")
+
+        max_x = 0
+        min_x = 1e9
+
+        all_colors = []
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            all_colors.append(self._get_ls_lc_ms_mc())
+
+            if max(data[0]) > max_x:
+                max_x = max(data[0])
+
+            if min(data[0]) < min_x:
+                min_x = min(data[0])
+
+            ax_up.plot(
+                data[0],
+                data[1],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = all_colors[-1][1],
+                linestyle = all_colors[-1][0],
+                marker = all_colors[-1][2],
+                markerfacecolor = all_colors[-1][3],
+                markeredgecolor = all_colors[-1][3],
+                markersize = 5.5,
+                linewidth = 1.5,
+                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
             )
 
         coef = polyfit(
-            x = [ __ for _ in all_data for __ in _[1] ],
-            y = [ __ for _ in all_data for __ in _[-1] ],
-            deg = [ 0, 1, 4 ],
-        )
+            x = [ __**-1 for _ in all_data for __ in _[0] ],
+            y = [ __ for _ in all_data for __ in _[1] ],
+            deg = [ 1, 2, 3, 4 ],
+        ).tolist()
 
-        #~ print(coef)
+        p = lambda x: coef[1]*x**-1 + coef[2]*x**-2 + coef[3]*x**-3 + coef[4]*x**-4
 
-        p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
-
-        p_x = np.linspace(ax.get_xlim()[0], ax.get_xlim()[-1], 100)
+        p_x = np.linspace(min_x, max_x, 100)
         p_y = [ p(_) for _ in p_x ]
 
-        ax.plot(
+        ax_up.plot(
             p_x,
             p_y,
             label = "poly fit, $\chi^2$"
-                "\n\t {:.3f} + {:.3f}x + {:.3f}$x^4$".format(
-                coef[0], coef[1], coef[4]
+                "\n\t {:.3f}$(1/x)^1$ + {:.3f}$(1/x)^2$ + {:.3f}$(1/x)^3$ + {:.3f}$(1/x)^4$".format(
+                coef[1], coef[2], coef[3], coef[4]
             ),
             color = "m",
             linestyle = "-",
             linewidth = 2
         )
 
-        ax.legend(loc="best", fontsize=10)
+        ax_up.get_shared_x_axes().join(ax_up, ax_down)
+        ax_up.set_xticklabels([])
+
+        ax_down.set_yscale("log")
+        self._set_parms(ax_down, "M/R", r"$\left| 1 - \bar I/\bar I_{fit} \right|$")
+
+        for label, data, eos, ac in zip( all_label, all_data, severalEOSs, all_colors ):
+
+            _data = [
+                abs(1 - _/p(__)) for _, __ in zip(data[1], data[0])
+            ]
+
+            ax_down.plot(
+                data[0],
+                _data,
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = ac[1],
+                linestyle = ac[0],
+                marker = ac[2],
+                markerfacecolor = ac[3],
+                markeredgecolor = ac[3],
+                markersize = 3,
+                linewidth = 0,
+                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
+            )
+
+        ax_up.legend(loc="best", fontsize=8)
         plt.show()
 
         return
 
-
     @staticmethod
-    def _get_figure(nrows, ncols, grid_placement):
+    def _get_figure(nrows, ncols, grid_placement, height_ratios=None):
         """
         create Figure and assign specific subplot geometry defined by
         <nrows> amount of rows and <ncols> amount of columns
@@ -847,10 +1114,9 @@ class plot_result:
         """
 
         #~ style.use("seaborn-poster")
-        gs = GridSpec(nrows=nrows, ncols=ncols)
+        gs = GridSpec(nrows=nrows, ncols=ncols, height_ratios = height_ratios)
         plt.rc('text', usetex=True)
-        plt.rc('text', usetex=True)
-
+        plt.rc('font', family='serif')
         fig = plt.figure()
         fig.set_tight_layout(True)
 
@@ -894,7 +1160,34 @@ class plot_result:
         ]
 
     @staticmethod
-    def _set_parms(ax, label_x, label_y):
+    def _3by1_shareX_grid_placement(fig, gs):
+        """
+        create grid which looks like ( proportion 1 : 2 )
+
+        +----------------------+
+        |                      |
+        |       Y0 vs X0       |
+        |                      |
+        |                      |
+        |                      |
+        |                      |
+        +----------------------+ shared Ox
+        |                      |
+        |       Y1 vs X1       |
+        |                      |
+        +----------------------+
+        """
+
+        up = fig.add_subplot( gs[0:1,0] )
+        down = fig.add_subplot( gs[1,0] )
+
+        return [ up, down  ]
+
+    @staticmethod
+    def _set_parms(
+        ax, label_x, label_y, fontsize=10, x_ticksize = 8, y_ticksize = 8,
+        x_format_str = "%.1e", y_format_str = "%.1e"
+    ):
         """
         set the parameters of the provided axes <ax>; it will modify to
         specific size the fonts and tick of the ax; also sets the
@@ -919,18 +1212,23 @@ class plot_result:
 
         from matplotlib.ticker import FormatStrFormatter
 
-        fontsize = 10
-        ticksize = 8
+        if label_x:
+            ax.set_xlabel(label_x, fontsize=fontsize)
 
-        ax.clear()
+        if x_ticksize:
+            ax.xaxis.set_tick_params(labelsize=x_ticksize)
 
-        ax.xaxis.set_major_formatter(FormatStrFormatter('%.1e'))
-        ax.set_xlabel(label_x, fontsize=fontsize)
-        ax.xaxis.set_tick_params(labelsize=ticksize)
+        if x_format_str:
+            ax.xaxis.set_major_formatter(FormatStrFormatter(x_format_str))
 
-        ax.yaxis.set_major_formatter(FormatStrFormatter('%.1e'))
-        ax.set_ylabel(label_y, fontsize=fontsize)
-        ax.yaxis.set_tick_params(labelsize=ticksize)
+        if label_y:
+            ax.set_ylabel(label_y, fontsize=fontsize)
+
+        if y_ticksize:
+            ax.yaxis.set_tick_params(labelsize=y_ticksize)
+
+        if y_format_str:
+            ax.yaxis.set_major_formatter(FormatStrFormatter(y_format_str))
 
         return
 
