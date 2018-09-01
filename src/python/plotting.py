@@ -138,7 +138,7 @@ class plot_result:
 
         return
 
-    def get_my_latests_resEOSname_file(self, fname = "STT_phiScal_J_"):
+    def get_my_latests_res_file(self, fname = "STT_phiScal_J_"):
         """
         return the latest result file in my_ResPath for current EOS
         """
@@ -146,7 +146,7 @@ class plot_result:
         try:
             return max(
                 glob.glob(os.path.join(
-                        self.my_ResPath, self.my_EOSname, fname + "*"
+                        self.my_ResPath, fname + "*"
                 ) ),
                 key = os.path.getctime
             )
@@ -155,10 +155,14 @@ class plot_result:
 
             return None
 
-    def plot_my_latest_resEOSname(self):
+    def plot_latest_resEOSname_severalEOSs(self, severalEOSs):
+        """
+        get the latest result from the root folder and plot it alongside
+        severalEOSs, which again is list of dicsts in the expected form
+        """
 
         label, headline, data = self.get_resEOSname_data(
-            self.get_my_latests_resEOSname_file()
+            self.get_my_latests_res_file()
         )
 
         fig, all_axes = self._get_figure(2,2, self._4by4_grid_placement)
@@ -173,19 +177,132 @@ class plot_result:
         self._set_parms( ax_phiScal_c_p_c, "$p_c$", "$\\varphi_c$" )
         self._set_parms( ax_rho_c_p_c, "$p_c$", "$\\rho_c$" )
 
-        ax_M_AR.plot(data[3], data[2], linewidth=1.5)
-        ax_J_M.plot(data[2], data[5], linewidth=1.5)
-        ax_phiScal_c_p_c.plot(data[0], data[1], linewidth=1.5)
-        ax_rho_c_p_c.plot(data[0], data[4], linewidth=1.5)
+        ax_M_AR.plot(
+            data[3],
+            data[2],
+            linewidth=0,
+            marker = "o",
+            markersize = 3
+        )
 
-        val_beta, val_m, val_lambda = self._get_parameter_values(label)
+        ax_J_M.plot(
+            data[2],
+            data[5],
+            linewidth=0,
+            marker = "o",
+            markersize = 3
+        )
+
+        ax_phiScal_c_p_c.plot(
+            data[0],
+            data[1],
+            linewidth=0,
+            marker = "o",
+            markersize = 3
+        )
+
+        ax_rho_c_p_c.plot(
+            data[0],
+            data[4],
+            linewidth=0,
+            marker = "o",
+            markersize = 3
+        )
+
+        val_EOSname, val_beta, val_m, val_lambda = self._get_parameter_values(label)
 
         plt.suptitle(
             "EOS = {}; beta = {:.1f}; m = {:.1e}; lambda = {:.1e}".format(
-                self.my_EOSname, val_beta, val_m, val_lambda
+                val_EOSname, val_beta, val_m, val_lambda
             ),
-            fontsize=10, y=0.99
+            fontsize=10, y=0.998
         )
+
+        all_label, all_headline, all_data = self.get_severalEOS_data(severalEOSs)
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+
+            ax_M_AR.plot(
+                data[3],
+                data[2],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 2.5,
+                linewidth = 1.5,
+                markevery = self._get_markevry(data[3]),
+                alpha = 0.5
+            )
+
+            ax_J_M.plot(
+                data[2],
+                data[5],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 2.5,
+                linewidth = 1.5,
+                markevery = self._get_markevry(data[3]),
+                alpha = 0.5
+            )
+
+            ax_phiScal_c_p_c.plot(
+                data[0],
+                data[1],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 2.5,
+                linewidth = 1.5,
+                markevery = self._get_markevry(data[3]),
+                alpha = 0.5
+            )
+
+            ax_rho_c_p_c.plot(
+                data[0],
+                data[4],
+                label = "{}"
+                    "\n\t $\\beta$ = {:.1f}"
+                    "\n\t m = {:.1e}"
+                    "\n\t $\\lambda$ = {:.1e}".format(
+                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
+                ),
+                color = lc,
+                linestyle = ls,
+                marker = ms,
+                markerfacecolor = mc,
+                markeredgecolor = mc,
+                markersize = 2.5,
+                linewidth = 1.5,
+                markevery = self._get_markevry(data[3]),
+                alpha = 0.5
+            )
 
         plt.show()
 
@@ -434,12 +551,19 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 5.5,
+                markersize = 5,
                 linewidth = 1.5,
                 markevery = self._get_markevry(data[3])
             )
 
-        ax.legend(loc="best", fontsize=8)
+        ax.legend(
+            loc="best",
+            fontsize=8,
+            handlelength=3.8,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5
+        )
         plt.show()
 
         return
@@ -484,12 +608,19 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 5.5,
+                markersize = 5,
                 linewidth = 1.5,
                 markevery = self._get_markevry(data[0])
             )
 
-        ax.legend(loc="best", fontsize=8)
+        ax.legend(
+            loc="best",
+            fontsize=8,
+            handlelength=3.8,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5
+        )
         plt.show()
 
         return
@@ -536,12 +667,19 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 5.5,
+                markersize = 5,
                 linewidth = 1.5,
                 markevery = self._get_markevry(data[-2])
             )
 
-        ax.legend(loc="best", fontsize=8)
+        ax.legend(
+            loc="best",
+            fontsize=8,
+            handlelength=3.2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5
+        )
         plt.show()
 
         return
@@ -588,12 +726,19 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 5.5,
+                markersize = 5,
                 linewidth = 1.5,
                 markevery = self._get_markevry(data[-2])
             )
 
-        ax.legend(loc="best", fontsize=8)
+        ax.legend(
+            loc="best",
+            fontsize=8,
+            handlelength=3.2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5
+        )
         plt.show()
 
         return
@@ -640,12 +785,19 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 5.5,
+                markersize = 5,
                 linewidth = 1.5,
                 markevery = self._get_markevry(data[2])
             )
 
-        ax.legend(loc="best", fontsize=8)
+        ax.legend(
+            loc="best",
+            fontsize=8,
+            handlelength=3.2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5
+        )
         plt.show()
 
         return
@@ -778,7 +930,7 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 5.5,
+                markersize = 5,
                 linewidth = 1.5,
                 markevery = self._get_markevry(data[0])
             )
@@ -845,7 +997,7 @@ class plot_result:
                 marker = all_colors[-1][2],
                 markerfacecolor = all_colors[-1][3],
                 markeredgecolor = all_colors[-1][3],
-                markersize = 5.5,
+                markersize = 5,
                 linewidth = 1.5,
                 markevery = self._get_markevry(data[0])
             )
@@ -906,7 +1058,14 @@ class plot_result:
                 markevery = 1
             )
 
-        ax_up.legend(loc="best", fontsize=8)
+        ax_up.legend(
+            loc="best",
+            fontsize=8,
+            handlelength=3.2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5
+        )
         plt.show()
 
         return
@@ -952,12 +1111,19 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 5.5,
+                markersize = 5,
                 linewidth = 1.5,
                 markevery = self._get_markevry(data[3])
             )
 
-        ax.legend(loc="best", fontsize=8)
+        ax.legend(
+            loc="best",
+            fontsize=8,
+            handlelength=3.2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5
+        )
         plt.show()
 
         return
@@ -1018,7 +1184,7 @@ class plot_result:
                 marker = all_colors[-1][2],
                 markerfacecolor = all_colors[-1][3],
                 markeredgecolor = all_colors[-1][3],
-                markersize = 5.5,
+                markersize = 5,
                 linewidth = 1.5,
                 markevery = self._get_markevry(data[0])
             )
@@ -1235,6 +1401,7 @@ class plot_result:
     @staticmethod
     def _get_parameter_values(label):
 
+        val_eosName = ""
         val_beta = 0
         val_m = 0
         val_lambda = 0
@@ -1247,8 +1414,10 @@ class plot_result:
                 val_lambda = float(_.replace("lambda", ""))
             elif "m" in _:
                 val_m = float(_.replace("m", ""))
+            elif "STT" not in _ and "phiScal" not in _ and "J" not in _:
+                val_eosName = _
 
-        return val_beta, val_m, val_lambda
+        return val_eosName, val_beta, val_m, val_lambda
 
     @staticmethod
     def _units_coef_clac():
@@ -1301,7 +1470,7 @@ class plot_result:
         """
 
         markerstyles = [
-            "s", ">", "<", "^", "v", "o", "x", "P", "d", "D", "H", "*", "p",
+            "s", ">", "<", "^", "v", "o", "X", "P", "d", "D", "H", "*", "p",
         ]
 
         linestyles = [
