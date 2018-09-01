@@ -28,7 +28,7 @@ class plot_result:
         self.my_data = None
         self.my_label = None
 
-        self.amount_of_points = 10
+        #~ self.amount_of_points = 10
 
         self.kalin_path = None
         self.kalin_file = None
@@ -436,7 +436,7 @@ class plot_result:
                 markeredgecolor = mc,
                 markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[2][-1] - data[2][0])/self.amount_of_points)
+                markevery = self._get_markevry(data[3])
             )
 
         ax.legend(loc="best", fontsize=8)
@@ -484,9 +484,9 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 0,
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[2][-1] - data[2][0])/self.amount_of_points)
+                markevery = self._get_markevry(data[0])
             )
 
         ax.legend(loc="best", fontsize=8)
@@ -536,9 +536,9 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 0,
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[2][-1] - data[2][0])/self.amount_of_points)
+                markevery = self._get_markevry(data[-2])
             )
 
         ax.legend(loc="best", fontsize=8)
@@ -588,9 +588,9 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 0,
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[2][-1] - data[2][0])/self.amount_of_points)
+                markevery = self._get_markevry(data[-2])
             )
 
         ax.legend(loc="best", fontsize=8)
@@ -640,9 +640,9 @@ class plot_result:
                 marker = ms,
                 markerfacecolor = mc,
                 markeredgecolor = mc,
-                markersize = 0,
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[2][-1] - data[2][0])/self.amount_of_points)
+                markevery = self._get_markevry(data[2])
             )
 
         ax.legend(loc="best", fontsize=8)
@@ -780,7 +780,7 @@ class plot_result:
                 markeredgecolor = mc,
                 markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
+                markevery = self._get_markevry(data[0])
             )
 
         ax.legend(loc="best", fontsize=8)
@@ -847,7 +847,7 @@ class plot_result:
                 markeredgecolor = all_colors[-1][3],
                 markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
+                markevery = self._get_markevry(data[0])
             )
 
         coef = polyfit(
@@ -903,7 +903,7 @@ class plot_result:
                 markeredgecolor = ac[3],
                 markersize = 3,
                 linewidth = 0,
-                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
+                markevery = 1
             )
 
         ax_up.legend(loc="best", fontsize=8)
@@ -954,7 +954,7 @@ class plot_result:
                 markeredgecolor = mc,
                 markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
+                markevery = self._get_markevry(data[3])
             )
 
         ax.legend(loc="best", fontsize=8)
@@ -1020,7 +1020,7 @@ class plot_result:
                 markeredgecolor = all_colors[-1][3],
                 markersize = 5.5,
                 linewidth = 1.5,
-                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
+                markevery = self._get_markevry(data[0])
             )
 
         coef = polyfit(
@@ -1074,7 +1074,7 @@ class plot_result:
                 markeredgecolor = ac[3],
                 markersize = 3,
                 linewidth = 0,
-                markevery = abs((data[0][-1] - data[0][0])/self.amount_of_points)
+                markevery = 1
             )
 
         ax_up.legend(loc="best", fontsize=8)
@@ -1321,6 +1321,27 @@ class plot_result:
             ), 1
         )[0]
 
+    @staticmethod
+    def _get_markevry(data, amount_points = 40):
+        """
+        for provided data list get the difference between the max and min to
+        evluate the stem for getting amount_points and return list of
+        indexes of points closes to the step
+        """
+
+        step = abs(max(data) - min(data))/amount_points
+
+        res = [ 0 ]
+
+        for _, __ in enumerate(data):
+            if abs(__ - data[res[-1]]) >=  step:
+                res.append(_)
+
+        res.append(len(data)-1)
+
+        return res
+
+
 #################################################################################
 ##### PAST VERSION TO BE DELETED ################################################
 #################################################################################
@@ -1340,7 +1361,6 @@ class plot_result:
         """
 
         return bool(string and string.strip())
-
 
     @staticmethod
     def _get_max_xy_coord(x, y):
