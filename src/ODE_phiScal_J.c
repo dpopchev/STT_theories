@@ -4,18 +4,18 @@
 #define ODE_NAME "phiScal_J"
 
 // interval of central pressures to go over through
-#define P_START 1e-5 // 1e-4
-#define P_END 5e-3 // 2e-3
-#define GVPHISCAL_FF -5e-2
+#define P_START 1.25e-3 // 1e-4; 1e-5
+#define P_END 1.6e-3 // 1.6e-3; 5e-3
+#define GVPHISCAL_FF -3e-2
 
 // value of the infinity to use
-#define R_INF_PHISCAL 5e1
+#define R_INF_PHISCAL 9e1
 #define R_INF 1e9
 
 // parameters of the scalar field
 #define BETA -6
-#define M 5e-3
-#define LAMBDA 0
+#define M 0
+#define LAMBDA 1e0
 
 static double \
   // values to save in the ResultFile
@@ -748,13 +748,16 @@ static void change_current_pressure(void){
     int current_power = (int)get_power(p_current);
         switch(current_power){
             case -5:
-                p_current += 2*pow10( current_power - 1 );
+                // 0.5 for scalarization
+                p_current += 0.5*pow10( current_power - 1 );
                 break;
             case -4:
-                p_current += 2*pow10( current_power - 1 );
+                // 0.5 for scalarization
+                p_current += 0.5*pow10( current_power - 1 );
                 break;
             case -3:
-                p_current += 2*pow10( current_power - 2 );
+                //5 for scalarization, but the exponent is -2
+                p_current += 5*pow10( current_power - 2 );
                 break;
             default:
                 printf("\n %e not known, terminating... \n", p_current);
@@ -833,7 +836,10 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
         // set initial guess for the infinity for the scalar field
         r_inf_phiscal = R_INF_PHISCAL;
 
-        printf("\n p_c = %.3e \n",p_current);
+        printf(
+            "\n p_c = %.3e ---> eos %s beta %.3e; m %.3e; lambda %.3e; vinit %.3e \n",
+            p_current, eos->model_name, (double)BETA, (double)M, (double)LAMBDA, (double) GVPHISCAL_FF
+        );
         v_phiScal_J = v_phiScal_J_tmp;
         printf(
           "\n\t scalar field shoot with initial"

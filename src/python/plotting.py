@@ -181,6 +181,7 @@ class plot_result:
             data[3],
             data[2],
             linewidth=0,
+            linestyle="",
             marker = "o",
             markersize = 3
         )
@@ -189,6 +190,7 @@ class plot_result:
             data[2],
             data[5],
             linewidth=0,
+            linestyle="",
             marker = "o",
             markersize = 3
         )
@@ -197,6 +199,7 @@ class plot_result:
             data[0],
             data[1],
             linewidth=0,
+            linestyle="",
             marker = "o",
             markersize = 3
         )
@@ -205,6 +208,7 @@ class plot_result:
             data[0],
             data[4],
             linewidth=0,
+            linestyle="",
             marker = "o",
             markersize = 3
         )
@@ -303,6 +307,16 @@ class plot_result:
                 markevery = self._get_markevry(data[3]),
                 alpha = 0.5
             )
+
+
+        ax_rho_c_p_c.legend(
+            loc="best",
+            fontsize=8,
+            handlelength=3.2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5
+        )
 
         plt.show()
 
@@ -819,73 +833,90 @@ class plot_result:
         ]
         """
 
-        for eos in [ _["name"] for _ in severalEOSs ]:
+        for eos in severalEOSs:
 
-            for result in glob.glob(os.path.join(self.my_ResPath, eos, fname + "*")):
+            result = os.path.join(
+                self.my_ResPath,
+                eos["name"],
+                "_".join( [
+                    fname,
+                    eos["name"],
+                    "beta{:.3e}".format(eos["beta"]),
+                    "m{:.3e}".format(eos["m"]),
+                    "lambda{:.3e}".format(eos["lambda"])
+                ] )
+            )
 
-                with open(result, "r") as f:
-                    src_data_lines = f.readlines()
+            with open(result, "r") as f:
+                src_data_lines = f.readlines()
 
-                #~ first line is just headline
-                src_data_lines.pop(0)
+            #~ first line is just headline
+            src_data_lines.pop(0)
 
-                current_convert = "_tildeI"
+            current_convert = "_tildeI"
 
-                target = os.path.join(
-                    self.my_ResPath, eos, "Fitting",
-                    os.path.basename(result) + current_convert
+            target = os.path.join(
+                self.my_ResPath, eos["name"], "Fitting",
+                os.path.basename(result) + current_convert
+            )
+
+            print(
+                "\n will convert \n\t from {} \n\t to {} \n\t as {}".format(
+                    result, target, current_convert
                 )
+            )
 
-                print(
-                    "\n will convert \n\t from {} \n\t to {} \n\t as {}".format(
-                        result, target, current_convert
-                    )
-                )
+            with open( target, "w" ) as f:
 
-                with open( target, "w" ) as f:
+                f.write("# M/R I/(MR**3) \n")
 
-                    f.write("# M/R I/(MR**3) \n")
+                for line in src_data_lines:
 
-                    for line in src_data_lines:
+                    if not line.strip():
+                        continue
 
-                        tmp = [
-                            float(_) for _ in line.strip().split(" ") if len(_.strip())
-                        ]
+                    tmp = [
+                        float(_) for _ in line.strip().split(" ") if len(_.strip())
+                    ]
 
-                        f.write(
-                            "{:.6e} {:.6e} \n".format(
-                                tmp[2]/tmp[3], tmp[5]/(tmp[2]*tmp[3]**3)
-                            )
+                    f.write(
+                        "{:.6e} {:.6e} \n".format(
+                            tmp[2]/tmp[3], tmp[5]/(tmp[2]*tmp[3]**3)
                         )
-
-                current_convert = "_barI"
-
-                target = os.path.join(
-                    self.my_ResPath, eos, "Fitting",
-                    os.path.basename(result) + current_convert
-                )
-
-                print(
-                    "\n will convert \n\t from {} \n\t to {} \n\t as {}".format(
-                        result, target, current_convert
                     )
+
+            current_convert = "_barI"
+
+            target = os.path.join(
+                self.my_ResPath, eos["name"], "Fitting",
+                os.path.basename(result) + current_convert
+            )
+
+            print(
+                "\n will convert \n\t from {} \n\t to {} \n\t as {}".format(
+                    result, target, current_convert
                 )
+            )
 
-                with open( target, "w" ) as f:
+            with open( target, "w" ) as f:
 
-                    f.write("# (M/R)**-1 I/M**3 \n")
+                f.write("# (M/R)**-1 I/M**3 \n")
 
-                    for line in src_data_lines:
+                for line in src_data_lines:
 
-                        tmp = [
-                            float(_) for _ in line.strip().split(" ") if len(_.strip())
-                        ]
+                    if not line.strip():
+                        continue
 
-                        f.write(
-                            "{:.6e} {:.6e} \n".format(
-                                tmp[2]/tmp[3], tmp[5]/(tmp[2]**3)
-                            )
+
+                    tmp = [
+                        float(_) for _ in line.strip().split(" ") if len(_.strip())
+                    ]
+
+                    f.write(
+                        "{:.6e} {:.6e} \n".format(
+                            tmp[2]/tmp[3], tmp[5]/(tmp[2]**3)
                         )
+                    )
 
         return
 
@@ -1002,13 +1033,13 @@ class plot_result:
                 markevery = self._get_markevry(data[0])
             )
 
-        coef = polyfit(
+        coef, rest  = polyfit(
             x = [ __ for _ in all_data for __ in _[0] ],
             y = [ __ for _ in all_data for __ in _[1] ],
             deg = [ 0, 1, 4 ],
-        ).tolist()
-
-        #~ print(coef)
+            w = np.sqrt(np.array([ __ for _ in all_data for __ in _[1] ])),
+            full = True,
+        )
 
         p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
 
@@ -1018,9 +1049,9 @@ class plot_result:
         ax_up.plot(
             p_x,
             p_y,
-            label = "poly fit, $\chi^2$"
+            label = "poly fit, $\chi^2$ = {:.3e}"
                 "\n\t {:.3f} + {:.3f}x + {:.3f}$x^4$".format(
-                coef[0], coef[1], coef[4]
+                rest[0][0], coef[0], coef[1], coef[4]
             ),
             color = "m",
             linestyle = "-",
@@ -1189,11 +1220,13 @@ class plot_result:
                 markevery = self._get_markevry(data[0])
             )
 
-        coef = polyfit(
+        coef, rest = polyfit(
             x = [ __**-1 for _ in all_data for __ in _[0] ],
             y = [ __ for _ in all_data for __ in _[1] ],
             deg = [ 1, 2, 3, 4 ],
-        ).tolist()
+            w = np.sqrt(np.array([ __ for _ in all_data for __ in _[1] ])),
+            full = True
+        )
 
         p = lambda x: coef[1]*x**-1 + coef[2]*x**-2 + coef[3]*x**-3 + coef[4]*x**-4
 
@@ -1203,9 +1236,9 @@ class plot_result:
         ax_up.plot(
             p_x,
             p_y,
-            label = "poly fit, $\chi^2$"
+            label = "poly fit, $\chi^2$ = {:.3e}"
                 "\n\t {:.3f}$(1/x)^1$ + {:.3f}$(1/x)^2$ + {:.3f}$(1/x)^3$ + {:.3f}$(1/x)^4$".format(
-                coef[1], coef[2], coef[3], coef[4]
+                rest[0][0], coef[1], coef[2], coef[3], coef[4]
             ),
             color = "m",
             linestyle = "-",
@@ -1491,1063 +1524,1059 @@ class plot_result:
         )[0]
 
     @staticmethod
-    def _get_markevry(data, amount_points = 40):
+    def _get_markevry(data, amount_points = 20):
         """
         for provided data list get the difference between the max and min to
         evluate the stem for getting amount_points and return list of
         indexes of points closes to the step
+
+        solution used from
+        https://stackoverflow.com/questions/9873626/choose-m-evenly-spaced-elements-from-a-sequence-of-length-n
         """
 
-        step = abs(max(data) - min(data))/amount_points
+        f = lambda m, n: [i*n//m + n//(2*m) for i in range(m)]
 
-        res = [ 0 ]
-
-        for _, __ in enumerate(data):
-            if abs(__ - data[res[-1]]) >=  step:
-                res.append(_)
-
-        res.append(len(data)-1)
-
-        return res
+        return f(amount_points, len(data))
 
 
 #################################################################################
 ##### PAST VERSION TO BE DELETED ################################################
 #################################################################################
-    @staticmethod
-    def _check_if_StrNotBlank(string):
-        """
-        check if a sting is blank/empty
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        : boolean
-            True if string is not blank/empty
-            False if string is blank/empty
-        """
-
-        return bool(string and string.strip())
-
-    @staticmethod
-    def _get_max_xy_coord(x, y):
-        """
-        return the maximum coordinates of axes; this method is receiving
-        the axes class method get_?lim(), who is an list with the min/max
-        values
-
-        Parameters
-        ----------
-        x: matplotlib.axes.get_xlim method
-            list of the min and max value of the abscissa of an axes
-
-        y: matplotlib.axes.get_ylim method
-            list of the min and max value of the ordinate of an axes
-
-        Returns
-        -------
-        max_x, max_y: tuple
-            the max values of x and y of an axes
-        """
-
-        max_y = max(y, key=abs)
-        max_x = max(x, key=abs)
-
-        return max_x, max_y
-
-    @staticmethod
-    def _get_min_xy_coord(x, y):
-        """
-        return the maximum coordinates of axes; this method is receiving
-        the axes class method get_?lim(), who is an list with the min/max
-        values
-
-        Parameters
-        ----------
-        x: matplotlib.axes.get_xlim method
-            list of the min and max value of the abscissa of an axes
-
-        y: matplotlib.axes.get_ylim method
-            list of the min and max value of the ordinate of an axes
-
-        Returns
-        -------
-        max_x, max_y: tuple
-            the max values of x and y of an axes
-        """
-
-        max_y = min(y, key=abs)
-        max_x = min(x, key=abs)
-
-        return max_x, max_y
-
-    @staticmethod
-    def _get_center_coordinates_axes(ax):
-        """
-        return the center coordinates of an axes
-
-        Parameters
-        ----------
-        ax: matplotlib.axes.Axes class
-
-        Returns:
-        center_x, center_y: double
-            the center coordinates of an axes <ax>
-        """
-        max_x, max_y = get_max_xy_coord(ax.get_xlim(), ax.get_ylim())
-        min_x, min_y = get_min_xy_coord(ax.get_xlim(), ax.get_ylim())
-
-        center_x = (max_x + min_x) / 2
-        center_y = (max_y + min_y) / 2
-
-        return center_x, center_y
-
-    @staticmethod
-    def _get_iter_ls_c():
-        """
-        get iterator who provides all possible combinations of predefined
-        list of line styles and colour to be used for plotting
-
-        the lists are shuffled before creating the generator
-
-        the generator cycles, thus it will never end
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        : cycle object
-            generator who will repeat the product(styles_line, styles_colours)
-            indefinitely
-        """
-        from itertools import product
-        from itertools import cycle
-        from random import shuffle
-
-        styles_line = ["-", "--", "-."]
-        styles_colours = ["b", "g", "r", "c", "m", "y", "k"]
-
-        shuffle(styles_line)
-        shuffle(styles_colours)
-
-        return cycle(product(styles_line, styles_colours))
-
-    @staticmethod
-    def _set_single_grid_placement(fig, gs):
-        """
-        create single axes in <fig> using GridSpec <gs>
-        and fig.add_subplot() method
-
-        Parameters
-        ---------
-        fig: Figure
-            the figure whos geometry will be specified
-
-        gs: class
-            predefined class of how many rows and columns the
-            figure should have
-
-        Returns
-        ------
-        all_ax: list
-            list containing all axes defined by the <gs> in <fig>
-        """
-
-        all_ax = []
-        all_ax.append(fig.add_subplot(gs[:]))
-
-        return all_ax
-
-    @staticmethod
-    def _get_index(max_index):
-        """
-        get the user input choice of an index and return it
-        by making sure it is an positive integer not greater than <max_index>
-
-        Parameters
-        ----------
-        max_index: int
-            the maximum index available
-
-        Return
-        ------
-        index: int
-            the index which the user chose
-        """
-
-        while "waiting for the number":
-            try:
-                index = int(input("\n\t\t index =... "))
-            except ValueError:
-                print("\n Not a number is you typed \n")
-                continue
-
-            if index < 0 or index >= max_index:
-                print("\n {} not in allowed boundaries \n".format(index))
-            else:
-                return index
-
-    @staticmethod
-    def _get_yes_or_no_answer():
-        """
-        get the answer of yes-no question
-
-        Parameters
-        ----------
-
-        Return
-        ------
-        """
-
-        while "Answer is invalid":
-            ans = str(input("\n\t y/n answer... ")).lower().strip()
-
-            print("\n")
-
-            if ans[:1] == "y":
-                return True
-            elif ans[:1] == "n":
-                return False
-            else:
-                print("\n y or n answer only !\n")
-                continue
-
-    def _get_latest_file(self, path, model):
-        """
-        return the name of the latest modified file in path
-        by creating wildcard of the type model + "*"
-
-        Parameters
-        ----------
-        path: string
-            the path to the directory of interest
-        model: string
-            how the file name looks like, it serves as wildcard
-            of the type model + "*"
-
-        Returns
-        -------
-        : string
-            the name of latest modified file
-        """
-
-        import glob
-        import os
-
-        if (self._check_if_StrNotBlank(path) and
-            self._check_if_StrNotBlank(model)):
-
-            filename = max(
-                glob.glob(path + "/" + model + "*"),
-                key=os.path.getctime
-            )
-
-            filename = filename.split("/")[-1]
-
-            print(
-                "\n latest file in \n\t {} is: {} \n".format(
-                    path, filename
-                )
-            )
-        else:
-
-            filename = ""
-
-            print("\n path and name not set, some filename var!!! \n")
-
-        return filename
-
-    def _get_xy_current_file(self, headline):
-        """
-        list the enumerated <headlines> and let the user choose
-        which will be plotted as Y and as X on the fig
-
-        Parameters
-        ----------
-        headline: list
-            list of available headlines to choose from
-
-        Return
-        ------
-        index_x: int
-            the index of the headline to be used on the abscissa
-
-        index_y: int
-            the index of the headline to be used on the ordinate
-        """
-
-        print("\n choose columns to plot Y vs X \n")
-
-        for cnt, value in enumerate(headline):
-            print("\t {}: {}".format(cnt, value))
-
-        print("\n\t Y... ")
-        index_y = self._get_index(len(headline))
-
-        print("\n\t X... ")
-        index_x = self._get_index(len(headline))
-
-        return index_x, index_y
-
-    def _get_filename_from_dir(self, path):
-        """
-        lists all the files in <path> and lets the user choose
-        which file to be loaded
-
-        Parameters
-        ----------
-        path: string
-            the full path to the directory whos files will be listed
-
-        Return
-        ------
-            : string
-                the filename of our choice
-        """
-
-        import os
-
-        list_dir = os.listdir(path)
-
-        for ind, val in enumerate(list_dir):
-            print("{}. {}".format(ind, val))
-
-        return list_dir[self._get_index(len(list_dir))]
-
-    def _set_default_paths(self):
-        """
-        sets default paths in self to the result directories
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-
-        self.path_res = "/home/dimitar/projects/STT_theories/results"
-
-        print(
-            "\n mine path_res: {} \n".format(
-                self.path_res
-            )
-        )
-
-        self.path_daniela = "/home/dimitar/Documents/Teaching_Materials/" \
-            + "University/Uvod.Fizika.Cherni.Dupki/Doktorant/" \
-            + "Daniela_Static_NS_Massive_SlowRot"
-
-        print(
-            "\n daniela path_res: {} \n".format(
-                self.path_daniela
-            )
-        )
-
-        self.path_kalin = "/home/dimitar/Documents/Teaching_Materials/" \
-            + "University/Uvod.Fizika.Cherni.Dupki/Doktorant/" \
-            + "Kalin_Static_NS_SlowRot_Massive_Lambda/beta-6"
-
-        print(
-            "\n kalin path_res: {} \n".format(
-                self.path_kalin
-            )
-        )
-
-        return
-
-    def _load_file(self, path, filename, data, headline, label):
-        """
-        load the data from <filename> in <path> by appending them to
-        <data>, append the headline (the name of each column) in
-        <headline> and the name of the file in <label>
-
-        Parameters
-        ----------
-        path: string
-            the path to the directory containing the file with data
-        filename: string
-            the name of the file which will be loaded
-        data: list
-            the loaded data will be appended here
-        headline: list
-            the name of each column will be appended here as a list
-        label: list
-            the name of the file will be apended here
-
-        Returns
-        ------
-        """
-
-        if not(self._check_if_StrNotBlank(path) and
-               self._check_if_StrNotBlank(filename)):
-
-            print(
-                "\n from where to load a file!!! \n\t {} / {} \n".format(
-                    path, filename
-                )
-            )
-
-        with open(path + "/" + filename, "r") as f:
-            all_data = f.readlines()
-
-        headline.append(
-            [
-                i.strip() for i in
-                all_data.pop(0).strip().split(" ")
-                if
-                "#" not in i and
-                len(i.strip())
-            ]
-        )
-
-        label.append(filename.split("/")[-1][-41:])
-
-        data.append(
-            [
-                [] for i in all_data[0].strip().split(" ") if len(i.strip())
-            ]
-        )
-
-        for cnt, line in enumerate(all_data):
-
-            for apnd, num in zip(
-                data[-1], [
-                    float(i) for i in line.strip().split(" ") if len(i.strip())
-                ]
-            ):
-                apnd.append(num)
-
-        return
-
-    def _load_daniela_file(self, path, filename, data, headline, label):
-        """
-        load danieala result file with name <filename> by appending the data
-        after taking care of coefficients to <data> and saving the <headlines>(
-        what is the name of each column) and label - the filename itself
-
-        Parameters
-        ----------
-        path: string
-            the full path of the directory where the file is
-        filename: string
-            the name of the file itself
-        data: list
-            where to append the data of interest
-        headline: list
-            what each column is
-        label: list
-            the name the given data, expect it will be the filename
-
-        Returns
-        -------
-        """
-
-        if not(self._check_if_StrNotBlank(path) and
-               self._check_if_StrNotBlank(filename)):
-
-            print(
-                "from where to load a daniela file!!! {} / {}".format(
-                    path, filename
-                )
-            )
-
-        with open(path + "/" + filename, "r") as f:
-            all_data = f.readlines()
-
-        #~ get rid of inline text
-        all_data = [
-            line for line in all_data
-            if "rho" not in line
-        ]
-
-        #~ i am not interested in all data, so only the indexes here
-        #~ will be saved
-        #~ since in some files the central pressure is in different column
-        #~ we check it and take into account
-        if filename in [
-            "models_APR_beta-4.5_mphi5e-3.dat",
-            "models_APR_beta-6.0_mphi0.dat",
-            "models_APR_beta-6.0_mphi1e-3.dat"
-        ]:
-            indexes = [0, 1, 2, 3, 4, 10]
-        else:
-            indexes = [0, 1, 2, 3, 4, 11]
-
-        units = [
-            self.units["density"], self.units["rad"],
-            1, self.units["j"], 1, 1
-        ]
-
-        data.append([[] for i in indexes])
-
-        for cnt, line in enumerate(all_data):
-            for i, u, d in zip(indexes, units, data[-1]):
-                try:
-                    d.append(float(line.split(" ")[i]) / u)
-                except ValueError:
-                    print(
-                        "\n ValueError: line {}: {} \n".format(
-                            cnt, line
-                        )
-                    )
-                    break
-
-        data[-1][-2] = \
-            [(-1)*i for i in data[-1][-2]]
-
-        label.append(filename)
-
-        return
-
-    def _load_kalin_file(self, path, filename, data, headline, label):
-        """
-        load kalin result file with name <filename> by appending the data
-        after taking care of coefficients to <data> and saving the <headlines>(
-        what is the name of each column) and label - the filename itself
-
-        Parameters
-        ----------
-        path: string
-            the full path of the directory where the file is
-        filename: string
-            the name of the file itself
-        data: list
-            where to append the data of interest
-        headline: list
-            what each column is
-        label: list
-            the name the given data, expect it will be the filename
-
-        Returns
-        -------
-        """
-
-        if not(self._check_if_StrNotBlank(path) and
-               self._check_if_StrNotBlank(filename) ):
-
-            print(
-                "from where to load a kalin file!!! {} / {}".format(
-                    path, filename
-                )
-            )
-
-        with open(path + "/" + filename, "r") as f:
-            all_data = f.readlines()
-
-        #~ get rid of inline text
-        all_data = [
-            line for line in all_data
-            if "lambda" not in line and "f_rot" not in line
-        ]
-
-        #~ i am not interested in all data, so only the indexes here
-        #~ will be saved
-        #~ since in some files the central pressure is in different column
-        #~ we check it and take into account
-        indexes = [3, 5, 7, 10, 6, 2]
-
-        units = [
-            self.units["density"], self.units["rad"],
-            1, 1, 1, 1
-        ]
-
-        data.append([[] for i in indexes])
-
-        for cnt, line in enumerate(all_data):
-            for i, u, d in zip(indexes, units, data[-1]):
-                try:
-                    d.append(float(line.split(" ")[i]) / u)
-                except ValueError:
-                    print(
-                        "\n ValueError: line {}: {} \n".format(
-                            cnt, line
-                        )
-                    )
-                    break
-
-        label.append(filename)
-
-        return
-
-    def load_ResultFile_latest(self, filename_type="STT_phiScal_"):
-        """
-        load the latest modified file from <self.path_res>
-
-        Parameters
-        ----------
-        filename_type: string
-            this string will be used as wildcard filename_type + "*"
-            to search in self.path_res; if no value is supplied, the
-            default "STT_phiScal_" will be used
-
-        Return
-        ------
-        """
-
-        fname_res = self._get_latest_file(
-            self.path_res, filename_type
-        )
-
-        print("\n now will load:\n\t {} \n".format(fname_res))
-
-        self._load_file(
-            self.path_res,
-            fname_res,
-            self.data_res,
-            self.headline_res,
-            self.label_res
-        )
-
-        return
-
-    def load_ResultFile_argument(self, filename_type=""):
-        """
-        load <filename_type> and append the results in self.data_res and etc
-        it will search the file at <self.path>
-
-        Parameters
-        ----------
-        filename_type: string
-            the file name at <self.path> which will be loaded
-
-        Return
-        ------
-        """
-
-        if self._check_if_StrNotBlank(filename_type):
-
-            self._load_file(
-                self.path_res,
-                filename_type,
-                self.data_res,
-                self.headline_res,
-                self.label_res
-            )
-
-        else:
-            print("\n you forgot to give filename \n")
-
-        return
-
-    def load_ResultFile(self):
-        """
-        load <filename_type> and append the results in self.data_res and etc
-        it will search the file at <self.path>
-
-        Parameters
-        ----------
-        filename_type: string
-            the file name at <self.path> which will be loaded
-
-        Return
-        ------
-        """
-
-        filename = self._get_filename_from_dir(self.path_res)
-
-        print("\n now will load:\n\t {} \n".format(filename))
-
-        self._load_file(
-            self.path_res,
-            filename,
-            self.data_res,
-            self.headline_res,
-            self.label_res
-        )
-
-        return
-
-    def load_DanielaFile(self):
-        """
-        load daniela data from <self.path_daniela>
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-
-        filename = self._get_filename_from_dir(self.path_daniela)
-
-        print("\n now will load:\n\t {} \n".format(filename))
-
-        self._load_daniela_file(
-            self.path_daniela,
-            filename,
-            self.data_daniela,
-            self.headline_daniela,
-            self.label_daniela
-        )
-
-    def load_KalinFile(self):
-        """
-        load kalin data from <self.path_kalin>
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-
-        filename = self._get_filename_from_dir(self.path_kalin)
-
-        print("\n now will load:\n\t {} \n".format(filename))
-
-        self._load_kalin_file(
-            self.path_kalin,
-            filename,
-            self.data_kalin,
-            self.headline_kalin,
-            self.label_kalin
-        )
-
-    def clear_data(self):
-        """
-        clear the data in self:
-            data_*, which contains the plot data
-            headline_*, which is the naming of each column of each data
-            label_*, which is name of the file the data come from
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-
-        self.data_res.clear()
-        self.headline_res.clear()
-        self.label_res.clear()
-
-        self.data_daniela.clear()
-        self.headline_daniela.clear()
-        self.label_daniela.clear()
-
-        self.data_kalin.clear()
-        self.headline_kalin.clear()
-        self.label_kalin.clear()
-
-        return
-
-    def plot_data_res_last(self):
-        """
-        creates figure with single subplot to plot the last list in
-        <self.data_res> with asking which column will be used for
-        X and Y axis
-
-        Parameters
-        ----------
-
-        Return
-        ------
-        """
-
-        from matplotlib import pyplot as plt
-        from IPython import get_ipython
-
-        #~ if we start it in jupyter qtconsole
-        #~ this will force open it in new window not inside
-        get_ipython().run_line_magic("matplotlib", "qt5")
-
-        #~ lets check if we have anything to plot
-        if not self.data_res:
-            self.load_ResultFile_latest()
-
-        index_x, index_y = self._get_xy_current_file(
-            self.headline_res[-1]
-        )
-
-        fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
-
-        ax = all_ax[-1]
-
-        self._set_parms(
-            ax,
-            self.headline_res[-1][index_x],
-            self.headline_res[-1][index_y]
-        )
-
-        ax.plot(
-            self.data_res[-1][index_x],
-            self.data_res[-1][index_y],
-            linewidth=1.5,
-            label=self.label_res[-1]
-        )
-
-        ax.legend(loc="best", fontsize=8)
-        plt.show()
-
-        return
-
-    def plot_data_res_all(self):
-        """
-        creates figure with single subplot to plot all data in
-        <self.data_res> with asking which column will be used for all
-        X and Y axis (it presumes that all share the same headline)
-
-        Parameters
-        ----------
-
-        Return
-        ------
-        """
-
-        from matplotlib import pyplot as plt
-        from IPython import get_ipython
-
-        #~ if we start it in jupyter qtconsole
-        #~ this will force open it in new window not inside
-        get_ipython().run_line_magic('matplotlib', "qt5")
-
-        #~ lets check if we have anything to plot
-        if not self.data_res:
-            self.load_ResultFile()
-
-        index_x, index_y = self._get_xy_current_file(
-            self.headline_res[-1]
-        )
-
-        fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
-
-        ax = all_ax[-1]
-
-        self._set_parms(
-            ax,
-            self.headline_res[-1][index_x],
-            self.headline_res[-1][index_y]
-        )
-
-        for data, label in zip(self.data_res, self.label_res):
-            ax.plot(
-                data[index_x],
-                data[index_y],
-                linewidth=1.5,
-                label=label
-            )
-
-        ax.legend(loc="best", fontsize=8)
-        plt.show()
-
-        return
-
-    def plot_compare_last_res_daniela(self):
-
-        from matplotlib import pyplot as plt
-        from IPython import get_ipython
-
-        get_ipython().run_line_magic('matplotlib', "qt5")
-
-        #~ lets check if we have anything to plot
-        if not self.data_res:
-            self.load_ResultFile()
-
-        if not self.data_daniela:
-            self.load_DanielaFile()
-
-        index_x, index_y = self._get_xy_current_file(self.headline_res[-1])
-
-        fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
-
-        ax = all_ax[-1]
-
-        self._set_parms(
-            ax,
-            self.headline_res[-1][index_x],
-            self.headline_res[-1][index_y]
-        )
-
-        ax.plot(
-            self.data_res[-1][index_x],
-            self.data_res[-1][index_y],
-            linewidth=1.5,
-            label=self.label_res[-1],
-        )
-
-        ax.plot(
-            self.data_daniela[-1][
-                self.daniela_mapping[self.headline_res[-1][index_x]]
-            ],
-            self.data_daniela[-1][
-                self.daniela_mapping[self.headline_res[-1][index_y]]
-            ],
-            marker="o",
-            markersize=5,
-            alpha=0.4,
-            linewidth=0,
-            label=self.label_daniela[-1]
-        )
-
-        ax.legend(loc="best", fontsize=8)
-        plt.show()
-
-        return
-
-    def plot_compare_last_res_daniela_kalin(self):
-
-        from matplotlib import pyplot as plt
-        from IPython import get_ipython
-
-        get_ipython().run_line_magic('matplotlib', "qt5")
-
-        #~ lets check if we have anything to plot
-        if not self.data_res:
-            self.load_ResultFile()
-
-        if not self.data_daniela:
-            self.load_DanielaFile()
-
-        if not self.data_kalin:
-            self.load_KalinFile()
-
-        index_x, index_y = self._get_xy_current_file( self.headline_res[-1] )
-
-        fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
-
-        ax = all_ax[-1]
-
-        self._set_parms(
-            ax,
-            self.headline_res[-1][index_x],
-            self.headline_res[-1][index_y]
-        )
-
-        ax.plot(
-            self.data_res[-1][index_x],
-            self.data_res[-1][index_y],
-            linewidth=1.5,
-            label=self.label_res[-1],
-        )
-
-        ax.plot(
-            self.data_daniela[-1][
-                self.daniela_mapping[self.headline_res[-1][index_x]]
-            ],
-            self.data_daniela[-1][
-                self.daniela_mapping[self.headline_res[-1][index_y]]
-            ],
-            marker="o",
-            markersize=5,
-            alpha=0.4,
-            linewidth=0,
-            label=self.label_daniela[-1]
-        )
-
-        ax.plot(
-            self.data_kalin[-1][
-                self.kalin_mapping[self.headline_res[-1][index_x]]
-            ],
-            self.data_kalin[-1][
-                self.kalin_mapping[self.headline_res[-1][index_y]]
-            ],
-            marker="X",
-            markersize=5,
-            alpha=0.4,
-            linewidth=0,
-            label=self.label_kalin[-1]
-        )
-
-        ax.legend(loc="best", fontsize=8)
-        plt.show()
-
-        return
-
-    def plot_compare_last_res_kalin(self):
-
-        from matplotlib import pyplot as plt
-        from IPython import get_ipython
-
-        get_ipython().run_line_magic('matplotlib', "qt5")
-
-        #~ lets check if we have anything to plot
-        if not self.data_res:
-            self.load_ResultFile()
-
-        if not self.data_kalin:
-            self.load_KalinFile()
-
-        index_x, index_y = self._get_xy_current_file(self.headline_res[-1])
-
-        fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
-
-        ax = all_ax[-1]
-
-        self._set_parms(
-            ax,
-            self.headline_res[-1][index_x],
-            self.headline_res[-1][index_y]
-        )
-
-        ax.plot(
-            self.data_res[-1][index_x],
-            self.data_res[-1][index_y],
-            linewidth=1.5,
-            label=self.label_res[-1],
-        )
-
-        ax.plot(
-            self.data_kalin[-1][
-                self.kalin_mapping[self.headline_res[-1][index_x]]
-            ],
-            self.data_kalin[-1][
-                self.kalin_mapping[self.headline_res[-1][index_y]]
-            ],
-            marker="X",
-            markersize=5,
-            alpha=0.5,
-            linewidth=0,
-            label=self.label_kalin[-1]
-        )
-
-        ax.legend(loc="best", fontsize=8)
-        plt.show()
-
-        return
-
-    def remove_from_data_res(self):
-        """
-        user says who from <self.data_res> based on their labels saved in
-        <self.label_res>
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        """
-
-        while "want to remove something":
-            print("\n Want to remove some data from self.data_res? \n")
-
-            if not self._get_yes_or_no_answer():
-                return
-
-            for cnt, val in enumerate(self.label_res):
-
-                print("{}. {} ".format(cnt, val))
-
-            print("\n Choose index... ")
-            i = self._get_index(len(self.label_res))
-
-            del self.data_res[i]
-            del self.label_res[i]
-            del self.headline_res[i]
+    #@staticmethod
+    #def _check_if_StrNotBlank(string):
+        #"""
+        #check if a sting is blank/empty
+
+        #Parameters
+        #----------
+
+        #Returns
+        #-------
+        #: boolean
+            #True if string is not blank/empty
+            #False if string is blank/empty
+        #"""
+
+        #return bool(string and string.strip())
+
+    #@staticmethod
+    #def _get_max_xy_coord(x, y):
+        #"""
+        #return the maximum coordinates of axes; this method is receiving
+        #the axes class method get_?lim(), who is an list with the min/max
+        #values
+
+        #Parameters
+        #----------
+        #x: matplotlib.axes.get_xlim method
+            #list of the min and max value of the abscissa of an axes
+
+        #y: matplotlib.axes.get_ylim method
+            #list of the min and max value of the ordinate of an axes
+
+        #Returns
+        #-------
+        #max_x, max_y: tuple
+            #the max values of x and y of an axes
+        #"""
+
+        #max_y = max(y, key=abs)
+        #max_x = max(x, key=abs)
+
+        #return max_x, max_y
+
+    #@staticmethod
+    #def _get_min_xy_coord(x, y):
+        #"""
+        #return the maximum coordinates of axes; this method is receiving
+        #the axes class method get_?lim(), who is an list with the min/max
+        #values
+
+        #Parameters
+        #----------
+        #x: matplotlib.axes.get_xlim method
+            #list of the min and max value of the abscissa of an axes
+
+        #y: matplotlib.axes.get_ylim method
+            #list of the min and max value of the ordinate of an axes
+
+        #Returns
+        #-------
+        #max_x, max_y: tuple
+            #the max values of x and y of an axes
+        #"""
+
+        #max_y = min(y, key=abs)
+        #max_x = min(x, key=abs)
+
+        #return max_x, max_y
+
+    #@staticmethod
+    #def _get_center_coordinates_axes(ax):
+        #"""
+        #return the center coordinates of an axes
+
+        #Parameters
+        #----------
+        #ax: matplotlib.axes.Axes class
+
+        #Returns:
+        #center_x, center_y: double
+            #the center coordinates of an axes <ax>
+        #"""
+        #max_x, max_y = get_max_xy_coord(ax.get_xlim(), ax.get_ylim())
+        #min_x, min_y = get_min_xy_coord(ax.get_xlim(), ax.get_ylim())
+
+        #center_x = (max_x + min_x) / 2
+        #center_y = (max_y + min_y) / 2
+
+        #return center_x, center_y
+
+    #@staticmethod
+    #def _get_iter_ls_c():
+        #"""
+        #get iterator who provides all possible combinations of predefined
+        #list of line styles and colour to be used for plotting
+
+        #the lists are shuffled before creating the generator
+
+        #the generator cycles, thus it will never end
+
+        #Parameters
+        #----------
+
+        #Returns
+        #-------
+        #: cycle object
+            #generator who will repeat the product(styles_line, styles_colours)
+            #indefinitely
+        #"""
+        #from itertools import product
+        #from itertools import cycle
+        #from random import shuffle
+
+        #styles_line = ["-", "--", "-."]
+        #styles_colours = ["b", "g", "r", "c", "m", "y", "k"]
+
+        #shuffle(styles_line)
+        #shuffle(styles_colours)
+
+        #return cycle(product(styles_line, styles_colours))
+
+    #@staticmethod
+    #def _set_single_grid_placement(fig, gs):
+        #"""
+        #create single axes in <fig> using GridSpec <gs>
+        #and fig.add_subplot() method
+
+        #Parameters
+        #---------
+        #fig: Figure
+            #the figure whos geometry will be specified
+
+        #gs: class
+            #predefined class of how many rows and columns the
+            #figure should have
+
+        #Returns
+        #------
+        #all_ax: list
+            #list containing all axes defined by the <gs> in <fig>
+        #"""
+
+        #all_ax = []
+        #all_ax.append(fig.add_subplot(gs[:]))
+
+        #return all_ax
+
+    #@staticmethod
+    #def _get_index(max_index):
+        #"""
+        #get the user input choice of an index and return it
+        #by making sure it is an positive integer not greater than <max_index>
+
+        #Parameters
+        #----------
+        #max_index: int
+            #the maximum index available
+
+        #Return
+        #------
+        #index: int
+            #the index which the user chose
+        #"""
+
+        #while "waiting for the number":
+            #try:
+                #index = int(input("\n\t\t index =... "))
+            #except ValueError:
+                #print("\n Not a number is you typed \n")
+                #continue
+
+            #if index < 0 or index >= max_index:
+                #print("\n {} not in allowed boundaries \n".format(index))
+            #else:
+                #return index
+
+    #@staticmethod
+    #def _get_yes_or_no_answer():
+        #"""
+        #get the answer of yes-no question
+
+        #Parameters
+        #----------
+
+        #Return
+        #------
+        #"""
+
+        #while "Answer is invalid":
+            #ans = str(input("\n\t y/n answer... ")).lower().strip()
+
+            #print("\n")
+
+            #if ans[:1] == "y":
+                #return True
+            #elif ans[:1] == "n":
+                #return False
+            #else:
+                #print("\n y or n answer only !\n")
+                #continue
+
+    #def _get_latest_file(self, path, model):
+        #"""
+        #return the name of the latest modified file in path
+        #by creating wildcard of the type model + "*"
+
+        #Parameters
+        #----------
+        #path: string
+            #the path to the directory of interest
+        #model: string
+            #how the file name looks like, it serves as wildcard
+            #of the type model + "*"
+
+        #Returns
+        #-------
+        #: string
+            #the name of latest modified file
+        #"""
+
+        #import glob
+        #import os
+
+        #if (self._check_if_StrNotBlank(path) and
+            #self._check_if_StrNotBlank(model)):
+
+            #filename = max(
+                #glob.glob(path + "/" + model + "*"),
+                #key=os.path.getctime
+            #)
+
+            #filename = filename.split("/")[-1]
+
+            #print(
+                #"\n latest file in \n\t {} is: {} \n".format(
+                    #path, filename
+                #)
+            #)
+        #else:
+
+            #filename = ""
+
+            #print("\n path and name not set, some filename var!!! \n")
+
+        #return filename
+
+    #def _get_xy_current_file(self, headline):
+        #"""
+        #list the enumerated <headlines> and let the user choose
+        #which will be plotted as Y and as X on the fig
+
+        #Parameters
+        #----------
+        #headline: list
+            #list of available headlines to choose from
+
+        #Return
+        #------
+        #index_x: int
+            #the index of the headline to be used on the abscissa
+
+        #index_y: int
+            #the index of the headline to be used on the ordinate
+        #"""
+
+        #print("\n choose columns to plot Y vs X \n")
+
+        #for cnt, value in enumerate(headline):
+            #print("\t {}: {}".format(cnt, value))
+
+        #print("\n\t Y... ")
+        #index_y = self._get_index(len(headline))
+
+        #print("\n\t X... ")
+        #index_x = self._get_index(len(headline))
+
+        #return index_x, index_y
+
+    #def _get_filename_from_dir(self, path):
+        #"""
+        #lists all the files in <path> and lets the user choose
+        #which file to be loaded
+
+        #Parameters
+        #----------
+        #path: string
+            #the full path to the directory whos files will be listed
+
+        #Return
+        #------
+            #: string
+                #the filename of our choice
+        #"""
+
+        #import os
+
+        #list_dir = os.listdir(path)
+
+        #for ind, val in enumerate(list_dir):
+            #print("{}. {}".format(ind, val))
+
+        #return list_dir[self._get_index(len(list_dir))]
+
+    #def _set_default_paths(self):
+        #"""
+        #sets default paths in self to the result directories
+
+        #Parameters
+        #----------
+
+        #Returns
+        #-------
+        #"""
+
+        #self.path_res = "/home/dimitar/projects/STT_theories/results"
+
+        #print(
+            #"\n mine path_res: {} \n".format(
+                #self.path_res
+            #)
+        #)
+
+        #self.path_daniela = "/home/dimitar/Documents/Teaching_Materials/" \
+            #+ "University/Uvod.Fizika.Cherni.Dupki/Doktorant/" \
+            #+ "Daniela_Static_NS_Massive_SlowRot"
+
+        #print(
+            #"\n daniela path_res: {} \n".format(
+                #self.path_daniela
+            #)
+        #)
+
+        #self.path_kalin = "/home/dimitar/Documents/Teaching_Materials/" \
+            #+ "University/Uvod.Fizika.Cherni.Dupki/Doktorant/" \
+            #+ "Kalin_Static_NS_SlowRot_Massive_Lambda/beta-6"
+
+        #print(
+            #"\n kalin path_res: {} \n".format(
+                #self.path_kalin
+            #)
+        #)
+
+        #return
+
+    #def _load_file(self, path, filename, data, headline, label):
+        #"""
+        #load the data from <filename> in <path> by appending them to
+        #<data>, append the headline (the name of each column) in
+        #<headline> and the name of the file in <label>
+
+        #Parameters
+        #----------
+        #path: string
+            #the path to the directory containing the file with data
+        #filename: string
+            #the name of the file which will be loaded
+        #data: list
+            #the loaded data will be appended here
+        #headline: list
+            #the name of each column will be appended here as a list
+        #label: list
+            #the name of the file will be apended here
+
+        #Returns
+        #------
+        #"""
+
+        #if not(self._check_if_StrNotBlank(path) and
+               #self._check_if_StrNotBlank(filename)):
+
+            #print(
+                #"\n from where to load a file!!! \n\t {} / {} \n".format(
+                    #path, filename
+                #)
+            #)
+
+        #with open(path + "/" + filename, "r") as f:
+            #all_data = f.readlines()
+
+        #headline.append(
+            #[
+                #i.strip() for i in
+                #all_data.pop(0).strip().split(" ")
+                #if
+                #"#" not in i and
+                #len(i.strip())
+            #]
+        #)
+
+        #label.append(filename.split("/")[-1][-41:])
+
+        #data.append(
+            #[
+                #[] for i in all_data[0].strip().split(" ") if len(i.strip())
+            #]
+        #)
+
+        #for cnt, line in enumerate(all_data):
+
+            #for apnd, num in zip(
+                #data[-1], [
+                    #float(i) for i in line.strip().split(" ") if len(i.strip())
+                #]
+            #):
+                #apnd.append(num)
+
+        #return
+
+    #def _load_daniela_file(self, path, filename, data, headline, label):
+        #"""
+        #load danieala result file with name <filename> by appending the data
+        #after taking care of coefficients to <data> and saving the <headlines>(
+        #what is the name of each column) and label - the filename itself
+
+        #Parameters
+        #----------
+        #path: string
+            #the full path of the directory where the file is
+        #filename: string
+            #the name of the file itself
+        #data: list
+            #where to append the data of interest
+        #headline: list
+            #what each column is
+        #label: list
+            #the name the given data, expect it will be the filename
+
+        #Returns
+        #-------
+        #"""
+
+        #if not(self._check_if_StrNotBlank(path) and
+               #self._check_if_StrNotBlank(filename)):
+
+            #print(
+                #"from where to load a daniela file!!! {} / {}".format(
+                    #path, filename
+                #)
+            #)
+
+        #with open(path + "/" + filename, "r") as f:
+            #all_data = f.readlines()
+
+        ##~ get rid of inline text
+        #all_data = [
+            #line for line in all_data
+            #if "rho" not in line
+        #]
+
+        ##~ i am not interested in all data, so only the indexes here
+        ##~ will be saved
+        ##~ since in some files the central pressure is in different column
+        ##~ we check it and take into account
+        #if filename in [
+            #"models_APR_beta-4.5_mphi5e-3.dat",
+            #"models_APR_beta-6.0_mphi0.dat",
+            #"models_APR_beta-6.0_mphi1e-3.dat"
+        #]:
+            #indexes = [0, 1, 2, 3, 4, 10]
+        #else:
+            #indexes = [0, 1, 2, 3, 4, 11]
+
+        #units = [
+            #self.units["density"], self.units["rad"],
+            #1, self.units["j"], 1, 1
+        #]
+
+        #data.append([[] for i in indexes])
+
+        #for cnt, line in enumerate(all_data):
+            #for i, u, d in zip(indexes, units, data[-1]):
+                #try:
+                    #d.append(float(line.split(" ")[i]) / u)
+                #except ValueError:
+                    #print(
+                        #"\n ValueError: line {}: {} \n".format(
+                            #cnt, line
+                        #)
+                    #)
+                    #break
+
+        #data[-1][-2] = \
+            #[(-1)*i for i in data[-1][-2]]
+
+        #label.append(filename)
+
+        #return
+
+    #def _load_kalin_file(self, path, filename, data, headline, label):
+        #"""
+        #load kalin result file with name <filename> by appending the data
+        #after taking care of coefficients to <data> and saving the <headlines>(
+        #what is the name of each column) and label - the filename itself
+
+        #Parameters
+        #----------
+        #path: string
+            #the full path of the directory where the file is
+        #filename: string
+            #the name of the file itself
+        #data: list
+            #where to append the data of interest
+        #headline: list
+            #what each column is
+        #label: list
+            #the name the given data, expect it will be the filename
+
+        #Returns
+        #-------
+        #"""
+
+        #if not(self._check_if_StrNotBlank(path) and
+               #self._check_if_StrNotBlank(filename) ):
+
+            #print(
+                #"from where to load a kalin file!!! {} / {}".format(
+                    #path, filename
+                #)
+            #)
+
+        #with open(path + "/" + filename, "r") as f:
+            #all_data = f.readlines()
+
+        ##~ get rid of inline text
+        #all_data = [
+            #line for line in all_data
+            #if "lambda" not in line and "f_rot" not in line
+        #]
+
+        ##~ i am not interested in all data, so only the indexes here
+        ##~ will be saved
+        ##~ since in some files the central pressure is in different column
+        ##~ we check it and take into account
+        #indexes = [3, 5, 7, 10, 6, 2]
+
+        #units = [
+            #self.units["density"], self.units["rad"],
+            #1, 1, 1, 1
+        #]
+
+        #data.append([[] for i in indexes])
+
+        #for cnt, line in enumerate(all_data):
+            #for i, u, d in zip(indexes, units, data[-1]):
+                #try:
+                    #d.append(float(line.split(" ")[i]) / u)
+                #except ValueError:
+                    #print(
+                        #"\n ValueError: line {}: {} \n".format(
+                            #cnt, line
+                        #)
+                    #)
+                    #break
+
+        #label.append(filename)
+
+        #return
+
+    #def load_ResultFile_latest(self, filename_type="STT_phiScal_"):
+        #"""
+        #load the latest modified file from <self.path_res>
+
+        #Parameters
+        #----------
+        #filename_type: string
+            #this string will be used as wildcard filename_type + "*"
+            #to search in self.path_res; if no value is supplied, the
+            #default "STT_phiScal_" will be used
+
+        #Return
+        #------
+        #"""
+
+        #fname_res = self._get_latest_file(
+            #self.path_res, filename_type
+        #)
+
+        #print("\n now will load:\n\t {} \n".format(fname_res))
+
+        #self._load_file(
+            #self.path_res,
+            #fname_res,
+            #self.data_res,
+            #self.headline_res,
+            #self.label_res
+        #)
+
+        #return
+
+    #def load_ResultFile_argument(self, filename_type=""):
+        #"""
+        #load <filename_type> and append the results in self.data_res and etc
+        #it will search the file at <self.path>
+
+        #Parameters
+        #----------
+        #filename_type: string
+            #the file name at <self.path> which will be loaded
+
+        #Return
+        #------
+        #"""
+
+        #if self._check_if_StrNotBlank(filename_type):
+
+            #self._load_file(
+                #self.path_res,
+                #filename_type,
+                #self.data_res,
+                #self.headline_res,
+                #self.label_res
+            #)
+
+        #else:
+            #print("\n you forgot to give filename \n")
+
+        #return
+
+    #def load_ResultFile(self):
+        #"""
+        #load <filename_type> and append the results in self.data_res and etc
+        #it will search the file at <self.path>
+
+        #Parameters
+        #----------
+        #filename_type: string
+            #the file name at <self.path> which will be loaded
+
+        #Return
+        #------
+        #"""
+
+        #filename = self._get_filename_from_dir(self.path_res)
+
+        #print("\n now will load:\n\t {} \n".format(filename))
+
+        #self._load_file(
+            #self.path_res,
+            #filename,
+            #self.data_res,
+            #self.headline_res,
+            #self.label_res
+        #)
+
+        #return
+
+    #def load_DanielaFile(self):
+        #"""
+        #load daniela data from <self.path_daniela>
+
+        #Parameters
+        #----------
+
+        #Returns
+        #-------
+        #"""
+
+        #filename = self._get_filename_from_dir(self.path_daniela)
+
+        #print("\n now will load:\n\t {} \n".format(filename))
+
+        #self._load_daniela_file(
+            #self.path_daniela,
+            #filename,
+            #self.data_daniela,
+            #self.headline_daniela,
+            #self.label_daniela
+        #)
+
+    #def load_KalinFile(self):
+        #"""
+        #load kalin data from <self.path_kalin>
+
+        #Parameters
+        #----------
+
+        #Returns
+        #-------
+        #"""
+
+        #filename = self._get_filename_from_dir(self.path_kalin)
+
+        #print("\n now will load:\n\t {} \n".format(filename))
+
+        #self._load_kalin_file(
+            #self.path_kalin,
+            #filename,
+            #self.data_kalin,
+            #self.headline_kalin,
+            #self.label_kalin
+        #)
+
+    #def clear_data(self):
+        #"""
+        #clear the data in self:
+            #data_*, which contains the plot data
+            #headline_*, which is the naming of each column of each data
+            #label_*, which is name of the file the data come from
+
+        #Parameters
+        #----------
+
+        #Returns
+        #-------
+        #"""
+
+        #self.data_res.clear()
+        #self.headline_res.clear()
+        #self.label_res.clear()
+
+        #self.data_daniela.clear()
+        #self.headline_daniela.clear()
+        #self.label_daniela.clear()
+
+        #self.data_kalin.clear()
+        #self.headline_kalin.clear()
+        #self.label_kalin.clear()
+
+        #return
+
+    #def plot_data_res_last(self):
+        #"""
+        #creates figure with single subplot to plot the last list in
+        #<self.data_res> with asking which column will be used for
+        #X and Y axis
+
+        #Parameters
+        #----------
+
+        #Return
+        #------
+        #"""
+
+        #from matplotlib import pyplot as plt
+        #from IPython import get_ipython
+
+        ##~ if we start it in jupyter qtconsole
+        ##~ this will force open it in new window not inside
+        #get_ipython().run_line_magic("matplotlib", "qt5")
+
+        ##~ lets check if we have anything to plot
+        #if not self.data_res:
+            #self.load_ResultFile_latest()
+
+        #index_x, index_y = self._get_xy_current_file(
+            #self.headline_res[-1]
+        #)
+
+        #fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
+
+        #ax = all_ax[-1]
+
+        #self._set_parms(
+            #ax,
+            #self.headline_res[-1][index_x],
+            #self.headline_res[-1][index_y]
+        #)
+
+        #ax.plot(
+            #self.data_res[-1][index_x],
+            #self.data_res[-1][index_y],
+            #linewidth=1.5,
+            #label=self.label_res[-1]
+        #)
+
+        #ax.legend(loc="best", fontsize=8)
+        #plt.show()
+
+        #return
+
+    #def plot_data_res_all(self):
+        #"""
+        #creates figure with single subplot to plot all data in
+        #<self.data_res> with asking which column will be used for all
+        #X and Y axis (it presumes that all share the same headline)
+
+        #Parameters
+        #----------
+
+        #Return
+        #------
+        #"""
+
+        #from matplotlib import pyplot as plt
+        #from IPython import get_ipython
+
+        ##~ if we start it in jupyter qtconsole
+        ##~ this will force open it in new window not inside
+        #get_ipython().run_line_magic('matplotlib', "qt5")
+
+        ##~ lets check if we have anything to plot
+        #if not self.data_res:
+            #self.load_ResultFile()
+
+        #index_x, index_y = self._get_xy_current_file(
+            #self.headline_res[-1]
+        #)
+
+        #fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
+
+        #ax = all_ax[-1]
+
+        #self._set_parms(
+            #ax,
+            #self.headline_res[-1][index_x],
+            #self.headline_res[-1][index_y]
+        #)
+
+        #for data, label in zip(self.data_res, self.label_res):
+            #ax.plot(
+                #data[index_x],
+                #data[index_y],
+                #linewidth=1.5,
+                #label=label
+            #)
+
+        #ax.legend(loc="best", fontsize=8)
+        #plt.show()
+
+        #return
+
+    #def plot_compare_last_res_daniela(self):
+
+        #from matplotlib import pyplot as plt
+        #from IPython import get_ipython
+
+        #get_ipython().run_line_magic('matplotlib', "qt5")
+
+        ##~ lets check if we have anything to plot
+        #if not self.data_res:
+            #self.load_ResultFile()
+
+        #if not self.data_daniela:
+            #self.load_DanielaFile()
+
+        #index_x, index_y = self._get_xy_current_file(self.headline_res[-1])
+
+        #fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
+
+        #ax = all_ax[-1]
+
+        #self._set_parms(
+            #ax,
+            #self.headline_res[-1][index_x],
+            #self.headline_res[-1][index_y]
+        #)
+
+        #ax.plot(
+            #self.data_res[-1][index_x],
+            #self.data_res[-1][index_y],
+            #linewidth=1.5,
+            #label=self.label_res[-1],
+        #)
+
+        #ax.plot(
+            #self.data_daniela[-1][
+                #self.daniela_mapping[self.headline_res[-1][index_x]]
+            #],
+            #self.data_daniela[-1][
+                #self.daniela_mapping[self.headline_res[-1][index_y]]
+            #],
+            #marker="o",
+            #markersize=5,
+            #alpha=0.4,
+            #linewidth=0,
+            #label=self.label_daniela[-1]
+        #)
+
+        #ax.legend(loc="best", fontsize=8)
+        #plt.show()
+
+        #return
+
+    #def plot_compare_last_res_daniela_kalin(self):
+
+        #from matplotlib import pyplot as plt
+        #from IPython import get_ipython
+
+        #get_ipython().run_line_magic('matplotlib', "qt5")
+
+        ##~ lets check if we have anything to plot
+        #if not self.data_res:
+            #self.load_ResultFile()
+
+        #if not self.data_daniela:
+            #self.load_DanielaFile()
+
+        #if not self.data_kalin:
+            #self.load_KalinFile()
+
+        #index_x, index_y = self._get_xy_current_file( self.headline_res[-1] )
+
+        #fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
+
+        #ax = all_ax[-1]
+
+        #self._set_parms(
+            #ax,
+            #self.headline_res[-1][index_x],
+            #self.headline_res[-1][index_y]
+        #)
+
+        #ax.plot(
+            #self.data_res[-1][index_x],
+            #self.data_res[-1][index_y],
+            #linewidth=1.5,
+            #label=self.label_res[-1],
+        #)
+
+        #ax.plot(
+            #self.data_daniela[-1][
+                #self.daniela_mapping[self.headline_res[-1][index_x]]
+            #],
+            #self.data_daniela[-1][
+                #self.daniela_mapping[self.headline_res[-1][index_y]]
+            #],
+            #marker="o",
+            #markersize=5,
+            #alpha=0.4,
+            #linewidth=0,
+            #label=self.label_daniela[-1]
+        #)
+
+        #ax.plot(
+            #self.data_kalin[-1][
+                #self.kalin_mapping[self.headline_res[-1][index_x]]
+            #],
+            #self.data_kalin[-1][
+                #self.kalin_mapping[self.headline_res[-1][index_y]]
+            #],
+            #marker="X",
+            #markersize=5,
+            #alpha=0.4,
+            #linewidth=0,
+            #label=self.label_kalin[-1]
+        #)
+
+        #ax.legend(loc="best", fontsize=8)
+        #plt.show()
+
+        #return
+
+    #def plot_compare_last_res_kalin(self):
+
+        #from matplotlib import pyplot as plt
+        #from IPython import get_ipython
+
+        #get_ipython().run_line_magic('matplotlib', "qt5")
+
+        ##~ lets check if we have anything to plot
+        #if not self.data_res:
+            #self.load_ResultFile()
+
+        #if not self.data_kalin:
+            #self.load_KalinFile()
+
+        #index_x, index_y = self._get_xy_current_file(self.headline_res[-1])
+
+        #fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
+
+        #ax = all_ax[-1]
+
+        #self._set_parms(
+            #ax,
+            #self.headline_res[-1][index_x],
+            #self.headline_res[-1][index_y]
+        #)
+
+        #ax.plot(
+            #self.data_res[-1][index_x],
+            #self.data_res[-1][index_y],
+            #linewidth=1.5,
+            #label=self.label_res[-1],
+        #)
+
+        #ax.plot(
+            #self.data_kalin[-1][
+                #self.kalin_mapping[self.headline_res[-1][index_x]]
+            #],
+            #self.data_kalin[-1][
+                #self.kalin_mapping[self.headline_res[-1][index_y]]
+            #],
+            #marker="X",
+            #markersize=5,
+            #alpha=0.5,
+            #linewidth=0,
+            #label=self.label_kalin[-1]
+        #)
+
+        #ax.legend(loc="best", fontsize=8)
+        #plt.show()
+
+        #return
+
+    #def remove_from_data_res(self):
+        #"""
+        #user says who from <self.data_res> based on their labels saved in
+        #<self.label_res>
+
+        #Parameters
+        #----------
+
+        #Returns
+        #-------
+        #"""
+
+        #while "want to remove something":
+            #print("\n Want to remove some data from self.data_res? \n")
+
+            #if not self._get_yes_or_no_answer():
+                #return
+
+            #for cnt, val in enumerate(self.label_res):
+
+                #print("{}. {} ".format(cnt, val))
+
+            #print("\n Choose index... ")
+            #i = self._get_index(len(self.label_res))
+
+            #del self.data_res[i]
+            #del self.label_res[i]
+            #del self.headline_res[i]
 
 
 if __name__ == "__main__":
 
     print("\n asd \n")
-#~ imp.reload(myplt_M)
+#~ cd projects/STT_theories/src/python/
+#~ import imp
+#~ import plotting as myplt_M
+#~ severalEOSs = [
+    #~ {'name': 'SLy4', 'beta': 0, 'm': 0, 'lambda': 0},
+    #~ {'name': 'SLy4', 'beta': -6, 'm': 0, 'lambda': 1}
+#~ ]
 #~ myplt = myplt_M.plot_result()
 #~ myplt.set_my_ResPath()
-#~ myplt.set_my_EOSname("APR4")
-#~ myplt.move_my_latest_res()
-#~ myplt.plot_my_latest_resEOSname()
-#~ imp.reload(myplt_M)
-#~ myplt = myplt_M.plot_result()
-#~ myplt.set_my_ResPath()
-#~ myplt.plot_severalEOSs_uniTildeI(severalEOSs)
+#~ myplt.plot_severalEOSs_MvsR(severalEOSs)
+#~ myplt.plot_severalEOSs_phiScal_cVSp_c(severalEOSs)
