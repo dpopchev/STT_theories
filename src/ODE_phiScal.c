@@ -1003,12 +1003,12 @@ void get_phiScal_cVal_infVal_fitShoot(
             &shoot_fitting_execute
         );
 
-        printf(
-          "\n\t\t v_%d = %e ----> v_%d = %e ( R = %e )\n"
-          "\n\t\t count = %d with inf = %e\n\n",
-          count - 1, phiScal_c, count, newt_v[1], R,
-          count, r_inf
-        );
+        //~ printf(
+          //~ "\n\t\t v_%d = %e ----> v_%d = %e ( R = %e )\n"
+          //~ "\n\t\t count = %d with inf = %e\n\n",
+          //~ count - 1, phiScal_c, count, newt_v[1], R,
+          //~ count, r_inf
+        //~ );
 
         // criteria for the difference in the previous and now
         // central value of the scalar field
@@ -1017,10 +1017,10 @@ void get_phiScal_cVal_infVal_fitShoot(
             phiScal_c = newt_v[1];
             r_inf += 0.1*r_inf;
         }else{
-            printf(
-                "\n\t\t No significant difference assume \n\t\t\t %e and inf %e \n",
-                newt_v[1], r_inf
-            );
+            //~ printf(
+                //~ "\n\t\t No significant difference assume \n\t\t\t %e and inf %e \n",
+                //~ newt_v[1], r_inf
+            //~ );
             break;
         }
     }

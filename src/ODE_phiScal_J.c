@@ -4,18 +4,18 @@
 #define ODE_NAME "phiScal_J"
 
 // interval of central pressures to go over through
-#define P_START 1.25e-3 // 1e-4; 1e-5
-#define P_END 1.6e-3 // 1.6e-3; 5e-3
-#define GVPHISCAL_FF -3e-2
+#define P_START 5.00e-05 // 5e-5; GR 1e-5
+#define P_END 4.5e-3 // 4.5e-3; GR 7e-3
+#define GVPHISCAL_FF -3.00e-02
 
 // value of the infinity to use
-#define R_INF_PHISCAL 9e1
+#define R_INF_PHISCAL 1e6
 #define R_INF 1e9
 
 // parameters of the scalar field
-#define BETA -6
-#define M 0
-#define LAMBDA 1e0
+#define BETA -6.00e+00
+#define M 0.00e+00
+#define LAMBDA 0.00e+00
 
 static double \
   // values to save in the ResultFile
@@ -757,7 +757,7 @@ static void change_current_pressure(void){
                 break;
             case -3:
                 //5 for scalarization, but the exponent is -2
-                p_current += 5*pow10( current_power - 2 );
+                p_current += 0.5*pow10( current_power - 1 );
                 break;
             default:
                 printf("\n %e not known, terminating... \n", p_current);
@@ -841,11 +841,11 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
             p_current, eos->model_name, (double)BETA, (double)M, (double)LAMBDA, (double) GVPHISCAL_FF
         );
         v_phiScal_J = v_phiScal_J_tmp;
-        printf(
-          "\n\t scalar field shoot with initial"
-          "v_phiScal = %e and phiScal_inf = %e \n",
-          v_phiScal_J, r_inf_phiscal
-        );
+        //~ printf(
+          //~ "\n\t scalar field shoot with initial"
+          //~ "v_phiScal = %e and phiScal_inf = %e \n",
+          //~ v_phiScal_J, r_inf_phiscal
+        //~ );
 
         // lets find the interval with maximum difference
         // and the corresponding central value for the scalar field
@@ -879,11 +879,11 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
 
         r_inf = r_inf_phiscal;
 
-        printf(
-            "\n\t fine shoot for inf %e \n"
-            "\n\t\t ( %e %e %e ) ---> ",
-            r_inf_phiscal, v1[1], v1[2], v1[3]
-        );
+        //~ printf(
+            //~ "\n\t fine shoot for inf %e \n"
+            //~ "\n\t\t ( %e %e %e ) ---> ",
+            //~ r_inf_phiscal, v1[1], v1[2], v1[3]
+        //~ );
 
         newt(
             v1,
@@ -892,10 +892,10 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
             &shoot_regular_execute
         );
 
-        printf(
-            " ( %e %e %e ); R = %e \n",
-            v1[1], v1[2], v1[3], R
-        );
+        //~ printf(
+            //~ " ( %e %e %e ); R = %e \n",
+            //~ v1[1], v1[2], v1[3], R
+        //~ );
 
         v_phiScal_J = v1[1];
         PhiMetr_c = v1[2];
@@ -922,14 +922,14 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
                 &shoot_regular_execute_modif
             );
 
-            printf(
-                "\n\t v_%d ---> for inf %e ( R = %e )"
-                "\n\t\t %e ---> %e  \n"
-                "\n\t\t %e ---> %e  \n",
-                count, r_inf, R,
-                PhiMetr_c, v2[1],
-                Omega_c, v2[2]
-            );
+            //~ printf(
+                //~ "\n\t v_%d ---> for inf %e ( R = %e )"
+                //~ "\n\t\t %e ---> %e  \n"
+                //~ "\n\t\t %e ---> %e  \n",
+                //~ count, r_inf, R,
+                //~ PhiMetr_c, v2[1],
+                //~ Omega_c, v2[2]
+            //~ );
 
             // check whether there is any significant difference
             // in the now and previous shooted central values in
@@ -943,10 +943,10 @@ void single_shoot_regular_phiScal_J_iterate_inf_iterpres(void){
                 inftmp = r_inf;
                 r_inf += 0.2*r_inf;
             }else{
-                printf(
-                    "\n\t No sig diff in with \n\t\t %e %e and inf %e \n",
-                    v2[1], v2[2], r_inf
-                );
+                //~ printf(
+                    //~ "\n\t No sig diff in with \n\t\t %e %e and inf %e \n",
+                    //~ v2[1], v2[2], r_inf
+                //~ );
                 break;
             }
         }

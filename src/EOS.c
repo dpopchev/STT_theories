@@ -3,17 +3,25 @@
 #define DEBUGGING_EOS_INIT 0
 
 // the total amount of eos we have
-#define DEF_TOTAL_EOS_NAME_COUNT 5
+#define DEF_TOTAL_EOS_NAME_COUNT 35
 
 // which model we will use
-#define DEF_EOS_MODEL_NUM 5
-
+#define DEF_EOS_MODEL_NUM 35
 // if we will use splines, the dimensions of the vector
 #define DEF_EOS_PICEWISE_VECTORS_DIM 7
 
 const char \
     *default_eos_names[] = {
-      "", "EOSII", "SLy4", "APR4", "FPS", "WFF2"
+        "", "EOSII",
+        "PAL6",     "SLy",
+        "APR1",     "APR2",      "APR3",     "APR4",
+        "FPS",     "WFF1",     "WFF2",      "WFF3",
+        "BBB2",     "BPAL12",     "ENG",     "MPA1",
+        "MS1",      "MS2",     "MS1b",      "PS",
+        "GS1",     "GS2",       "BGN1H1",     "GNH3",
+        "H1",       "H2",       "H3",       "H4",
+        "H5",       "H6",       "H7",       "PCL2",
+        "ALF1",       "ALF2",     "ALF3",     "ALF4"
     };
 
 static void picewise_EOS_load(
@@ -144,7 +152,25 @@ void eos_init(EOSmodelInfoStruct **eos){
             break;
 
         case 2:
+            tmp_log_p1 = 34.380;
+            tmp_Gamma1 = 2.227;
+            tmp_Gamma2 = 2.189;
+            tmp_Gamma3 = 2.159;
 
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 3:
             tmp_log_p1 = 34.384;
             tmp_Gamma1 = 3.005;
             tmp_Gamma2 = 2.988;
@@ -158,13 +184,69 @@ void eos_init(EOSmodelInfoStruct **eos){
             (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
 
             picewise_EOS_load(
-              tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
             );
 
             break;
 
-        case 3:
+        case 4:
+            tmp_log_p1 = 33.943;
+            tmp_Gamma1 = 2.442;
+            tmp_Gamma2 = 3.256;
+            tmp_Gamma3 = 2.908;
 
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 5:
+            tmp_log_p1 = 34.126;
+            tmp_Gamma1 = 2.643;
+            tmp_Gamma2 = 3.014;
+            tmp_Gamma3 = 2.945;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 6:
+            tmp_log_p1 = 34.392;
+            tmp_Gamma1 = 3.166;
+            tmp_Gamma2 = 3.573;
+            tmp_Gamma3 = 3.281;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 7:
             tmp_log_p1 = 34.269;
             tmp_Gamma1 = 2.830;
             tmp_Gamma2 = 3.445;
@@ -178,13 +260,12 @@ void eos_init(EOSmodelInfoStruct **eos){
             (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
 
             picewise_EOS_load(
-              tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
             );
 
             break;
 
-        case 4:
-
+        case 8:
             tmp_log_p1 = 34.283;
             tmp_Gamma1 = 2.985;
             tmp_Gamma2 = 2.863;
@@ -198,13 +279,31 @@ void eos_init(EOSmodelInfoStruct **eos){
             (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
 
             picewise_EOS_load(
-              tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
             );
 
             break;
 
-        case 5:
+        case 9:
+            tmp_log_p1 = 34.031;
+            tmp_Gamma1 = 2.519;
+            tmp_Gamma2 = 3.791;
+            tmp_Gamma3 = 3.660;
 
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 10:
             tmp_log_p1 = 34.233;
             tmp_Gamma1 = 2.888;
             tmp_Gamma2 = 3.475;
@@ -218,7 +317,482 @@ void eos_init(EOSmodelInfoStruct **eos){
             (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
 
             picewise_EOS_load(
-              tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 11:
+            tmp_log_p1 = 34.283;
+            tmp_Gamma1 = 3.329;
+            tmp_Gamma2 = 2.952;
+            tmp_Gamma3 = 2.589;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 12:
+            tmp_log_p1 = 34.331;
+            tmp_Gamma1 = 3.418;
+            tmp_Gamma2 = 2.835;
+            tmp_Gamma3 = 2.832;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 13:
+            tmp_log_p1 = 34.358;
+            tmp_Gamma1 = 2.209;
+            tmp_Gamma2 = 2.201;
+            tmp_Gamma3 = 2.176;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 14:
+            tmp_log_p1 = 34.437;
+            tmp_Gamma1 = 3.514;
+            tmp_Gamma2 = 3.130;
+            tmp_Gamma3 = 3.168;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 15:
+            tmp_log_p1 = 34.495;
+            tmp_Gamma1 = 3.446;
+            tmp_Gamma2 = 3.572;
+            tmp_Gamma3 = 2.887;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 16:
+            tmp_log_p1 = 34.858;
+            tmp_Gamma1 = 3.224;
+            tmp_Gamma2 = 3.033;
+            tmp_Gamma3 = 1.325;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 17:
+            tmp_log_p1 = 34.605;
+            tmp_Gamma1 = 2.447;
+            tmp_Gamma2 = 2.184;
+            tmp_Gamma3 = 1.855;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 18:
+            tmp_log_p1 = 34.855;
+            tmp_Gamma1 = 3.456;
+            tmp_Gamma2 = 3.011;
+            tmp_Gamma3 = 1.425;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 19:
+            tmp_log_p1 = 34.671;
+            tmp_Gamma1 = 2.216;
+            tmp_Gamma2 = 1.640;
+            tmp_Gamma3 = 2.365;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 20:
+            tmp_log_p1 = 34.504;
+            tmp_Gamma1 = 2.350;
+            tmp_Gamma2 = 1.267;
+            tmp_Gamma3 = 2.421;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 21:
+            tmp_log_p1 = 34.642;
+            tmp_Gamma1 = 2.519;
+            tmp_Gamma2 = 1.571;
+            tmp_Gamma3 = 2.314;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 22:
+            tmp_log_p1 = 34.623;
+            tmp_Gamma1 = 3.258;
+            tmp_Gamma2 = 1.472;
+            tmp_Gamma3 = 2.464;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 23:
+            tmp_log_p1 = 34.648;
+            tmp_Gamma1 = 2.664;
+            tmp_Gamma2 = 2.194;
+            tmp_Gamma3 = 2.304;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 24:
+            tmp_log_p1 = 34.564;
+            tmp_Gamma1 = 2.595;
+            tmp_Gamma2 = 1.845;
+            tmp_Gamma3 = 1.897;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 25:
+            tmp_log_p1 = 34.617;
+            tmp_Gamma1 = 2.775;
+            tmp_Gamma2 = 1.855;
+            tmp_Gamma3 = 1.858;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 26:
+            tmp_log_p1 = 34.646;
+            tmp_Gamma1 = 2.787;
+            tmp_Gamma2 = 1.951;
+            tmp_Gamma3 = 1.901;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 27:
+            tmp_log_p1 = 34.669;
+            tmp_Gamma1 = 2.909;
+            tmp_Gamma2 = 2.246;
+            tmp_Gamma3 = 2.144;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 28:
+            tmp_log_p1 = 34.609;
+            tmp_Gamma1 = 2.793;
+            tmp_Gamma2 = 1.974;
+            tmp_Gamma3 = 1.915;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 29:
+            tmp_log_p1 = 34.593;
+            tmp_Gamma1 = 2.637;
+            tmp_Gamma2 = 2.121;
+            tmp_Gamma3 = 2.064;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 30:
+            tmp_log_p1 = 34.559;
+            tmp_Gamma1 = 2.621;
+            tmp_Gamma2 = 2.048;
+            tmp_Gamma3 = 2.006;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 31:
+            tmp_log_p1 = 34.507;
+            tmp_Gamma1 = 2.554;
+            tmp_Gamma2 = 1.880;
+            tmp_Gamma3 = 1.977;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 32:
+            tmp_log_p1 = 34.055;
+            tmp_Gamma1 = 2.013;
+            tmp_Gamma2 = 3.389;
+            tmp_Gamma3 = 2.033;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 33:
+            tmp_log_p1 = 34.616;
+            tmp_Gamma1 = 4.070;
+            tmp_Gamma2 = 2.411;
+            tmp_Gamma3 = 1.890;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 34:
+            tmp_log_p1 = 34.283;
+            tmp_Gamma1 = 2.883;
+            tmp_Gamma2 = 2.653;
+            tmp_Gamma3 = 1.952;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
+            );
+
+            break;
+
+        case 35:
+            tmp_log_p1 = 34.314;
+            tmp_Gamma1 = 3.009;
+            tmp_Gamma2 = 3.438;
+            tmp_Gamma3 = 1.803;
+
+            (*eos)->PieceWise_K = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_Gamma = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_a = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_density = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_presure = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+            (*eos)->PieceWise_N = dvector(1,DEF_EOS_PICEWISE_VECTORS_DIM);
+
+            picewise_EOS_load(
+            tmp_log_p1, tmp_Gamma1, tmp_Gamma2, tmp_Gamma3, (*eos)
             );
 
             break;
@@ -280,103 +854,49 @@ void eos_free(EOSmodelInfoStruct **eos){
 
 void EOSeq( EOSmodelInfoStruct *eos, double pressure ){
 
-    switch(eos->model_num){
+    if(eos->model_num >= 2){
+        pressure *= GV_PRESSURE_UNITS;
+        int i = 1;
+        double LV_C = 2.9979e10;
 
-        case 1:{
+        while( pressure > eos->PieceWise_presure[i] ){
+            i++;
+        }
 
-            double p0 = 2.7039e-4, gamma = 2.34, k = 0.0195;
+        double eps =  \
+          ( 1.0 + eos->PieceWise_a[i] ) \
+          * pow( pressure / eos->PieceWise_K[i],1.0 / eos->PieceWise_Gamma[i])\
+          + pressure/pow( LV_C, 2 ) / ( eos->PieceWise_Gamma[i] - 1.0 );
 
-            eos->current = p0*pow( pressure/(k*p0), 1.0/gamma);
+        eos->current = eps/GV_DENSITY_UNITS;
 
-            return;
-            break;
+        return;
+    }else{
+        printf("\n EOSeq do not know what to do %d \n", eos->model_num);
 
-        }case 2:{
-
-            pressure *= GV_PRESSURE_UNITS;
-            int i = 1;
-            double LV_C = 2.9979e10;
-
-            while( pressure > eos->PieceWise_presure[i] ){
-                i++;
-            }
-
-            double eps =  \
-              ( 1.0 + eos->PieceWise_a[i] ) \
-              * pow( pressure / eos->PieceWise_K[i],1.0 / eos->PieceWise_Gamma[i])\
-              + pressure/pow( LV_C, 2 ) / ( eos->PieceWise_Gamma[i] - 1.0 );
-
-            eos->current = eps/GV_DENSITY_UNITS;
-
-            return;
-            break;
-        }case 3:{
-
-            pressure *= GV_PRESSURE_UNITS;
-            int i = 1;
-            double LV_C = 2.9979e10;
-
-            while( pressure > eos->PieceWise_presure[i] ){
-                i++;
-            }
-
-            double eps =  \
-              ( 1.0 + eos->PieceWise_a[i] ) \
-              * pow( pressure / eos->PieceWise_K[i],1.0 / eos->PieceWise_Gamma[i])\
-              + pressure/pow( LV_C, 2 ) / ( eos->PieceWise_Gamma[i] - 1.0 );
-
-            eos->current = eps/GV_DENSITY_UNITS;
-
-            return;
-            break;
-        }case 4:{
-
-            pressure *= GV_PRESSURE_UNITS;
-            int i = 1;
-            double LV_C = 2.9979e10;
-
-            while( pressure > eos->PieceWise_presure[i] ){
-                i++;
-            }
-
-            double eps =  \
-              ( 1.0 + eos->PieceWise_a[i] ) \
-              * pow( pressure / eos->PieceWise_K[i],1.0 / eos->PieceWise_Gamma[i])\
-              + pressure/pow( LV_C, 2 ) / ( eos->PieceWise_Gamma[i] - 1.0 );
-
-            eos->current = eps/GV_DENSITY_UNITS;
-
-            return;
-            break;
-        }case 5:{
-
-            pressure *= GV_PRESSURE_UNITS;
-            int i = 1;
-            double LV_C = 2.9979e10;
-
-            while( pressure > eos->PieceWise_presure[i] ){
-                i++;
-            }
-
-            double eps =  \
-              ( 1.0 + eos->PieceWise_a[i] ) \
-              * pow( pressure / eos->PieceWise_K[i],1.0 / eos->PieceWise_Gamma[i])\
-              + pressure/pow( LV_C, 2 ) / ( eos->PieceWise_Gamma[i] - 1.0 );
-
-            eos->current = eps/GV_DENSITY_UNITS;
-
-            return;
-            break;
-
-        }default:
-            printf(
-              "\n EOS.c eos_init %d unknown, exiting... line 260\n", eos->model_num
-            );
-
-
-            exit(260);
-            break;
+        return;
     }
+
+    //~ switch(eos->model_num){
+
+        //~ case 1:{
+
+            //~ double p0 = 2.7039e-4, gamma = 2.34, k = 0.0195;
+
+            //~ eos->current = p0*pow( pressure/(k*p0), 1.0/gamma);
+
+            //~ return;
+            //~ break;
+
+        //~ }default:
+            //~ printf(
+              //~ "\n EOS.c eos_init %d unknown, exiting... line 260\n", eos->model_num
+            //~ );
+
+
+            //~ exit(260);
+            //~ break;
+    //~ }
 
     return;
 }

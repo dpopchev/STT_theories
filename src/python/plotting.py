@@ -353,6 +353,9 @@ class plot_result:
             ):
                 d.append(n)
 
+            if abs(data[1][-1]) > 1e-5 and data[1][-1] > 0:
+                data[1][-1] *= (-1)
+
         return label, headline, data
 
     def get_severalEOS_data(
@@ -1279,6 +1282,20 @@ class plot_result:
         ax_up.legend(loc="best", fontsize=8)
         plt.show()
 
+        return
+
+    def foo(self,severalEOSs):
+        self.plot_severalEOSs_MvsR(severalEOSs)
+        self.plot_severalEOSs_phiScal_cVSp_c(severalEOSs)
+        return
+
+    def foo2(self,severalEOSs):
+        self.plot_latest_resEOSname_severalEOSs(severalEOSs)
+        return
+
+    def foo_uniI(self,severalEOSs):
+        self.plot_severalEOSs_uniTildeI_polyFit(severalEOSs)
+        self.plot_severalEOSs_uniBarI_polyFit(severalEOSs)
         return
 
     @staticmethod
@@ -2580,3 +2597,61 @@ if __name__ == "__main__":
 #~ myplt.set_my_ResPath()
 #~ myplt.plot_severalEOSs_MvsR(severalEOSs)
 #~ myplt.plot_severalEOSs_phiScal_cVSp_c(severalEOSs)
+
+#~ STEP LIKE M
+#~ eos = "APR4"
+#~ severalEOSs = [
+    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
+#~ ]
+#~ myplt.foo(severalEOSs)
+#~ severalEOSs = [
+    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 5e-3, 'lambda': 0},
+#~ ]
+#~ myplt.foo(severalEOSs)
+#~ severalEOSs = [
+    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 5e-3, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 1e-2, 'lambda': 0},
+#~ ]
+#~ myplt.foo(severalEOSs)
+#~ severalEOSs = [
+    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 5e-3, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 1e-2, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 5e-2, 'lambda': 0},
+#~ ]
+#~ myplt.foo(severalEOSs)
+
+#~ STEP LIKE LAMBDA
+#~ eos = "APR4"
+#~ severalEOSs = [
+    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
+#~ ]
+#~ myplt.foo(severalEOSs)
+#~ severalEOSs = [
+    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e-1},
+#~ ]
+#~ myplt.foo(severalEOSs)
+#~ severalEOSs = [
+    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e-1},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e0},
+#~ ]
+#~ myplt.foo(severalEOSs)
+#~ severalEOSs = [
+    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e-1},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e0},
+    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e1},
+#~ ]
+#~ myplt.foo(severalEOSs)
