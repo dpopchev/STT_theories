@@ -4,17 +4,19 @@ import os
 import glob
 import shutil
 import itertools
+import pathlib
 import random
 
 import numpy as np
 
 from matplotlib import pyplot as plt
+from matplotlib.lines import Line2D
 from IPython import get_ipython
 from matplotlib import style
 from matplotlib.gridspec import GridSpec
 from numpy.polynomial.polynomial import polyfit
 
-get_ipython().run_line_magic("matplotlib", "qt5")
+get_ipython().run_line_magic("matplotlib", "qt")
 
 class plot_result:
 
@@ -45,6 +47,10 @@ class plot_result:
         }
 
         self.units = self._units_coef_clac()
+
+        self.specific_ms = None
+        self.specific_ls = None
+        self.specific_c = None
 
         #~ self.data_daniela = []
         #~ self.headline_daniela = []
@@ -78,6 +84,34 @@ class plot_result:
         self.my_ResPath = os.path.expanduser(my_ResPath)
 
         return
+
+    def set_severalEOSs_ms_ls_c(self, severalEOSs):
+        """
+        for consistent marking on all graphs for the current instance
+
+        EXAMPLE INPUT
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        self.specific_ms = self._get_specific_ms( list(
+            set( [ _["name"] for _ in severalEOSs ] )
+        ) )
+
+        self.specific_ls = self._get_specific_ls( list(
+            set( [ _["m"] for _ in severalEOSs ] )
+        ) )
+
+        self.specific_c = lambda_linestyle = self._get_specific_c( list(
+            set( [ _["lambda"] for _ in severalEOSs ] )
+        ) )
+
+        return
+
 
     def get_my_ResPath(self):
 
@@ -549,38 +583,93 @@ class plot_result:
 
         self._set_parms(ax, "R [km]", "$M/M_{\odot}$")
 
+        EOS_markers = self._get_specific_ms( list(
+            set( [ _["name"] for _ in severalEOSs ] )
+        ) )
+
+        m_colors = self._get_specific_c( list(
+            set( [ _["m"] for _ in severalEOSs ] )
+        ) )
+
+        lambda_linestyle = self._get_specific_ls( list(
+            set( [ _["lambda"] for _ in severalEOSs ] )
+        ) )
+
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
             data[3] = [ _*self.units["R"] for _ in data[3] ]
 
-            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+            #~ old way it set random at every iiteration for every entry
+            #~ ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+
+            #~ label entry for each line, but now it will specific
+            #~ label_entry = "{}"
+                #~ "\n\t $\\beta$ = {:.1f}"
+                #~ "\n\t m = {:.1e}"
+                #~ "\n\t $\\lambda$ = {:.1e}".format(
+                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
+            #~ )
 
             ax.plot(
                 data[3],
                 data[2],
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = lc,
-                linestyle = ls,
-                marker = ms,
-                markerfacecolor = mc,
-                markeredgecolor = mc,
-                markersize = 5,
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = self._get_markevry(data[3])
+                markevery = self._get_markevry(data[2])
             )
 
+        legend_eos = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = __,
+                linewidth = 0,
+                label = _
+            )
+            for _, __ in EOS_markers.items()
+        ]
+
+        legend_lambda = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = None,
+                linewidth = 1.5,
+                linestyle = __,
+                label = "$\\lambda =$ {:.2e}".format(_)
+            )
+            for _, __ in lambda_linestyle.items()
+        ]
+
+        legend_m = [
+            Line2D(
+                [0], [0],
+                color=__,
+                marker = None,
+                linewidth = 1.5,
+                linestyle = "-",
+                label = "$m =$ {:.2e}".format(_)
+            )
+            for _, __ in m_colors.items()
+        ]
+
         ax.legend(
+            handles = [*legend_eos, *legend_lambda, *legend_m],
             loc="best",
             fontsize=8,
-            handlelength=3.8,
+            handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.5
+            markerscale = 1,
+            ncol=3,
+            frameon = False,
         )
+
         plt.show()
 
         return
@@ -607,37 +696,83 @@ class plot_result:
 
         self._set_parms(ax, "$p_c$", "$\\varphi_c$")
 
+        EOS_markers = self._get_specific_ms( list(
+            set( [ _["name"] for _ in severalEOSs ] )
+        ) )
+
+        m_colors = self._get_specific_c( list(
+            set( [ _["m"] for _ in severalEOSs ] )
+        ) )
+
+        lambda_linestyle = self._get_specific_ls( list(
+            set( [ _["lambda"] for _ in severalEOSs ] )
+        ) )
+
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+            #~ ls, lc, ms, mc = self._get_ls_lc_ms_mc()
 
             ax.plot(
                 data[0],
                 data[1],
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = lc,
-                linestyle = ls,
-                marker = ms,
-                markerfacecolor = mc,
-                markeredgecolor = mc,
-                markersize = 5,
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = self._get_markevry(data[0])
+                markevery = self._get_markevry(data[1])
             )
 
+        legend_eos = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = __,
+                linewidth = 0,
+                label = _
+            )
+            for _, __ in EOS_markers.items()
+        ]
+
+        legend_lambda = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = None,
+                linewidth = 1.5,
+                linestyle = __,
+                label = "$\\lambda =$ {:.2e}".format(_)
+            )
+            for _, __ in lambda_linestyle.items()
+        ]
+
+        legend_m = [
+            Line2D(
+                [0], [0],
+                color=__,
+                marker = None,
+                linewidth = 1.5,
+                linestyle = "-",
+                label = "$m =$ {:.2e}".format(_)
+            )
+            for _, __ in m_colors.items()
+        ]
+
         ax.legend(
+            handles = [*legend_eos, *legend_lambda, *legend_m],
             loc="best",
             fontsize=8,
-            handlelength=3.8,
+            handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.5
+            markerscale = 1,
+            ncol=3,
+            frameon = False,
         )
+
         plt.show()
 
         return
@@ -664,39 +799,91 @@ class plot_result:
 
         self._set_parms(ax, "$\\rho_c [g/cm^3]$", "$\\varphi_c$")
 
+        EOS_markers = self._get_specific_ms( list(
+            set( [ _["name"] for _ in severalEOSs ] )
+        ) )
+
+        m_colors = self._get_specific_c( list(
+            set( [ _["m"] for _ in severalEOSs ] )
+        ) )
+
+        lambda_linestyle = self._get_specific_ls( list(
+            set( [ _["lambda"] for _ in severalEOSs ] )
+        ) )
+
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
             data[-2] = [ _*self.units["density"] for _ in data[-2] ]
 
-            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+            #~ ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+            #~ label_entry = "{}"
+                #~ "\n\t $\\beta$ = {:.1f}"
+                #~ "\n\t m = {:.1e}"
+                #~ "\n\t $\\lambda$ = {:.1e}".format(
+                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
+            #~ )
 
             ax.plot(
                 data[-2],
                 data[1],
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = lc,
-                linestyle = ls,
-                marker = ms,
-                markerfacecolor = mc,
-                markeredgecolor = mc,
-                markersize = 5,
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = self._get_markevry(data[-2])
+                markevery = self._get_markevry(data[1])
             )
 
+        legend_eos = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = __,
+                linewidth = 0,
+                label = _
+            )
+            for _, __ in EOS_markers.items()
+        ]
+
+        legend_lambda = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = None,
+                linewidth = 1.5,
+                linestyle = __,
+                label = "$\\lambda =$ {:.2e}".format(_)
+            )
+            for _, __ in lambda_linestyle.items()
+        ]
+
+        legend_m = [
+            Line2D(
+                [0], [0],
+                color=__,
+                marker = None,
+                linewidth = 1.5,
+                linestyle = "-",
+                label = "$m =$ {:.2e}".format(_)
+            )
+            for _, __ in m_colors.items()
+        ]
+
         ax.legend(
+            handles = [*legend_eos, *legend_lambda, *legend_m],
             loc="best",
             fontsize=8,
-            handlelength=3.2,
+            handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.5
+            markerscale = 1,
+            ncol=3,
+            frameon = False,
         )
+
         plt.show()
 
         return
@@ -723,38 +910,91 @@ class plot_result:
 
         self._set_parms(ax, "$\\rho_c [g/cm^3]$", "$M/M_{\odot}$")
 
+        EOS_markers = self._get_specific_ms( list(
+            set( [ _["name"] for _ in severalEOSs ] )
+        ) )
+
+        m_colors = self._get_specific_c( list(
+            set( [ _["m"] for _ in severalEOSs ] )
+        ) )
+
+        lambda_linestyle = self._get_specific_ls( list(
+            set( [ _["lambda"] for _ in severalEOSs ] )
+        ) )
+
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
             data[-2] = [ _*self.units["density"] for _ in data[-2] ]
 
-            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+            #~ old way it set random at every iiteration for every entry
+            #~ ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+            #~ label entry for each line, but now it will specific
+            #~ label_entry = "{}"
+                #~ "\n\t $\\beta$ = {:.1f}"
+                #~ "\n\t m = {:.1e}"
+                #~ "\n\t $\\lambda$ = {:.1e}".format(
+                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
+            #~ )
 
             ax.plot(
                 data[-2],
                 data[2],
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = lc,
-                linestyle = ls,
-                marker = ms,
-                markerfacecolor = mc,
-                markeredgecolor = mc,
-                markersize = 5,
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = self._get_markevry(data[-2])
+                markevery = self._get_markevry(data[2])
             )
 
+        legend_eos = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = __,
+                linewidth = 0,
+                label = _
+            )
+            for _, __ in EOS_markers.items()
+        ]
+
+        legend_lambda = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = None,
+                linewidth = 1.5,
+                linestyle = __,
+                label = "$\\lambda =$ {:.2e}".format(_)
+            )
+            for _, __ in lambda_linestyle.items()
+        ]
+
+        legend_m = [
+            Line2D(
+                [0], [0],
+                color=__,
+                marker = None,
+                linewidth = 1.5,
+                linestyle = "-",
+                label = "$m =$ {:.2e}".format(_)
+            )
+            for _, __ in m_colors.items()
+        ]
+
         ax.legend(
+            handles = [*legend_eos, *legend_lambda, *legend_m],
             loc="best",
             fontsize=8,
-            handlelength=3.2,
+            handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.5
+            markerscale = 1,
+            ncol=3,
+            frameon = False,
         )
         plt.show()
 
@@ -782,39 +1022,92 @@ class plot_result:
 
         self._set_parms(ax, "$M/M_{\odot}$", "$J 10^{45} [g cm^3]$")
 
+        EOS_markers = self._get_specific_ms( list(
+            set( [ _["name"] for _ in severalEOSs ] )
+        ) )
+
+        m_colors = self._get_specific_c( list(
+            set( [ _["m"] for _ in severalEOSs ] )
+        ) )
+
+        lambda_linestyle = self._get_specific_ls( list(
+            set( [ _["lambda"] for _ in severalEOSs ] )
+        ) )
+
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
             data[-1] = [ _*self.units["J"]*1e-45 for _ in data[-1] ]
 
-            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+            #~ old way it set random at every iiteration for every entry
+            #~ ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+            #~ label entry for each line, but now it will specific
+            #~ label_entry = "{}"
+                #~ "\n\t $\\beta$ = {:.1f}"
+                #~ "\n\t m = {:.1e}"
+                #~ "\n\t $\\lambda$ = {:.1e}".format(
+                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
+            #~ )
 
             ax.plot(
                 data[2],
                 data[-1],
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = lc,
-                linestyle = ls,
-                marker = ms,
-                markerfacecolor = mc,
-                markeredgecolor = mc,
-                markersize = 5,
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
                 linewidth = 1.5,
                 markevery = self._get_markevry(data[2])
             )
+        legend_eos = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = __,
+                linewidth = 0,
+                label = _
+            )
+            for _, __ in EOS_markers.items()
+        ]
+
+        legend_lambda = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = None,
+                linewidth = 1.5,
+                linestyle = __,
+                label = "$\\lambda =$ {:.2e}".format(_)
+            )
+            for _, __ in lambda_linestyle.items()
+        ]
+
+        legend_m = [
+            Line2D(
+                [0], [0],
+                color=__,
+                marker = None,
+                linewidth = 1.5,
+                linestyle = "-",
+                label = "$m =$ {:.2e}".format(_)
+            )
+            for _, __ in m_colors.items()
+        ]
 
         ax.legend(
+            handles = [*legend_eos, *legend_lambda, *legend_m],
             loc="best",
             fontsize=8,
-            handlelength=3.2,
+            handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.5
+            markerscale = 1,
+            ncol=3,
+            frameon = False,
         )
+
         plt.show()
 
         return
@@ -858,8 +1151,14 @@ class plot_result:
 
             current_convert = "_tildeI"
 
+            target_path = os.path.join(
+                self.my_ResPath, eos["name"], "Fitting"
+            )
+
+            pathlib.Path( target_path ).mkdir(parents=True, exist_ok=True)
+
             target = os.path.join(
-                self.my_ResPath, eos["name"], "Fitting",
+                target_path,
                 os.path.basename(result) + current_convert
             )
 
@@ -871,7 +1170,7 @@ class plot_result:
 
             with open( target, "w" ) as f:
 
-                f.write("# M/R I/(MR**3) \n")
+                f.write("# M/R I/(MR**2) \n")
 
                 for line in src_data_lines:
 
@@ -884,16 +1183,17 @@ class plot_result:
 
                     f.write(
                         "{:.6e} {:.6e} \n".format(
-                            tmp[2]/tmp[3], tmp[5]/(tmp[2]*tmp[3]**3)
+                            tmp[2]/tmp[3], tmp[5]/(tmp[2]*tmp[3]**2)
                         )
                     )
 
             current_convert = "_barI"
 
             target = os.path.join(
-                self.my_ResPath, eos["name"], "Fitting",
+                target_path,
                 os.path.basename(result) + current_convert
             )
+
 
             print(
                 "\n will convert \n\t from {} \n\t to {} \n\t as {}".format(
@@ -946,30 +1246,92 @@ class plot_result:
 
         self._set_parms(ax, "M/R", "$I/(MR^2)$")
 
+        EOS_markers = self._get_specific_ms( list(
+            set( [ _["name"] for _ in severalEOSs ] )
+        ) )
+
+        m_colors = self._get_specific_c( list(
+            set( [ _["m"] for _ in severalEOSs ] )
+        ) )
+
+        lambda_linestyle = self._get_specific_ls( list(
+            set( [ _["lambda"] for _ in severalEOSs ] )
+        ) )
+
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+            #~ old way it set random at every iiteration for every entry
+            #~ ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+
+            #~ label entry for each line, but now it will specific
+            #~ label_entry = "{}"
+                #~ "\n\t $\\beta$ = {:.1f}"
+                #~ "\n\t m = {:.1e}"
+                #~ "\n\t $\\lambda$ = {:.1e}".format(
+                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
+            #~ )
 
             ax.plot(
                 data[0],
                 data[1],
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = lc,
-                linestyle = ls,
-                marker = ms,
-                markerfacecolor = mc,
-                markeredgecolor = mc,
-                markersize = 5,
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = self._get_markevry(data[0])
+                markevery = self._get_markevry(data[1])
             )
 
-        ax.legend(loc="best", fontsize=8)
+        legend_eos = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = __,
+                linewidth = 0,
+                label = _
+            )
+            for _, __ in EOS_markers.items()
+        ]
+
+        legend_lambda = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = None,
+                linewidth = 1.5,
+                linestyle = __,
+                label = "$\\lambda =$ {:.2e}".format(_)
+            )
+            for _, __ in lambda_linestyle.items()
+        ]
+
+        legend_m = [
+            Line2D(
+                [0], [0],
+                color=__,
+                marker = None,
+                linewidth = 1.5,
+                linestyle = "-",
+                label = "$m =$ {:.2e}".format(_)
+            )
+            for _, __ in m_colors.items()
+        ]
+
+        ax.legend(
+            handles = [*legend_eos, *legend_lambda, *legend_m],
+            loc="best",
+            fontsize=8,
+            handlelength=2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1,
+            ncol=3,
+            frameon = False,
+        )
+
         plt.show()
 
         return
@@ -1000,7 +1362,19 @@ class plot_result:
         ax_down = all_axes[1]
 
         #~ self._set_parms(ax_up, "M/R", "$I/(MR^3)$")
-        self._set_parms(ax_up, "", r"$I/(MR^3)$")
+        self._set_parms(ax_up, "", r"$I/(MR^2)$")
+
+        EOS_markers = self._get_specific_ms( list(
+            set( [ _["name"] for _ in severalEOSs ] )
+        ) )
+
+        m_colors = self._get_specific_c( list(
+            set( [ _["m"] for _ in severalEOSs ] )
+        ) )
+
+        lambda_linestyle = self._get_specific_ls( list(
+            set( [ _["lambda"] for _ in severalEOSs ] )
+        ) )
 
         max_x = 0
         min_x = 1e9
@@ -1009,7 +1383,16 @@ class plot_result:
 
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            all_colors.append(self._get_ls_lc_ms_mc())
+            #~ old way it set random at every iiteration for every entry
+            #~ all_colors.append(self._get_ls_lc_ms_mc())
+
+            #~ label entry for each line, but now it will specific
+            #~ label_entry = "{}"
+                #~ "\n\t $\\beta$ = {:.1f}"
+                #~ "\n\t m = {:.1e}"
+                #~ "\n\t $\\lambda$ = {:.1e}".format(
+                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
+            #~ ),
 
             if max(data[0]) > max_x:
                 max_x = max(data[0])
@@ -1020,20 +1403,15 @@ class plot_result:
             ax_up.plot(
                 data[0],
                 data[1],
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = all_colors[-1][1],
-                linestyle = all_colors[-1][0],
-                marker = all_colors[-1][2],
-                markerfacecolor = all_colors[-1][3],
-                markeredgecolor = all_colors[-1][3],
-                markersize = 5,
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = self._get_markevry(data[0])
+                markevery = self._get_markevry(data[1])
             )
 
         coef, rest  = polyfit(
@@ -1049,16 +1427,66 @@ class plot_result:
         p_x = np.linspace(min_x, max_x, 100)
         p_y = [ p(_) for _ in p_x ]
 
+        lines_eos = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = __,
+                linewidth = 0,
+                label = _
+            )
+            for _, __ in EOS_markers.items()
+        ]
+
+        lines_lambda = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = None,
+                linewidth = 1.5,
+                linestyle = __,
+                label = "$\\lambda =$ {:.2e}".format(_)
+            )
+            for _, __ in lambda_linestyle.items()
+        ]
+
+        lines_m = [
+            Line2D(
+                [0], [0],
+                color=__,
+                marker = None,
+                linewidth = 1.5,
+                linestyle = "-",
+                label = "$m =$ {:.2e}".format(_)
+            )
+            for _, __ in m_colors.items()
+        ]
+
+        lines_polyfit = [
+            Line2D(
+                [0], [0],
+                color = "#ff81c0",
+                marker = None,
+                linewidth = 2,
+                linestyle = "-",
+                label = "poly fit, $\chi_r^2$ = {:.3e}"
+                    "\n {:.3f} + {:.3f}x + {:.3f}$x^4$".format(
+                    rest[0][0]/(len([ __ for _ in all_data for __ in _[0] ]) - 3),
+                    coef[0],
+                    coef[1],
+                    coef[4]
+                )
+            )
+        ]
+
         ax_up.plot(
             p_x,
             p_y,
-            label = "poly fit, $\chi^2$ = {:.3e}"
-                "\n\t {:.3f} + {:.3f}x + {:.3f}$x^4$".format(
-                rest[0][0], coef[0], coef[1], coef[4]
-            ),
-            color = "m",
+            color = "#ff81c0",
+            marker = None,
+            linewidth = 2,
             linestyle = "-",
-            linewidth = 2
+            label = None
         )
 
         ax_up.get_shared_x_axes().join(ax_up, ax_down)
@@ -1067,7 +1495,7 @@ class plot_result:
         ax_down.set_yscale("log")
         self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
 
-        for label, data, eos, ac in zip( all_label, all_data, severalEOSs, all_colors ):
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
             _data = [
                 abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
@@ -1076,30 +1504,30 @@ class plot_result:
             ax_down.plot(
                 data[0],
                 _data,
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = ac[1],
-                linestyle = ac[0],
-                marker = ac[2],
-                markerfacecolor = ac[3],
-                markeredgecolor = ac[3],
-                markersize = 3,
-                linewidth = 0,
-                markevery = 1
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
+                linewidth = 1.5,
+                markevery = self._get_markevry(_data)
             )
 
         ax_up.legend(
+            handles = [*lines_eos, *lines_lambda, *lines_m, *lines_polyfit],
             loc="best",
             fontsize=8,
-            handlelength=3.2,
+            handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.5
+            markerscale = 1,
+            ncol = 3,
+            frameon = False,
+            mode = None
         )
+
         plt.show()
 
         return
@@ -1127,37 +1555,92 @@ class plot_result:
 
         self._set_parms(ax, "M/R", "$I/(M^3)$")
 
+        EOS_markers = self._get_specific_ms( list(
+            set( [ _["name"] for _ in severalEOSs ] )
+        ) )
+
+        m_colors = self._get_specific_c( list(
+            set( [ _["m"] for _ in severalEOSs ] )
+        ) )
+
+        lambda_linestyle = self._get_specific_ls( list(
+            set( [ _["lambda"] for _ in severalEOSs ] )
+        ) )
+
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+            #~ old way it set random at every iiteration for every entry
+            #~ ls, lc, ms, mc = self._get_ls_lc_ms_mc()
+
+            #~ label entry for each line, but now it will specific
+            #~ label_entry = "{}"
+                #~ "\n\t $\\beta$ = {:.1f}"
+                #~ "\n\t m = {:.1e}"
+                #~ "\n\t $\\lambda$ = {:.1e}".format(
+                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
+            #~ )
 
             ax.plot(
                 data[0],
                 data[1],
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = lc,
-                linestyle = ls,
-                marker = ms,
-                markerfacecolor = mc,
-                markeredgecolor = mc,
-                markersize = 5,
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = self._get_markevry(data[3])
+                markevery = self._get_markevry(data[1])
             )
 
+        legend_eos = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = __,
+                linewidth = 0,
+                label = _
+            )
+            for _, __ in EOS_markers.items()
+        ]
+
+        legend_lambda = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = None,
+                linewidth = 1.5,
+                linestyle = __,
+                label = "$\\lambda =$ {:.2e}".format(_)
+            )
+            for _, __ in lambda_linestyle.items()
+        ]
+
+        legend_m = [
+            Line2D(
+                [0], [0],
+                color=__,
+                marker = None,
+                linewidth = 1.5,
+                linestyle = "-",
+                label = "$m =$ {:.2e}".format(_)
+            )
+            for _, __ in m_colors.items()
+        ]
+
         ax.legend(
+            handles = [*legend_eos, *legend_lambda, *legend_m],
             loc="best",
             fontsize=8,
-            handlelength=3.2,
+            handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.5
+            markerscale = 1,
+            ncol=3,
+            frameon = False,
         )
+
         plt.show()
 
         return
@@ -1189,6 +1672,18 @@ class plot_result:
 
         self._set_parms(ax_up, "", "$I/(M^3)$")
 
+        EOS_markers = self._get_specific_ms( list(
+            set( [ _["name"] for _ in severalEOSs ] )
+        ) )
+
+        m_colors = self._get_specific_c( list(
+            set( [ _["m"] for _ in severalEOSs ] )
+        ) )
+
+        lambda_linestyle = self._get_specific_ls( list(
+            set( [ _["lambda"] for _ in severalEOSs ] )
+        ) )
+
         max_x = 0
         min_x = 1e9
 
@@ -1196,7 +1691,15 @@ class plot_result:
 
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            all_colors.append(self._get_ls_lc_ms_mc())
+            #~ old way it set random at every iiteration for every entry
+            #~ all_colors.append(self._get_ls_lc_ms_mc())
+            #~ old way it set random at every iiteration for every entry
+            #~ label_entry =  "{}"
+                #~ "\n\t $\\beta$ = {:.1f}"
+                #~ "\n\t m = {:.1e}"
+                #~ "\n\t $\\lambda$ = {:.1e}".format(
+                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
+            #~ )
 
             if max(data[0]) > max_x:
                 max_x = max(data[0])
@@ -1207,20 +1710,15 @@ class plot_result:
             ax_up.plot(
                 data[0],
                 data[1],
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = all_colors[-1][1],
-                linestyle = all_colors[-1][0],
-                marker = all_colors[-1][2],
-                markerfacecolor = all_colors[-1][3],
-                markeredgecolor = all_colors[-1][3],
-                markersize = 5,
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = self._get_markevry(data[0])
+                markevery = self._get_markevry(data[1])
             )
 
         coef, rest = polyfit(
@@ -1236,16 +1734,67 @@ class plot_result:
         p_x = np.linspace(min_x, max_x, 100)
         p_y = [ p(_) for _ in p_x ]
 
+        lines_eos = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = __,
+                linewidth = 0,
+                label = _
+            )
+            for _, __ in EOS_markers.items()
+        ]
+
+        lines_lambda = [
+            Line2D(
+                [0], [0],
+                color="b",
+                marker = None,
+                linewidth = 1.5,
+                linestyle = __,
+                label = "$\\lambda =$ {:.2e}".format(_)
+            )
+            for _, __ in lambda_linestyle.items()
+        ]
+
+        lines_m = [
+            Line2D(
+                [0], [0],
+                color=__,
+                marker = None,
+                linewidth = 1.5,
+                linestyle = "-",
+                label = "$m =$ {:.2e}".format(_)
+            )
+            for _, __ in m_colors.items()
+        ]
+
+        lines_polyfit = [
+            Line2D(
+                [0], [0],
+                color = "#ff81c0",
+                marker = None,
+                linewidth = 2,
+                linestyle = "-",
+                label = "poly fit, $\chi_r^2$ = {:.3e}"
+                    "\n {:.3f}$(1/x)^1$ + {:.3f}$(1/x)^2$ + {:.3f}$(1/x)^3$ + {:.3f}$(1/x)^4$".format(
+                        rest[0][0]/(len([ __ for _ in all_data for __ in _[0] ]) - 4),
+                        coef[1],
+                        coef[2],
+                        coef[3],
+                        coef[4]
+                )
+            )
+        ]
+
         ax_up.plot(
             p_x,
             p_y,
-            label = "poly fit, $\chi^2$ = {:.3e}"
-                "\n\t {:.3f}$(1/x)^1$ + {:.3f}$(1/x)^2$ + {:.3f}$(1/x)^3$ + {:.3f}$(1/x)^4$".format(
-                rest[0][0], coef[1], coef[2], coef[3], coef[4]
-            ),
-            color = "m",
+            color = "#ff81c0",
+            marker = None,
+            linewidth = 2,
             linestyle = "-",
-            linewidth = 2
+            label = None
         )
 
         ax_up.get_shared_x_axes().join(ax_up, ax_down)
@@ -1254,7 +1803,7 @@ class plot_result:
         ax_down.set_yscale("log")
         self._set_parms(ax_down, "M/R", r"$\left| 1 - \bar I/\bar I_{fit} \right|$")
 
-        for label, data, eos, ac in zip( all_label, all_data, severalEOSs, all_colors ):
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
             _data = [
                 abs(1 - _/p(__)) for _, __ in zip(data[1], data[0])
@@ -1263,23 +1812,32 @@ class plot_result:
             ax_down.plot(
                 data[0],
                 _data,
-                label = "{}"
-                    "\n\t $\\beta$ = {:.1f}"
-                    "\n\t m = {:.1e}"
-                    "\n\t $\\lambda$ = {:.1e}".format(
-                    eos["name"], eos["beta"], eos["m"], eos["lambda"]
-                ),
-                color = ac[1],
-                linestyle = ac[0],
-                marker = ac[2],
-                markerfacecolor = ac[3],
-                markeredgecolor = ac[3],
-                markersize = 3,
-                linewidth = 0,
-                markevery = 1
+                label = None,
+                color = m_colors.get(eos["m"], None),
+                linestyle = lambda_linestyle.get(eos["lambda"], None),
+                marker = EOS_markers.get(eos["name"], None),
+                markerfacecolor = m_colors.get(eos["m"], None),
+                markeredgecolor = m_colors.get(eos["m"], None),
+                markersize = 5.5,
+                linewidth = 1.5,
+                markevery = self._get_markevry(_data)
             )
 
-        ax_up.legend(loc="best", fontsize=8)
+        #~ ax_up.set_xlim(0.1)
+
+        ax_up.legend(
+            handles = [*lines_eos, *lines_lambda, *lines_m, *lines_polyfit],
+            loc="best",
+            fontsize=8,
+            handlelength=2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1,
+            ncol = 3,
+            frameon = False,
+            mode = None
+        )
+
         plt.show()
 
         return
@@ -1540,6 +2098,119 @@ class plot_result:
             ), 1
         )[0]
 
+    #~ @staticmethod
+    def _get_specific_ms(self, map_me):
+        """
+        for provided list return list of dictionaries, each having the
+        entry of the provided list as key and marker style as value
+
+        it is here because to be easier to find
+        """
+
+        if self.specific_ms:
+            return self.specific_ms
+
+        all_makrers_styles = [
+            "s", "8", ">", "<", "^", "v", "o",
+            "X", "P", "d", "D", "H", "h", "*", "p",
+        ]
+
+        if len(map_me) > len(all_makrers_styles):
+            print(
+                "\n not enough markers, amount of markers are {}\n".format(
+                    len(all_makrers_styles)
+                )
+            )
+
+            return
+
+        #~ shuffle the list just for fun
+        for _ in range(5):
+            random.shuffle(all_makrers_styles)
+
+        return {
+            _: __ for _, __ in zip(map_me, all_makrers_styles)
+        }
+
+    #~ @staticmethod
+    def _get_specific_ls(self, map_me):
+        """
+        for provided list return list of dictionaries, each having the
+        entry of the provided list as key and line style as value
+
+        it is here because to be easier to find
+        """
+
+        if self.specific_ls:
+            return self.specific_ls
+
+        all_line_styles = [
+            ":", "-.", "--"
+        ]
+
+        if len(map_me) > len(all_line_styles):
+            print(
+                "\n not enough markers, amount of lines are {}\n".format(
+                    len(all_line_styles)
+                )
+            )
+
+            return
+
+        #~ shuffle the list just for fun
+        for _ in range(5):
+            random.shuffle(all_line_styles)
+
+        return {
+            _: __ for _, __ in zip(map_me, all_line_styles)
+        }
+
+    #~ @staticmethod
+    def _get_specific_c(self, map_me):
+        """
+        for provided list return list of dictionaries, each having the
+        entry of the provided list as key and colour as value
+
+        it is here because to be easier to find
+        """
+
+        if self.specific_c:
+            return self.specific_c
+
+        all_colors = [
+            "b", "g", "r", "c", "m", "y", "k"
+        ]
+
+        if len(map_me) > len(all_colors):
+            print(
+                "\n not enough markers, amount of lines are {}\n".format(
+                    len(all_line_styles)
+                )
+            )
+
+            return
+
+        #~ shuffle the list just for fun
+        for _ in range(5):
+            random.shuffle(all_colors)
+
+        return {
+            _: __ for _, __ in zip(map_me, all_colors)
+        }
+
+    #~ @staticmethod
+    #~ def _get_val(ldict, key):
+        #~ """
+        #~ for the provided ldict list of dictionaries return the value of the
+        #~ key, or None if not found dictionary with such key
+        #~ """
+
+        #~ for _ in map(lambda _: _.get(key, None), ldict):
+            #~ if _:
+                #~ return _
+            #~ else:
+                #~ continue
+
     @staticmethod
     def _get_markevry(data, amount_points = 20):
         """
@@ -1551,9 +2222,78 @@ class plot_result:
         https://stackoverflow.com/questions/9873626/choose-m-evenly-spaced-elements-from-a-sequence-of-length-n
         """
 
-        f = lambda m, n: [i*n//m + n//(2*m) for i in range(m)]
+        #~ f = lambda m, n: [i*n//m + n//(2*m) for i in range(m)]
 
-        return f(amount_points, len(data))
+        #~ step = abs(max(data) - min(data))/amount_points
+
+        #~ idx = [ 0 ]
+        #~ last = data[0]
+        #~ for _, __ in enumerate(data):
+            #~ if abs(__ - last) > step:
+                #~ idx.append(_)
+                #~ last = __
+
+        #~ idx.append(len(data) - 1)
+        #~ return f(amount_points, len(data))
+
+        #~ abs(max(data) - min(data))/amount_points
+
+        #~ def _get_pairwise(_iter):
+            #~ "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+            #~ a, b = itertools.tee(_iter)
+            #~ next(b, None)
+            #~ return zip(a, b)
+
+        #~ data_diff = np.diff(data)
+
+        #~ idxs = [ 0 ]
+        #~ for _, __ in enumerate(data_diff):
+            #~ if __ * data_diff[idxs[-1]] > 0:
+                #~ continue
+            #~ else:
+                #~ idxs.append(_)
+
+        #~ idxs_p = [
+            #~ int(abs(_[0] - _[1])/len(data)*amount_points)
+            #~ for _ in _get_pairwise(idxs)
+        #~ ]
+
+
+
+        #~ idx_max = data.index(max(data, key=abs))
+
+        #~ evenly_l = np.linspace(
+            #~ data[0], data[idx_max], num = amount_points/2, endpoint = True
+        #~ )
+
+        #~ idx_l = [
+            #~ data.index(
+                #~ min(data[:idx_max], key=lambda x: abs(x-_))
+            #~ ) for _ in evenly_l
+        #~ ]
+
+        #~ evenly_r = np.linspace(
+            #~ data[idx_max], data[-1], num = amount_points/2, endpoint = True
+        #~ )
+
+        #~ idx_r = [
+            #~ data.index(
+                #~ min(data[idx_max:], key=lambda x: abs(x-_))
+            #~ ) for _ in evenly_r
+        #~ ]
+
+        #~ return [ *idx_l, *idx_r ]
+
+        evenly_spaced = np.linspace(
+            min(data, key=abs), max(data, key=abs),
+            num = amount_points,
+            endpoint = True
+        )
+
+        return [
+            data.index(min(data, key=lambda x: abs(x-_)))
+            for _ in evenly_spaced
+        ]
 
 
 #################################################################################

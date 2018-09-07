@@ -20,11 +20,27 @@ RESULTS_fname = "STT_phiScal_J"
 EOS_start_n = 2
 
 EOS_all = [
-    "", "EOSII", "PAL6",     "SLy", "APR1",     "APR2",      "APR3",
-    "APR4", "FPS",     "WFF1",     "WFF2",      "WFF3", "BBB2",     "BPAL12",
-    "ENG",     "MPA1", "MS1",      "MS2",     "MS1b",      "PS", "GS1",     "GS2",
-    "BGN1H1",     "GNH3", "H1",       "H2",       "H3",       "H4", "H5",
-    "H6",       "H7",       "PCL2", "ALF1",       "ALF2",     "ALF3",     "ALF4"
+    "", "EOSII", "PAL6", "SLy", "APR1", "APR2", "APR3", "APR4", "FPS", "WFF1",
+    "WFF2", "WFF3", "BBB2", "BPAL12", "ENG", "MPA1", "MS1", "MS2", "MS1b",
+    "PS", "GS1", "GS2", "BGN1H1", "GNH3", "H1", "H2", "H3", "H4", "H5",
+    "H6", "H7", "PCL2", "ALF1", "ALF2", "ALF3", "ALF4"
+]
+
+#~ only those who have max mass in units of the sun of 2
+#~ the list i would like to use
+#~ EOS_max18 = [
+    #~ "SLy", "APR2", "APR3", "APR4", "FPS", "WFF1", "WFF2", "WFF3", "BBB2", "ENG",
+    #~ "MPA1", "MS1", "MS1", "MS2", "MS1b", "PS", "GNH3", "H3", "H4", "ALF2", "ALF4"
+#~ ]
+EOS_max2 = [
+    "SLy", "APR3", "APR4", "WFF1", "WFF2", "ENG",
+    "MPA1", "MS1", "MS1", "MS1b", "H4", "ALF2"
+]
+
+#~ to avoid rewriting the code in C and give me opportunity to be more flexible
+#~ will only map the ones I wan to use to all of them as nested list of dictionary
+EOS_mapping = [
+    EOS_all.index(_) for _ in EOS_max18
 ]
 
 #~ the source file for EOS
@@ -79,7 +95,8 @@ M_init = float(ODE_content[M_line].strip().split()[2])
 
 LAMBDA_init = float(ODE_content[LAMBDA_line].strip().split()[2])
 
-for EOS_cur in range(EOS_start_n, len(EOS_all)):
+#~ for EOS_cur in range(EOS_start_n, len(EOS_all)):
+for EOS_cur in EOS_mapping:
 
     EOS_content[EOS_line] = EOS_sub.format(EOS_cur)
 
