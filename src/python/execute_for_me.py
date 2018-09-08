@@ -40,7 +40,7 @@ EOS_max2 = [
 #~ to avoid rewriting the code in C and give me opportunity to be more flexible
 #~ will only map the ones I wan to use to all of them as nested list of dictionary
 EOS_mapping = [
-    EOS_all.index(_) for _ in EOS_max18
+    EOS_all.index(_) for _ in EOS_all[2:]
 ]
 
 #~ the source file for EOS
@@ -113,9 +113,9 @@ for EOS_cur in EOS_mapping:
     #~ with open(ODE_PATH, "w") as f:
         #~ f.writelines(ODE_content)
 
-    all_beta = [ -6 ]
-    all_m = [ 0, 5e-3, 1e-2, 5e-2 ]
-    all_lambda = [ 0, 1e-1, 1e0, 1e1 ]
+    all_beta = [ 0 ]
+    all_m = [ 0 ]
+    all_lambda = [ 0 ]
 
     for p_beta, p_m, p_lambda in itertools.product(
         all_beta,all_m, all_lambda, repeat=1
