@@ -30,8 +30,6 @@ class plot_result:
         self.my_data = None
         self.my_label = None
 
-        #~ self.amount_of_points = 10
-
         self.kalin_path = None
         self.kalin_file = None
         self.kalin_headline = None
@@ -51,25 +49,6 @@ class plot_result:
         self.specific_ms = None
         self.specific_ls = None
         self.specific_c = None
-
-        #~ self.data_daniela = []
-        #~ self.headline_daniela = []
-        #~ self.label_daniela = []
-
-        #~ self.daniela_mapping = {
-            #~ "rho_c": 0,
-            #~ "AR": 1,
-            #~ "M": 2,
-            #~ "J": 3,
-            #~ "phiScal_c": 4,
-            #~ "p_c": 5
-        #~ }
-
-        #~ self.data_kalin = []
-        #~ self.headline_kalin = []
-        #~ self.label_kalin = []
-
-        #~ self._set_default_paths()
 
         return
 
@@ -982,7 +961,6 @@ class plot_result:
                 os.path.basename(result) + current_convert
             )
 
-
             print(
                 "\n will convert \n\t from {} \n\t to {} \n\t as {}".format(
                     result, target, current_convert
@@ -997,7 +975,6 @@ class plot_result:
 
                     if not line.strip():
                         continue
-
 
                     tmp = [
                         float(_) for _ in line.strip().split(" ") if len(_.strip())
@@ -1038,17 +1015,6 @@ class plot_result:
 
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            #~ old way it set random at every iiteration for every entry
-            #~ ls, lc, ms, mc = self._get_ls_lc_ms_mc()
-
-            #~ label entry for each line, but now it will specific
-            #~ label_entry = "{}"
-                #~ "\n\t $\\beta$ = {:.1f}"
-                #~ "\n\t m = {:.1e}"
-                #~ "\n\t $\\lambda$ = {:.1e}".format(
-                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
-            #~ )
-
             ax.plot(
                 data[0],
                 data[1],
@@ -1065,19 +1031,6 @@ class plot_result:
                     }
                 )
             )
-            #~ ax.plot(
-                #~ data[0],
-                #~ data[1],
-                #~ label = None,
-                #~ color = m_colors.get(eos["m"], None),
-                #~ linestyle = lambda_linestyle.get(eos["lambda"], None),
-                #~ marker = EOS_markers.get(eos["name"], None),
-                #~ markerfacecolor = m_colors.get(eos["m"], None),
-                #~ markeredgecolor = m_colors.get(eos["m"], None),
-                #~ markersize = 5.5,
-                #~ linewidth = 1.5,
-                #~ markevery = self._get_markevry(data[1])
-            #~ )
 
         lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
             markers, colors, linestyles
@@ -1095,20 +1048,6 @@ class plot_result:
             frameon = False,
             mode = None
         )
-
-        plt.show()
-
-        #~ ax.legend(
-            #~ handles = [*legend_eos, *legend_lambda, *legend_m],
-            #~ loc="best",
-            #~ fontsize=8,
-            #~ handlelength=2,
-            #~ numpoints=1,
-            #~ fancybox=True,
-            #~ markerscale = 1,
-            #~ ncol=3,
-            #~ frameon = False,
-        #~ )
 
         plt.show()
 
@@ -1133,7 +1072,6 @@ class plot_result:
             severalEOSs
         )
 
-        #~ fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
         fig, all_axes  = self._get_figure(
             2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
         )
@@ -1141,7 +1079,6 @@ class plot_result:
         ax_up = all_axes[0]
         ax_down = all_axes[1]
 
-        #~ self._set_parms(ax_up, "M/R", "$I/(MR^3)$")
         self._set_parms(ax_up, "", r"$I/(MR^2)$")
 
         markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
@@ -1152,17 +1089,6 @@ class plot_result:
         all_colors = []
 
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
-
-            #~ old way it set random at every iiteration for every entry
-            #~ all_colors.append(self._get_ls_lc_ms_mc())
-
-            #~ label entry for each line, but now it will specific
-            #~ label_entry = "{}"
-                #~ "\n\t $\\beta$ = {:.1f}"
-                #~ "\n\t m = {:.1e}"
-                #~ "\n\t $\\lambda$ = {:.1e}".format(
-                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
-            #~ ),
 
             if max(data[0]) > max_x:
                 max_x = max(data[0])
@@ -1185,11 +1111,6 @@ class plot_result:
                         "lambda": eos["lambda"]
                     }
                 )
-                #~ color = color_lambda.get(eos["lambda"], None),
-                #~ linestyle = linestyle_m.get(eos["m"], None),
-                #~ marker = marker_EOS.get(eos["name"], None),
-                #~ markerfacecolor = color_lambda.get(eos["lambda"], None),
-                #~ markeredgecolor = color_lambda.get(eos["lambda"], None),
             )
 
         coef, rest  = polyfit(
@@ -1306,90 +1227,42 @@ class plot_result:
 
         self._set_parms(ax, "M/R", "$I/(M^3)$")
 
-        EOS_markers = self._get_specific_ms( list(
-            set( [ _["name"] for _ in severalEOSs ] )
-        ) )
-
-        m_colors = self._get_specific_c( list(
-            set( [ _["m"] for _ in severalEOSs ] )
-        ) )
-
-        lambda_linestyle = self._get_specific_ls( list(
-            set( [ _["lambda"] for _ in severalEOSs ] )
-        ) )
+        markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
 
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
-
-            #~ old way it set random at every iiteration for every entry
-            #~ ls, lc, ms, mc = self._get_ls_lc_ms_mc()
-
-            #~ label entry for each line, but now it will specific
-            #~ label_entry = "{}"
-                #~ "\n\t $\\beta$ = {:.1f}"
-                #~ "\n\t m = {:.1e}"
-                #~ "\n\t $\\lambda$ = {:.1e}".format(
-                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
-            #~ )
 
             ax.plot(
                 data[0],
                 data[1],
                 label = None,
-                color = m_colors.get(eos["m"], None),
-                linestyle = lambda_linestyle.get(eos["lambda"], None),
-                marker = EOS_markers.get(eos["name"], None),
-                markerfacecolor = m_colors.get(eos["m"], None),
-                markeredgecolor = m_colors.get(eos["m"], None),
+                linewidth = 1.5,
                 markersize = 5.5,
-                linewidth = 1.5,
-                markevery = self._get_markevry(data[1])
+                markevery = self._get_markevry(data[0], data[1]),
+                **self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                )
             )
 
-        legend_eos = [
-            Line2D(
-                [0], [0],
-                color="b",
-                marker = __,
-                linewidth = 0,
-                label = _
-            )
-            for _, __ in EOS_markers.items()
-        ]
-
-        legend_lambda = [
-            Line2D(
-                [0], [0],
-                color="b",
-                marker = None,
-                linewidth = 1.5,
-                linestyle = __,
-                label = "$\\lambda =$ {:.2e}".format(_)
-            )
-            for _, __ in lambda_linestyle.items()
-        ]
-
-        legend_m = [
-            Line2D(
-                [0], [0],
-                color=__,
-                marker = None,
-                linewidth = 1.5,
-                linestyle = "-",
-                label = "$m =$ {:.2e}".format(_)
-            )
-            for _, __ in m_colors.items()
-        ]
+        lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
+            markers, colors, linestyles
+        )
 
         ax.legend(
-            handles = [*legend_eos, *legend_lambda, *legend_m],
+            handles = [*lines_markers, *lines_colors, *lines_linestyles],
             loc="best",
             fontsize=8,
             handlelength=2,
             numpoints=1,
             fancybox=True,
             markerscale = 1,
-            ncol=3,
+            ncol = 3,
             frameon = False,
+            mode = None
         )
 
         plt.show()
@@ -1413,7 +1286,6 @@ class plot_result:
 
         all_label, all_headline, all_data = self.get_severalEOS_uniBarI_data(severalEOSs)
 
-        #~ fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
         fig, all_axes  = self._get_figure(
             2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
         )
@@ -1423,17 +1295,7 @@ class plot_result:
 
         self._set_parms(ax_up, "", "$I/(M^3)$")
 
-        EOS_markers = self._get_specific_ms( list(
-            set( [ _["name"] for _ in severalEOSs ] )
-        ) )
-
-        m_colors = self._get_specific_c( list(
-            set( [ _["m"] for _ in severalEOSs ] )
-        ) )
-
-        lambda_linestyle = self._get_specific_ls( list(
-            set( [ _["lambda"] for _ in severalEOSs ] )
-        ) )
+        markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
 
         max_x = 0
         min_x = 1e9
@@ -1441,16 +1303,6 @@ class plot_result:
         all_colors = []
 
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
-
-            #~ old way it set random at every iiteration for every entry
-            #~ all_colors.append(self._get_ls_lc_ms_mc())
-            #~ old way it set random at every iiteration for every entry
-            #~ label_entry =  "{}"
-                #~ "\n\t $\\beta$ = {:.1f}"
-                #~ "\n\t m = {:.1e}"
-                #~ "\n\t $\\lambda$ = {:.1e}".format(
-                #~ eos["name"], eos["beta"], eos["m"], eos["lambda"]
-            #~ )
 
             if max(data[0]) > max_x:
                 max_x = max(data[0])
@@ -1462,14 +1314,17 @@ class plot_result:
                 data[0],
                 data[1],
                 label = None,
-                color = m_colors.get(eos["m"], None),
-                linestyle = lambda_linestyle.get(eos["lambda"], None),
-                marker = EOS_markers.get(eos["name"], None),
-                markerfacecolor = m_colors.get(eos["m"], None),
-                markeredgecolor = m_colors.get(eos["m"], None),
-                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = self._get_markevry(data[1])
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], data[1]),
+                **self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                )
             )
 
         coef, rest = polyfit(
@@ -1485,40 +1340,9 @@ class plot_result:
         p_x = np.linspace(min_x, max_x, 100)
         p_y = [ p(_) for _ in p_x ]
 
-        lines_eos = [
-            Line2D(
-                [0], [0],
-                color="b",
-                marker = __,
-                linewidth = 0,
-                label = _
-            )
-            for _, __ in EOS_markers.items()
-        ]
-
-        lines_lambda = [
-            Line2D(
-                [0], [0],
-                color="b",
-                marker = None,
-                linewidth = 1.5,
-                linestyle = __,
-                label = "$\\lambda =$ {:.2e}".format(_)
-            )
-            for _, __ in lambda_linestyle.items()
-        ]
-
-        lines_m = [
-            Line2D(
-                [0], [0],
-                color=__,
-                marker = None,
-                linewidth = 1.5,
-                linestyle = "-",
-                label = "$m =$ {:.2e}".format(_)
-            )
-            for _, __ in m_colors.items()
-        ]
+        lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
+            markers, colors, linestyles
+        )
 
         lines_polyfit = [
             Line2D(
@@ -1564,20 +1388,23 @@ class plot_result:
                 data[0],
                 _data,
                 label = None,
-                color = m_colors.get(eos["m"], None),
-                linestyle = lambda_linestyle.get(eos["lambda"], None),
-                marker = EOS_markers.get(eos["name"], None),
-                markerfacecolor = m_colors.get(eos["m"], None),
-                markeredgecolor = m_colors.get(eos["m"], None),
-                markersize = 5.5,
                 linewidth = 1.5,
-                markevery = self._get_markevry(_data)
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], _data),
+                **self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                )
             )
 
         #~ ax_up.set_xlim(0.1)
 
         ax_up.legend(
-            handles = [*lines_eos, *lines_lambda, *lines_m, *lines_polyfit],
+            handles = [*lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit],
             loc="best",
             fontsize=8,
             handlelength=2,
@@ -1836,9 +1663,6 @@ class plot_result:
             ":", "-.", "--", "-"
         ]
 
-        #~ colors = [
-            #~ "b", "g", "r", "c", "m", "y", "k"
-        #~ ]
         colors = [
             "b", "g", "r", "c", "y", "k"
         ]
@@ -1884,7 +1708,6 @@ class plot_result:
 
         return res
 
-    #~ @staticmethod
     def _get_specific_ls(self, map_me, label):
         """
         for provided list return list of dictionaries, each having the
@@ -1921,7 +1744,6 @@ class plot_result:
 
         return res
 
-    #~ @staticmethod
     def _get_specific_c(self, map_me, label):
         """
         for provided list return list of dictionaries, each having the
@@ -1958,19 +1780,6 @@ class plot_result:
 
         return res
 
-    #~ @staticmethod
-    #~ def _get_val(ldict, key):
-        #~ """
-        #~ for the provided ldict list of dictionaries return the value of the
-        #~ key, or None if not found dictionary with such key
-        #~ """
-
-        #~ for _ in map(lambda _: _.get(key, None), ldict):
-            #~ if _:
-                #~ return _
-            #~ else:
-                #~ continue
-
     @staticmethod
     def _get_markevry(data_x, data_y, amount_points = 20):
         """
@@ -1991,7 +1800,6 @@ class plot_result:
                 retstep = True
             )
 
-
             step = abs(step)
             evenly_spaced_idx = [ 0 ]
             cumitv_step = 0
@@ -2010,97 +1818,6 @@ class plot_result:
         idx_y = _get_EvenlySpacedIdxs(data_y, amount_points/2)
 
         return list( set(idx_x).union(idx_y) )
-
-####################
-### WORKING BEST, but fails with several maximums
-###################
-        #~ evenly_spaced, step = np.linspace(
-            #~ min(data, key=abs), max(data, key=abs),
-            #~ num = amount_points,
-            #~ endpoint = True,
-            #~ retstep = True
-        #~ )
-
-        #~ evenly_spaced_idx = [ 0 ]
-        #~ cumitv_step = 0
-        #~ for _, __ in enumerate(np.diff(data)):
-            #~ cumitv_step += abs(__)
-            #~ if cumitv_step > step:
-                #~ evenly_spaced_idx.append(_)
-                #~ cumitv_step = 0
-
-        #~ if abs(data[-1] - data[evenly_spaced_idx[-1]]) > step:
-            #~ evenly_spaced_idx.append(len(data)-1)
-
-        #~ return evenly_spaced_idx
-#######################
-###### END OF THE WOKRING BEST BLOCK
-###################
-        #~ return [
-            #~ data.index(min(data, key=lambda x: abs(x-_)))
-            #~ for _ in evenly_spaced
-        #~ ]
-
-        #~ OTHER WAYS ANND TRIES FOR EVEN SPACING
-        #~ f = lambda m, n: [i*n//m + n//(2*m) for i in range(m)]
-
-        #~ step = abs(max(data) - min(data))/amount_points
-
-        #~ idx = [ 0 ]
-        #~ last = data[0]
-        #~ for _, __ in enumerate(data):
-            #~ if abs(__ - last) > step:
-                #~ idx.append(_)
-                #~ last = __
-
-        #~ idx.append(len(data) - 1)
-        #~ return f(amount_points, len(data))
-
-        #~ abs(max(data) - min(data))/amount_points
-
-        #~ def _get_pairwise(_iter):
-            #~ "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-            #~ a, b = itertools.tee(_iter)
-            #~ next(b, None)
-            #~ return zip(a, b)
-
-        #~ data_diff = np.diff(data)
-
-        #~ idxs = [ 0 ]
-        #~ for _, __ in enumerate(data_diff):
-            #~ if __ * data_diff[idxs[-1]] > 0:
-                #~ continue
-            #~ else:
-                #~ idxs.append(_)
-
-        #~ idxs_p = [
-            #~ int(abs(_[0] - _[1])/len(data)*amount_points)
-            #~ for _ in _get_pairwise(idxs)
-        #~ ]
-
-        #~ idx_max = data.index(max(data, key=abs))
-
-        #~ evenly_l = np.linspace(
-            #~ data[0], data[idx_max], num = amount_points/2, endpoint = True
-        #~ )
-
-        #~ idx_l = [
-            #~ data.index(
-                #~ min(data[:idx_max], key=lambda x: abs(x-_))
-            #~ ) for _ in evenly_l
-        #~ ]
-
-        #~ evenly_r = np.linspace(
-            #~ data[idx_max], data[-1], num = amount_points/2, endpoint = True
-        #~ )
-
-        #~ idx_r = [
-            #~ data.index(
-                #~ min(data[idx_max:], key=lambda x: abs(x-_))
-            #~ ) for _ in evenly_r
-        #~ ]
-
-        #~ return [ *idx_l, *idx_r ]
 
     @staticmethod
     def _get_plot_keywords( markers, colors, linestyles, current ):
@@ -2218,1102 +1935,7 @@ class plot_result:
 
         return lines_markers, lines_colors, lines_linestyles
 
-#################################################################################
-##### PAST VERSION TO BE DELETED ################################################
-#################################################################################
-    #@staticmethod
-    #def _check_if_StrNotBlank(string):
-        #"""
-        #check if a sting is blank/empty
-
-        #Parameters
-        #----------
-
-        #Returns
-        #-------
-        #: boolean
-            #True if string is not blank/empty
-            #False if string is blank/empty
-        #"""
-
-        #return bool(string and string.strip())
-
-    #@staticmethod
-    #def _get_max_xy_coord(x, y):
-        #"""
-        #return the maximum coordinates of axes; this method is receiving
-        #the axes class method get_?lim(), who is an list with the min/max
-        #values
-
-        #Parameters
-        #----------
-        #x: matplotlib.axes.get_xlim method
-            #list of the min and max value of the abscissa of an axes
-
-        #y: matplotlib.axes.get_ylim method
-            #list of the min and max value of the ordinate of an axes
-
-        #Returns
-        #-------
-        #max_x, max_y: tuple
-            #the max values of x and y of an axes
-        #"""
-
-        #max_y = max(y, key=abs)
-        #max_x = max(x, key=abs)
-
-        #return max_x, max_y
-
-    #@staticmethod
-    #def _get_min_xy_coord(x, y):
-        #"""
-        #return the maximum coordinates of axes; this method is receiving
-        #the axes class method get_?lim(), who is an list with the min/max
-        #values
-
-        #Parameters
-        #----------
-        #x: matplotlib.axes.get_xlim method
-            #list of the min and max value of the abscissa of an axes
-
-        #y: matplotlib.axes.get_ylim method
-            #list of the min and max value of the ordinate of an axes
-
-        #Returns
-        #-------
-        #max_x, max_y: tuple
-            #the max values of x and y of an axes
-        #"""
-
-        #max_y = min(y, key=abs)
-        #max_x = min(x, key=abs)
-
-        #return max_x, max_y
-
-    #@staticmethod
-    #def _get_center_coordinates_axes(ax):
-        #"""
-        #return the center coordinates of an axes
-
-        #Parameters
-        #----------
-        #ax: matplotlib.axes.Axes class
-
-        #Returns:
-        #center_x, center_y: double
-            #the center coordinates of an axes <ax>
-        #"""
-        #max_x, max_y = get_max_xy_coord(ax.get_xlim(), ax.get_ylim())
-        #min_x, min_y = get_min_xy_coord(ax.get_xlim(), ax.get_ylim())
-
-        #center_x = (max_x + min_x) / 2
-        #center_y = (max_y + min_y) / 2
-
-        #return center_x, center_y
-
-    #@staticmethod
-    #def _get_iter_ls_c():
-        #"""
-        #get iterator who provides all possible combinations of predefined
-        #list of line styles and colour to be used for plotting
-
-        #the lists are shuffled before creating the generator
-
-        #the generator cycles, thus it will never end
-
-        #Parameters
-        #----------
-
-        #Returns
-        #-------
-        #: cycle object
-            #generator who will repeat the product(styles_line, styles_colours)
-            #indefinitely
-        #"""
-        #from itertools import product
-        #from itertools import cycle
-        #from random import shuffle
-
-        #styles_line = ["-", "--", "-."]
-        #styles_colours = ["b", "g", "r", "c", "m", "y", "k"]
-
-        #shuffle(styles_line)
-        #shuffle(styles_colours)
-
-        #return cycle(product(styles_line, styles_colours))
-
-    #@staticmethod
-    #def _set_single_grid_placement(fig, gs):
-        #"""
-        #create single axes in <fig> using GridSpec <gs>
-        #and fig.add_subplot() method
-
-        #Parameters
-        #---------
-        #fig: Figure
-            #the figure whos geometry will be specified
-
-        #gs: class
-            #predefined class of how many rows and columns the
-            #figure should have
-
-        #Returns
-        #------
-        #all_ax: list
-            #list containing all axes defined by the <gs> in <fig>
-        #"""
-
-        #all_ax = []
-        #all_ax.append(fig.add_subplot(gs[:]))
-
-        #return all_ax
-
-    #@staticmethod
-    #def _get_index(max_index):
-        #"""
-        #get the user input choice of an index and return it
-        #by making sure it is an positive integer not greater than <max_index>
-
-        #Parameters
-        #----------
-        #max_index: int
-            #the maximum index available
-
-        #Return
-        #------
-        #index: int
-            #the index which the user chose
-        #"""
-
-        #while "waiting for the number":
-            #try:
-                #index = int(input("\n\t\t index =... "))
-            #except ValueError:
-                #print("\n Not a number is you typed \n")
-                #continue
-
-            #if index < 0 or index >= max_index:
-                #print("\n {} not in allowed boundaries \n".format(index))
-            #else:
-                #return index
-
-    #@staticmethod
-    #def _get_yes_or_no_answer():
-        #"""
-        #get the answer of yes-no question
-
-        #Parameters
-        #----------
-
-        #Return
-        #------
-        #"""
-
-        #while "Answer is invalid":
-            #ans = str(input("\n\t y/n answer... ")).lower().strip()
-
-            #print("\n")
-
-            #if ans[:1] == "y":
-                #return True
-            #elif ans[:1] == "n":
-                #return False
-            #else:
-                #print("\n y or n answer only !\n")
-                #continue
-
-    #def _get_latest_file(self, path, model):
-        #"""
-        #return the name of the latest modified file in path
-        #by creating wildcard of the type model + "*"
-
-        #Parameters
-        #----------
-        #path: string
-            #the path to the directory of interest
-        #model: string
-            #how the file name looks like, it serves as wildcard
-            #of the type model + "*"
-
-        #Returns
-        #-------
-        #: string
-            #the name of latest modified file
-        #"""
-
-        #import glob
-        #import os
-
-        #if (self._check_if_StrNotBlank(path) and
-            #self._check_if_StrNotBlank(model)):
-
-            #filename = max(
-                #glob.glob(path + "/" + model + "*"),
-                #key=os.path.getctime
-            #)
-
-            #filename = filename.split("/")[-1]
-
-            #print(
-                #"\n latest file in \n\t {} is: {} \n".format(
-                    #path, filename
-                #)
-            #)
-        #else:
-
-            #filename = ""
-
-            #print("\n path and name not set, some filename var!!! \n")
-
-        #return filename
-
-    #def _get_xy_current_file(self, headline):
-        #"""
-        #list the enumerated <headlines> and let the user choose
-        #which will be plotted as Y and as X on the fig
-
-        #Parameters
-        #----------
-        #headline: list
-            #list of available headlines to choose from
-
-        #Return
-        #------
-        #index_x: int
-            #the index of the headline to be used on the abscissa
-
-        #index_y: int
-            #the index of the headline to be used on the ordinate
-        #"""
-
-        #print("\n choose columns to plot Y vs X \n")
-
-        #for cnt, value in enumerate(headline):
-            #print("\t {}: {}".format(cnt, value))
-
-        #print("\n\t Y... ")
-        #index_y = self._get_index(len(headline))
-
-        #print("\n\t X... ")
-        #index_x = self._get_index(len(headline))
-
-        #return index_x, index_y
-
-    #def _get_filename_from_dir(self, path):
-        #"""
-        #lists all the files in <path> and lets the user choose
-        #which file to be loaded
-
-        #Parameters
-        #----------
-        #path: string
-            #the full path to the directory whos files will be listed
-
-        #Return
-        #------
-            #: string
-                #the filename of our choice
-        #"""
-
-        #import os
-
-        #list_dir = os.listdir(path)
-
-        #for ind, val in enumerate(list_dir):
-            #print("{}. {}".format(ind, val))
-
-        #return list_dir[self._get_index(len(list_dir))]
-
-    #def _set_default_paths(self):
-        #"""
-        #sets default paths in self to the result directories
-
-        #Parameters
-        #----------
-
-        #Returns
-        #-------
-        #"""
-
-        #self.path_res = "/home/dimitar/projects/STT_theories/results"
-
-        #print(
-            #"\n mine path_res: {} \n".format(
-                #self.path_res
-            #)
-        #)
-
-        #self.path_daniela = "/home/dimitar/Documents/Teaching_Materials/" \
-            #+ "University/Uvod.Fizika.Cherni.Dupki/Doktorant/" \
-            #+ "Daniela_Static_NS_Massive_SlowRot"
-
-        #print(
-            #"\n daniela path_res: {} \n".format(
-                #self.path_daniela
-            #)
-        #)
-
-        #self.path_kalin = "/home/dimitar/Documents/Teaching_Materials/" \
-            #+ "University/Uvod.Fizika.Cherni.Dupki/Doktorant/" \
-            #+ "Kalin_Static_NS_SlowRot_Massive_Lambda/beta-6"
-
-        #print(
-            #"\n kalin path_res: {} \n".format(
-                #self.path_kalin
-            #)
-        #)
-
-        #return
-
-    #def _load_file(self, path, filename, data, headline, label):
-        #"""
-        #load the data from <filename> in <path> by appending them to
-        #<data>, append the headline (the name of each column) in
-        #<headline> and the name of the file in <label>
-
-        #Parameters
-        #----------
-        #path: string
-            #the path to the directory containing the file with data
-        #filename: string
-            #the name of the file which will be loaded
-        #data: list
-            #the loaded data will be appended here
-        #headline: list
-            #the name of each column will be appended here as a list
-        #label: list
-            #the name of the file will be apended here
-
-        #Returns
-        #------
-        #"""
-
-        #if not(self._check_if_StrNotBlank(path) and
-               #self._check_if_StrNotBlank(filename)):
-
-            #print(
-                #"\n from where to load a file!!! \n\t {} / {} \n".format(
-                    #path, filename
-                #)
-            #)
-
-        #with open(path + "/" + filename, "r") as f:
-            #all_data = f.readlines()
-
-        #headline.append(
-            #[
-                #i.strip() for i in
-                #all_data.pop(0).strip().split(" ")
-                #if
-                #"#" not in i and
-                #len(i.strip())
-            #]
-        #)
-
-        #label.append(filename.split("/")[-1][-41:])
-
-        #data.append(
-            #[
-                #[] for i in all_data[0].strip().split(" ") if len(i.strip())
-            #]
-        #)
-
-        #for cnt, line in enumerate(all_data):
-
-            #for apnd, num in zip(
-                #data[-1], [
-                    #float(i) for i in line.strip().split(" ") if len(i.strip())
-                #]
-            #):
-                #apnd.append(num)
-
-        #return
-
-    #def _load_daniela_file(self, path, filename, data, headline, label):
-        #"""
-        #load danieala result file with name <filename> by appending the data
-        #after taking care of coefficients to <data> and saving the <headlines>(
-        #what is the name of each column) and label - the filename itself
-
-        #Parameters
-        #----------
-        #path: string
-            #the full path of the directory where the file is
-        #filename: string
-            #the name of the file itself
-        #data: list
-            #where to append the data of interest
-        #headline: list
-            #what each column is
-        #label: list
-            #the name the given data, expect it will be the filename
-
-        #Returns
-        #-------
-        #"""
-
-        #if not(self._check_if_StrNotBlank(path) and
-               #self._check_if_StrNotBlank(filename)):
-
-            #print(
-                #"from where to load a daniela file!!! {} / {}".format(
-                    #path, filename
-                #)
-            #)
-
-        #with open(path + "/" + filename, "r") as f:
-            #all_data = f.readlines()
-
-        ##~ get rid of inline text
-        #all_data = [
-            #line for line in all_data
-            #if "rho" not in line
-        #]
-
-        ##~ i am not interested in all data, so only the indexes here
-        ##~ will be saved
-        ##~ since in some files the central pressure is in different column
-        ##~ we check it and take into account
-        #if filename in [
-            #"models_APR_beta-4.5_mphi5e-3.dat",
-            #"models_APR_beta-6.0_mphi0.dat",
-            #"models_APR_beta-6.0_mphi1e-3.dat"
-        #]:
-            #indexes = [0, 1, 2, 3, 4, 10]
-        #else:
-            #indexes = [0, 1, 2, 3, 4, 11]
-
-        #units = [
-            #self.units["density"], self.units["rad"],
-            #1, self.units["j"], 1, 1
-        #]
-
-        #data.append([[] for i in indexes])
-
-        #for cnt, line in enumerate(all_data):
-            #for i, u, d in zip(indexes, units, data[-1]):
-                #try:
-                    #d.append(float(line.split(" ")[i]) / u)
-                #except ValueError:
-                    #print(
-                        #"\n ValueError: line {}: {} \n".format(
-                            #cnt, line
-                        #)
-                    #)
-                    #break
-
-        #data[-1][-2] = \
-            #[(-1)*i for i in data[-1][-2]]
-
-        #label.append(filename)
-
-        #return
-
-    #def _load_kalin_file(self, path, filename, data, headline, label):
-        #"""
-        #load kalin result file with name <filename> by appending the data
-        #after taking care of coefficients to <data> and saving the <headlines>(
-        #what is the name of each column) and label - the filename itself
-
-        #Parameters
-        #----------
-        #path: string
-            #the full path of the directory where the file is
-        #filename: string
-            #the name of the file itself
-        #data: list
-            #where to append the data of interest
-        #headline: list
-            #what each column is
-        #label: list
-            #the name the given data, expect it will be the filename
-
-        #Returns
-        #-------
-        #"""
-
-        #if not(self._check_if_StrNotBlank(path) and
-               #self._check_if_StrNotBlank(filename) ):
-
-            #print(
-                #"from where to load a kalin file!!! {} / {}".format(
-                    #path, filename
-                #)
-            #)
-
-        #with open(path + "/" + filename, "r") as f:
-            #all_data = f.readlines()
-
-        ##~ get rid of inline text
-        #all_data = [
-            #line for line in all_data
-            #if "lambda" not in line and "f_rot" not in line
-        #]
-
-        ##~ i am not interested in all data, so only the indexes here
-        ##~ will be saved
-        ##~ since in some files the central pressure is in different column
-        ##~ we check it and take into account
-        #indexes = [3, 5, 7, 10, 6, 2]
-
-        #units = [
-            #self.units["density"], self.units["rad"],
-            #1, 1, 1, 1
-        #]
-
-        #data.append([[] for i in indexes])
-
-        #for cnt, line in enumerate(all_data):
-            #for i, u, d in zip(indexes, units, data[-1]):
-                #try:
-                    #d.append(float(line.split(" ")[i]) / u)
-                #except ValueError:
-                    #print(
-                        #"\n ValueError: line {}: {} \n".format(
-                            #cnt, line
-                        #)
-                    #)
-                    #break
-
-        #label.append(filename)
-
-        #return
-
-    #def load_ResultFile_latest(self, filename_type="STT_phiScal_"):
-        #"""
-        #load the latest modified file from <self.path_res>
-
-        #Parameters
-        #----------
-        #filename_type: string
-            #this string will be used as wildcard filename_type + "*"
-            #to search in self.path_res; if no value is supplied, the
-            #default "STT_phiScal_" will be used
-
-        #Return
-        #------
-        #"""
-
-        #fname_res = self._get_latest_file(
-            #self.path_res, filename_type
-        #)
-
-        #print("\n now will load:\n\t {} \n".format(fname_res))
-
-        #self._load_file(
-            #self.path_res,
-            #fname_res,
-            #self.data_res,
-            #self.headline_res,
-            #self.label_res
-        #)
-
-        #return
-
-    #def load_ResultFile_argument(self, filename_type=""):
-        #"""
-        #load <filename_type> and append the results in self.data_res and etc
-        #it will search the file at <self.path>
-
-        #Parameters
-        #----------
-        #filename_type: string
-            #the file name at <self.path> which will be loaded
-
-        #Return
-        #------
-        #"""
-
-        #if self._check_if_StrNotBlank(filename_type):
-
-            #self._load_file(
-                #self.path_res,
-                #filename_type,
-                #self.data_res,
-                #self.headline_res,
-                #self.label_res
-            #)
-
-        #else:
-            #print("\n you forgot to give filename \n")
-
-        #return
-
-    #def load_ResultFile(self):
-        #"""
-        #load <filename_type> and append the results in self.data_res and etc
-        #it will search the file at <self.path>
-
-        #Parameters
-        #----------
-        #filename_type: string
-            #the file name at <self.path> which will be loaded
-
-        #Return
-        #------
-        #"""
-
-        #filename = self._get_filename_from_dir(self.path_res)
-
-        #print("\n now will load:\n\t {} \n".format(filename))
-
-        #self._load_file(
-            #self.path_res,
-            #filename,
-            #self.data_res,
-            #self.headline_res,
-            #self.label_res
-        #)
-
-        #return
-
-    #def load_DanielaFile(self):
-        #"""
-        #load daniela data from <self.path_daniela>
-
-        #Parameters
-        #----------
-
-        #Returns
-        #-------
-        #"""
-
-        #filename = self._get_filename_from_dir(self.path_daniela)
-
-        #print("\n now will load:\n\t {} \n".format(filename))
-
-        #self._load_daniela_file(
-            #self.path_daniela,
-            #filename,
-            #self.data_daniela,
-            #self.headline_daniela,
-            #self.label_daniela
-        #)
-
-    #def load_KalinFile(self):
-        #"""
-        #load kalin data from <self.path_kalin>
-
-        #Parameters
-        #----------
-
-        #Returns
-        #-------
-        #"""
-
-        #filename = self._get_filename_from_dir(self.path_kalin)
-
-        #print("\n now will load:\n\t {} \n".format(filename))
-
-        #self._load_kalin_file(
-            #self.path_kalin,
-            #filename,
-            #self.data_kalin,
-            #self.headline_kalin,
-            #self.label_kalin
-        #)
-
-    #def clear_data(self):
-        #"""
-        #clear the data in self:
-            #data_*, which contains the plot data
-            #headline_*, which is the naming of each column of each data
-            #label_*, which is name of the file the data come from
-
-        #Parameters
-        #----------
-
-        #Returns
-        #-------
-        #"""
-
-        #self.data_res.clear()
-        #self.headline_res.clear()
-        #self.label_res.clear()
-
-        #self.data_daniela.clear()
-        #self.headline_daniela.clear()
-        #self.label_daniela.clear()
-
-        #self.data_kalin.clear()
-        #self.headline_kalin.clear()
-        #self.label_kalin.clear()
-
-        #return
-
-    #def plot_data_res_last(self):
-        #"""
-        #creates figure with single subplot to plot the last list in
-        #<self.data_res> with asking which column will be used for
-        #X and Y axis
-
-        #Parameters
-        #----------
-
-        #Return
-        #------
-        #"""
-
-        #from matplotlib import pyplot as plt
-        #from IPython import get_ipython
-
-        ##~ if we start it in jupyter qtconsole
-        ##~ this will force open it in new window not inside
-        #get_ipython().run_line_magic("matplotlib", "qt5")
-
-        ##~ lets check if we have anything to plot
-        #if not self.data_res:
-            #self.load_ResultFile_latest()
-
-        #index_x, index_y = self._get_xy_current_file(
-            #self.headline_res[-1]
-        #)
-
-        #fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
-
-        #ax = all_ax[-1]
-
-        #self._set_parms(
-            #ax,
-            #self.headline_res[-1][index_x],
-            #self.headline_res[-1][index_y]
-        #)
-
-        #ax.plot(
-            #self.data_res[-1][index_x],
-            #self.data_res[-1][index_y],
-            #linewidth=1.5,
-            #label=self.label_res[-1]
-        #)
-
-        #ax.legend(loc="best", fontsize=8)
-        #plt.show()
-
-        #return
-
-    #def plot_data_res_all(self):
-        #"""
-        #creates figure with single subplot to plot all data in
-        #<self.data_res> with asking which column will be used for all
-        #X and Y axis (it presumes that all share the same headline)
-
-        #Parameters
-        #----------
-
-        #Return
-        #------
-        #"""
-
-        #from matplotlib import pyplot as plt
-        #from IPython import get_ipython
-
-        ##~ if we start it in jupyter qtconsole
-        ##~ this will force open it in new window not inside
-        #get_ipython().run_line_magic('matplotlib', "qt5")
-
-        ##~ lets check if we have anything to plot
-        #if not self.data_res:
-            #self.load_ResultFile()
-
-        #index_x, index_y = self._get_xy_current_file(
-            #self.headline_res[-1]
-        #)
-
-        #fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
-
-        #ax = all_ax[-1]
-
-        #self._set_parms(
-            #ax,
-            #self.headline_res[-1][index_x],
-            #self.headline_res[-1][index_y]
-        #)
-
-        #for data, label in zip(self.data_res, self.label_res):
-            #ax.plot(
-                #data[index_x],
-                #data[index_y],
-                #linewidth=1.5,
-                #label=label
-            #)
-
-        #ax.legend(loc="best", fontsize=8)
-        #plt.show()
-
-        #return
-
-    #def plot_compare_last_res_daniela(self):
-
-        #from matplotlib import pyplot as plt
-        #from IPython import get_ipython
-
-        #get_ipython().run_line_magic('matplotlib', "qt5")
-
-        ##~ lets check if we have anything to plot
-        #if not self.data_res:
-            #self.load_ResultFile()
-
-        #if not self.data_daniela:
-            #self.load_DanielaFile()
-
-        #index_x, index_y = self._get_xy_current_file(self.headline_res[-1])
-
-        #fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
-
-        #ax = all_ax[-1]
-
-        #self._set_parms(
-            #ax,
-            #self.headline_res[-1][index_x],
-            #self.headline_res[-1][index_y]
-        #)
-
-        #ax.plot(
-            #self.data_res[-1][index_x],
-            #self.data_res[-1][index_y],
-            #linewidth=1.5,
-            #label=self.label_res[-1],
-        #)
-
-        #ax.plot(
-            #self.data_daniela[-1][
-                #self.daniela_mapping[self.headline_res[-1][index_x]]
-            #],
-            #self.data_daniela[-1][
-                #self.daniela_mapping[self.headline_res[-1][index_y]]
-            #],
-            #marker="o",
-            #markersize=5,
-            #alpha=0.4,
-            #linewidth=0,
-            #label=self.label_daniela[-1]
-        #)
-
-        #ax.legend(loc="best", fontsize=8)
-        #plt.show()
-
-        #return
-
-    #def plot_compare_last_res_daniela_kalin(self):
-
-        #from matplotlib import pyplot as plt
-        #from IPython import get_ipython
-
-        #get_ipython().run_line_magic('matplotlib', "qt5")
-
-        ##~ lets check if we have anything to plot
-        #if not self.data_res:
-            #self.load_ResultFile()
-
-        #if not self.data_daniela:
-            #self.load_DanielaFile()
-
-        #if not self.data_kalin:
-            #self.load_KalinFile()
-
-        #index_x, index_y = self._get_xy_current_file( self.headline_res[-1] )
-
-        #fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
-
-        #ax = all_ax[-1]
-
-        #self._set_parms(
-            #ax,
-            #self.headline_res[-1][index_x],
-            #self.headline_res[-1][index_y]
-        #)
-
-        #ax.plot(
-            #self.data_res[-1][index_x],
-            #self.data_res[-1][index_y],
-            #linewidth=1.5,
-            #label=self.label_res[-1],
-        #)
-
-        #ax.plot(
-            #self.data_daniela[-1][
-                #self.daniela_mapping[self.headline_res[-1][index_x]]
-            #],
-            #self.data_daniela[-1][
-                #self.daniela_mapping[self.headline_res[-1][index_y]]
-            #],
-            #marker="o",
-            #markersize=5,
-            #alpha=0.4,
-            #linewidth=0,
-            #label=self.label_daniela[-1]
-        #)
-
-        #ax.plot(
-            #self.data_kalin[-1][
-                #self.kalin_mapping[self.headline_res[-1][index_x]]
-            #],
-            #self.data_kalin[-1][
-                #self.kalin_mapping[self.headline_res[-1][index_y]]
-            #],
-            #marker="X",
-            #markersize=5,
-            #alpha=0.4,
-            #linewidth=0,
-            #label=self.label_kalin[-1]
-        #)
-
-        #ax.legend(loc="best", fontsize=8)
-        #plt.show()
-
-        #return
-
-    #def plot_compare_last_res_kalin(self):
-
-        #from matplotlib import pyplot as plt
-        #from IPython import get_ipython
-
-        #get_ipython().run_line_magic('matplotlib', "qt5")
-
-        ##~ lets check if we have anything to plot
-        #if not self.data_res:
-            #self.load_ResultFile()
-
-        #if not self.data_kalin:
-            #self.load_KalinFile()
-
-        #index_x, index_y = self._get_xy_current_file(self.headline_res[-1])
-
-        #fig, all_ax = self._get_figure(1, 1, self._set_single_grid_placement)
-
-        #ax = all_ax[-1]
-
-        #self._set_parms(
-            #ax,
-            #self.headline_res[-1][index_x],
-            #self.headline_res[-1][index_y]
-        #)
-
-        #ax.plot(
-            #self.data_res[-1][index_x],
-            #self.data_res[-1][index_y],
-            #linewidth=1.5,
-            #label=self.label_res[-1],
-        #)
-
-        #ax.plot(
-            #self.data_kalin[-1][
-                #self.kalin_mapping[self.headline_res[-1][index_x]]
-            #],
-            #self.data_kalin[-1][
-                #self.kalin_mapping[self.headline_res[-1][index_y]]
-            #],
-            #marker="X",
-            #markersize=5,
-            #alpha=0.5,
-            #linewidth=0,
-            #label=self.label_kalin[-1]
-        #)
-
-        #ax.legend(loc="best", fontsize=8)
-        #plt.show()
-
-        #return
-
-    #def remove_from_data_res(self):
-        #"""
-        #user says who from <self.data_res> based on their labels saved in
-        #<self.label_res>
-
-        #Parameters
-        #----------
-
-        #Returns
-        #-------
-        #"""
-
-        #while "want to remove something":
-            #print("\n Want to remove some data from self.data_res? \n")
-
-            #if not self._get_yes_or_no_answer():
-                #return
-
-            #for cnt, val in enumerate(self.label_res):
-
-                #print("{}. {} ".format(cnt, val))
-
-            #print("\n Choose index... ")
-            #i = self._get_index(len(self.label_res))
-
-            #del self.data_res[i]
-            #del self.label_res[i]
-            #del self.headline_res[i]
-
 
 if __name__ == "__main__":
 
     print("\n asd \n")
-#~ cd projects/STT_theories/src/python/
-#~ import imp
-#~ import plotting as myplt_M
-#~ severalEOSs = [
-    #~ {'name': 'SLy4', 'beta': 0, 'm': 0, 'lambda': 0},
-    #~ {'name': 'SLy4', 'beta': -6, 'm': 0, 'lambda': 1}
-#~ ]
-#~ myplt = myplt_M.plot_result()
-#~ myplt.set_my_ResPath()
-#~ myplt.plot_severalEOSs_MvsR(severalEOSs)
-#~ myplt.plot_severalEOSs_phiScal_cVSp_c(severalEOSs)
-
-#~ STEP LIKE M
-#~ eos = "APR4"
-#~ severalEOSs = [
-    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
-#~ ]
-#~ myplt.foo(severalEOSs)
-#~ severalEOSs = [
-    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 5e-3, 'lambda': 0},
-#~ ]
-#~ myplt.foo(severalEOSs)
-#~ severalEOSs = [
-    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 5e-3, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 1e-2, 'lambda': 0},
-#~ ]
-#~ myplt.foo(severalEOSs)
-#~ severalEOSs = [
-    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 5e-3, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 1e-2, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 5e-2, 'lambda': 0},
-#~ ]
-#~ myplt.foo(severalEOSs)
-
-#~ STEP LIKE LAMBDA
-#~ eos = "APR4"
-#~ severalEOSs = [
-    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
-#~ ]
-#~ myplt.foo(severalEOSs)
-#~ severalEOSs = [
-    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e-1},
-#~ ]
-#~ myplt.foo(severalEOSs)
-#~ severalEOSs = [
-    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e-1},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e0},
-#~ ]
-#~ myplt.foo(severalEOSs)
-#~ severalEOSs = [
-    #~ {'name': eos, 'beta': 0, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e-1},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e0},
-    #~ {'name': eos, 'beta': -6, 'm': 0, 'lambda': 1e1},
-#~ ]
-#~ myplt.foo(severalEOSs)
