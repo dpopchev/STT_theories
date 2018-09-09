@@ -65,7 +65,7 @@ class plot_result:
         return
 
     def set_severalEOSs_ms_ls_c(
-        self, severalEOSs, m_lambda_style = {"ls": "lambda", "c": "m"}
+        self, severalEOSs, m_lambda_style = { "ls": "lambda", "c": "m" }
     ):
         """
         for consistent marking on all graphs for the current instance
@@ -1043,11 +1043,13 @@ class plot_result:
             handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1,
+            markerscale = 1.25,
             ncol = 3,
             frameon = False,
             mode = None
         )
+
+        ax_up.set_xlim(0.09)
 
         plt.show()
 
@@ -1174,7 +1176,7 @@ class plot_result:
                 data[0],
                 _data,
                 label = None,
-                linewidth = 1.5,
+                linewidth = 0,
                 markersize = 5.5,
                 markevery = self._get_markevry(data[0], _data),
                 **self._get_plot_keywords(
@@ -1188,17 +1190,301 @@ class plot_result:
             )
 
         ax_up.legend(
-            handles = [*lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit],
+            handles = [
+                *lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit
+            ],
             loc="best",
             fontsize=8,
             handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1,
+            markerscale = 1.25,
             ncol = 3,
             frameon = False,
             mode = None
         )
+
+        ax_up.set_xlim(0.09)
+
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_uniTildeI_polyFitAll_GR(self, severalEOSs ):
+        """
+        plot severalEOS unifersal Tilde I relationships
+        <severalEOSs> with dictionaries see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        #~ expand the data and do the polyfit
+        def _get_polyfit_res(xp, yp):
+            xp = [ __ for _ in xp for __ in _ ]
+            yp = [ __ for _ in yp for __ in _ ]
+
+            coef, rest = polyfit(
+                x = xp, y = yp,
+                deg = [ 0, 1, 4 ],
+                w = np.sqrt(yp),
+                full = True
+            )
+
+            #~ calcualte the chi reduce
+            chi_red = rest[0][0]/(len(xp) - 3)
+            p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
+
+            return coef, chi_red, p
+
+        all_label, all_headline, all_data = self.get_severalEOS_uniTildeI_data(
+            severalEOSs
+        )
+
+        all_label_GR, all_headline_GR, all_data_GR = self.get_severalEOS_uniTildeI_data( [
+            { "name": _, "beta": 0, "m": 0, "lambda": 0 }
+            for _ in set( [ _["name"] for _ in severalEOSs ] )
+        ] )
+
+        fig, all_axes  = self._get_figure(
+            2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
+        )
+
+        ax_up = all_axes[0]
+        ax_down = all_axes[1]
+
+        self._set_parms(ax_up, "", r"$I/(MR^2)$")
+
+        markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
+
+        max_x = 0
+        min_x = 1e9
+
+        GR_color_markers = "#a9f971"
+        #~ GR_color_fit = "#ed0dd9"
+        GR_color_fit = "#a9f971"
+
+        #~ lets plot the regular stuff on up axes
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            if max(data[0]) > max_x:
+                max_x = max(data[0])
+
+            if min(data[0]) < min_x:
+                min_x = min(data[0])
+
+            ax_up.plot(
+                data[0],
+                data[1],
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], data[1]),
+                **self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                ),
+                alpha = 0.7
+            )
+
+        #~ will use this foreach to fill the polyfit for GR
+        polyfit_res = []
+        xp = []
+        yp = []
+
+        #~ plot all GR data and gather all x and y for evaluating the polyfit
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            ax_up.plot(
+                data[0],
+                data[1],
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], data[1]),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers,
+                alpha = 0.7
+            )
+
+            xp.append(data[0])
+            yp.append(data[1])
+
+        coef, chi_red, p = _get_polyfit_res(xp, yp)
+
+        #~ generate 100 points between min and max of x and plot it values
+        ax_up.plot(
+            np.linspace(min_x, max_x, 100),
+            [ p(_) for _ in np.linspace(min_x, max_x, 100) ],
+            label = None,
+            linewidth = 2,
+            linestyle = "-",
+            markersize = 0,
+            markevery = 0,
+            marker = None,
+            color = GR_color_fit,
+        )
+
+        #~ add the polyfit lien as entry in polyfit lines to be displayed in legend
+        lines_polyfit = [
+            Line2D(
+                [0], [0],
+                color = GR_color_fit,
+                marker = None,
+                linewidth = 2,
+                linestyle = "-",
+                label = "GR fit"
+                    #~ "$\chi_r^2$ = {:.3e}"
+                    #~ "\n $a_0$ = {:.3e}; $a_1$ = {:.3e}; $a_4$ = {:.3e}".format(
+                    #~ chi_red,
+                    #~ coef[0],
+                    #~ coef[1],
+                    #~ coef[4]
+                #~ )
+            )
+        ]
+
+        #~ for the generated polyfit function calcualte the relative error and plot it donw
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            ax_down.plot(
+                data[0],
+                [
+                    abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+                ],
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], data[1]),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers
+            )
+
+        #~ now do the same for each color
+        for k, v in colors.items():
+
+            #~ the colors will have label key containing the name of parameter
+            #~ which they represetn
+            if k == "label":
+                continue
+
+            xp = []
+            yp = []
+
+            for data, eos in zip(all_data, severalEOSs):
+                #~ if the current eos has parameter value equal to the current one
+                #~ lets append its data
+                if eos[colors["label"]] == k:
+                    xp.append( data[0] )
+                    yp.append( data[1] )
+
+            #~ expand all the data into flat list to calculate the polyfit
+            coef, chi_red, p = _get_polyfit_res(xp, yp)
+
+            lines_polyfit.append(
+                Line2D(
+                    [0], [0],
+                    color = v,
+                    marker = None,
+                    linewidth = 2,
+                    linestyle = "-",
+                    label = "{} {:.3e} fit".format(
+                        "$\\lambda =$ " if colors["label"] == "lambda" else "m =",
+                        k
+                    )
+                        #~ "$\chi_r^2$ = {:.3e}"
+                        #~ "\n $a_0$ = {:.3e}; $a_1$ = {:.3e}; $a_4$ = {:.3e}".format(
+                        #~ "$\\lambda =$ " if colors["label"] == "lambda" else "m ",
+                        #~ k,
+                        #~ chi_red,
+                        #~ coef[0],
+                        #~ coef[1],
+                        #~ coef[4]
+                    #~ )
+                )
+            )
+
+            ax_up.plot(
+                np.linspace(min_x, max_x, 100),
+                [ p(_) for _ in np.linspace(min_x, max_x, 100) ],
+                label = None,
+                linewidth = 2,
+                linestyle = "-",
+                markersize = 0,
+                markevery = 0,
+                marker = None,
+                color = v,
+            )
+
+            for data, eos in zip(all_data, severalEOSs):
+                #~ if the current eos has parameter value equal to the current one
+                #~ lets append its data
+                if eos[colors["label"]] == k:
+
+                    ax_down.plot(
+                        data[0],
+                        [
+                            abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+                        ],
+                        label = None,
+                        linewidth = 0,
+                        markersize = 5.5,
+                        markevery = self._get_markevry(data[0], data[1]),
+                        marker = markers.get(eos["name"], None),
+                        color = v,
+                        markerfacecolor = v,
+                        markeredgecolor = v
+                    )
+
+        lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
+            markers, colors, linestyles
+        )
+
+        ax_up.get_shared_x_axes().join(ax_up, ax_down)
+        ax_up.set_xticklabels([])
+
+        ax_down.set_yscale("log")
+        self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
+
+        ax_up.legend(
+            handles = [
+                *lines_markers, *lines_colors, *lines_polyfit
+            ],
+            loc="best",
+            fontsize=8,
+            handlelength=2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.25,
+            ncol = 4,
+            frameon = False,
+            mode = None
+        )
+
+        ax_up.set_xlim(9e-2, 3.5e-1)
+        ax_up.set_ylim(2.5e-1,6e-1)
 
         plt.show()
 
@@ -1259,11 +1545,13 @@ class plot_result:
             handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1,
+            markerscale = 1.25,
             ncol = 3,
             frameon = False,
             mode = None
         )
+
+        ax_up.set_xlim(0.09)
 
         plt.show()
 
@@ -1388,7 +1676,7 @@ class plot_result:
                 data[0],
                 _data,
                 label = None,
-                linewidth = 1.5,
+                linewidth = 0,
                 markersize = 5.5,
                 markevery = self._get_markevry(data[0], _data),
                 **self._get_plot_keywords(
@@ -1401,20 +1689,303 @@ class plot_result:
                 )
             )
 
-        #~ ax_up.set_xlim(0.1)
+        ax_up.set_xlim(0.09)
 
         ax_up.legend(
-            handles = [*lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit],
+            handles = [
+                *lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit
+            ],
             loc="best",
             fontsize=8,
             handlelength=2,
             numpoints=1,
             fancybox=True,
-            markerscale = 1,
+            markerscale = 1.25,
             ncol = 3,
             frameon = False,
             mode = None
         )
+
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_uniBarI_polyFitAll_GR(self, severalEOSs ):
+        """
+        plot severalEOS unifersal Tilde I relationships
+        <severalEOSs> with dictionaries see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        #~ expand the data and do the polyfit
+        def _get_polyfit_res(xp, yp):
+            xp = [ __**-1 for _ in xp for __ in _ ]
+            yp = [ __ for _ in yp for __ in _ ]
+
+            coef, rest = polyfit(
+                x = xp, y = yp,
+                deg = [ 1, 2, 3, 4 ],
+                w = np.sqrt(yp),
+                full = True
+            )
+
+            #~ calcualte the chi reduce
+            chi_red = rest[0][0]/(len(xp) - 4)
+            p = lambda x: coef[1]*x**-1 + coef[2]*x**-2 + coef[3]*x**-3 + coef[4]*x**-4
+
+            return coef, chi_red, p
+
+        all_label, all_headline, all_data = self.get_severalEOS_uniBarI_data(
+            severalEOSs
+        )
+
+        all_label_GR, all_headline_GR, all_data_GR = self.get_severalEOS_uniBarI_data( [
+            { "name": _, "beta": 0, "m": 0, "lambda": 0 }
+            for _ in set( [ _["name"] for _ in severalEOSs ] )
+        ] )
+
+        fig, all_axes  = self._get_figure(
+            2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
+        )
+
+        ax_up = all_axes[0]
+        ax_down = all_axes[1]
+
+        self._set_parms(ax_up, "", "$I/(M^3)$")
+
+        markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
+
+        max_x = 0
+        min_x = 1e9
+
+        GR_color_markers = "#a9f971"
+        #~ GR_color_fit = "#ed0dd9"
+        GR_color_fit = "#a9f971"
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            if max(data[0]) > max_x:
+                max_x = max(data[0])
+
+            if min(data[0]) < min_x:
+                min_x = min(data[0])
+
+            ax_up.plot(
+                data[0],
+                data[1],
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], data[1]),
+                **self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                ),
+                alpha = 0.7
+            )
+
+        #~ will use this foreach to fill the polyfit for GR
+        polyfit_res = []
+        xp = []
+        yp = []
+
+        #~ plot all GR data and gather all x and y for evaluating the polyfit
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            ax_up.plot(
+                data[0],
+                data[1],
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], data[1]),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers,
+                alpha = 0.7
+            )
+
+            xp.append(data[0])
+            yp.append(data[1])
+
+        coef, chi_red, p = _get_polyfit_res(xp,yp)
+
+        #~ generate 100 points between min and max of x and plot it values
+        ax_up.plot(
+            np.linspace(min_x, max_x, 100),
+            [ p(_) for _ in np.linspace(min_x, max_x, 100) ],
+            label = None,
+            linewidth = 2,
+            linestyle = "-",
+            markersize = 0,
+            markevery = 0,
+            marker = None,
+            color = GR_color_fit,
+        )
+
+        #~ add the polyfit lien as entry in polyfit lines to be displayed in legend
+        lines_polyfit = [
+            Line2D(
+                [0], [0],
+                color = GR_color_fit,
+                marker = None,
+                linewidth = 2,
+                linestyle = "-",
+                label = "GR fit,"
+                    #~ "$\chi_r^2$ = {:.3e}"
+                    #~ "\n $a_1$ = {:.3e}; $a_2$ = {:.3e}; $a_3$ = {:.3e}; $a_4$ = {:.3e}".format(
+                    #~ chi_red,
+                    #~ coef[1],
+                    #~ coef[2],
+                    #~ coef[3],
+                    #~ coef[4]
+                #~ )
+            )
+        ]
+
+        #~ for the generated polyfit function calcualte the relative error and plot it donw
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            ax_down.plot(
+                data[0],
+                [
+                    abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+                ],
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], data[1]),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers
+            )
+
+        #~ now do the same for each color
+        for k, v in colors.items():
+
+            #~ the colors will have label key containing the name of parameter
+            #~ which they represetn
+            if k == "label":
+                continue
+
+            xp = []
+            yp = []
+
+            for data, eos in zip(all_data, severalEOSs):
+                #~ if the current eos has parameter value equal to the current one
+                #~ lets append its data
+                if eos[colors["label"]] == k:
+                    xp.append( data[0] )
+                    yp.append( data[1] )
+
+            #~ expand all the data into flat list to calculate the polyfit
+            coef, chi_red, p = _get_polyfit_res(xp,yp)
+
+            lines_polyfit.append(
+                Line2D(
+                    [0], [0],
+                    color = v,
+                    marker = None,
+                    linewidth = 2,
+                    linestyle = "-",
+                    label = "{} {:.3e} fit".format(
+                        "$\\lambda =$ " if colors["label"] == "lambda" else "m =",
+                        k
+                    )
+                        #~ ", $\chi_r^2$ = {:.3e}"
+                        #~ "\n $a_1$ = {:.3e}; $a_2$ = {:.3e}; $a_3$ = {:.3e}; $a_4$ = {:.3e}".format(
+                        #~ "$\\lambda =$ " if colors["label"] == "lambda" else "m ",
+                        #~ k,
+                        #~ chi_red,
+                        #~ coef[1],
+                        #~ coef[2],
+                        #~ coef[3],
+                        #~ coef[4]
+                    #~ )
+                )
+            )
+
+            ax_up.plot(
+                np.linspace(min_x, max_x, 100),
+                [ p(_) for _ in np.linspace(min_x, max_x, 100) ],
+                label = None,
+                linewidth = 2,
+                linestyle = "-",
+                markersize = 0,
+                markevery = 0,
+                marker = None,
+                color = v,
+            )
+
+            for data, eos in zip(all_data, severalEOSs):
+                #~ if the current eos has parameter value equal to the current one
+                #~ lets append its data
+                if eos[colors["label"]] == k:
+
+                    ax_down.plot(
+                        data[0],
+                        [
+                            abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+                        ],
+                        label = None,
+                        linewidth = 0,
+                        markersize = 5.5,
+                        markevery = self._get_markevry(data[0], data[1]),
+                        marker = markers.get(eos["name"], None),
+                        color = v,
+                        markerfacecolor = v,
+                        markeredgecolor = v
+                    )
+
+        lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
+            markers, colors, linestyles
+        )
+
+        ax_up.get_shared_x_axes().join(ax_up, ax_down)
+        ax_up.set_xticklabels([])
+
+        ax_down.set_yscale("log")
+        self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
+
+        ax_up.legend(
+            handles = [
+                *lines_markers, *lines_colors, *lines_polyfit
+            ],
+            loc="best",
+            fontsize=8,
+            handlelength=2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.25,
+            ncol = 4,
+            frameon = False,
+            mode = None
+        )
+
+        ax_up.set_xlim(9e-2, 3.5e-1)
+        ax_up.set_ylim(4e0,3.6e1)
 
         plt.show()
 
@@ -1685,6 +2256,9 @@ class plot_result:
         all_makrers_styles = [
             "s", "8", ">", "<", "^", "v", "o",
             "X", "P", "d", "D", "H", "h", "*", "p",
+            "$\\bowtie$", "$\\clubsuit$", "$\\diamondsuit$", "$\\heartsuit$",
+            "$\\spadesuit$",
+            "$\\bigotimes$", "$\\bigoplus$",
         ]
 
         if len(map_me) > len(all_makrers_styles):
