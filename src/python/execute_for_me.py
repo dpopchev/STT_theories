@@ -113,9 +113,9 @@ for EOS_cur in EOS_mapping:
     #~ with open(ODE_PATH, "w") as f:
         #~ f.writelines(ODE_content)
 
-    all_beta = [ 0 ]
-    all_m = [ 0 ]
-    all_lambda = [ 0 ]
+    all_beta = [ -6 ]
+    all_m = [ 0, 5e-3, 1e-2, 5e-2 ]
+    all_lambda = [ 0, 1e-1, 1e0, 1e1 ]
 
     for p_beta, p_m, p_lambda in itertools.product(
         all_beta,all_m, all_lambda, repeat=1

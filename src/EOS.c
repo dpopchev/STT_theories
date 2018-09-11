@@ -6,7 +6,7 @@
 #define DEF_TOTAL_EOS_NAME_COUNT 35
 
 // which model we will use
-#define DEF_EOS_MODEL_NUM 35
+#define DEF_EOS_MODEL_NUM 16
 // if we will use splines, the dimensions of the vector
 #define DEF_EOS_PICEWISE_VECTORS_DIM 7
 

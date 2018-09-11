@@ -1,7 +1,7 @@
 #include "ExternalHeaders.h"
 
 // odeint defines
-#define EPS 1e-8
+#define EPS 1e-9
 #define H1 1e-30
 #define MAXSTP 1e9
 #define HMIN 0.0
