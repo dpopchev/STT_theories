@@ -4,12 +4,12 @@
 #define ODE_NAME "phiScal_J"
 
 // interval of central pressures to go over through
-#define P_START 4.91e-04 // 5e-5; GR 1e-5
+#define P_START 6.41e-04 // 5e-5; GR 1e-5
 #define P_END 4.5e-3 // 4.5e-3; GR 7e-3
-#define GVPHISCAL_FF -7.58e-02
+#define GVPHISCAL_FF -5.81e-02
 
 // value of the infinity to use
-#define R_INF_PHISCAL 2.04e+02
+#define R_INF_PHISCAL 1.41e+02
 #define R_INF 1e9
 
 // parameters of the scalar field
