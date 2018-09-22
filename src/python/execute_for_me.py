@@ -28,9 +28,12 @@ EOS_all = [
 
 #~ only those who have max mass in units of the sun of 2
 #~ the list i would like to use
+#~ EOS_max18 = [
+    #~ "SLy", "APR2", "APR3", "APR4", "FPS", "WFF1", "WFF2", "WFF3", "BBB2", "ENG",
+    #~ "MPA1", "MS1", "MS2",  "MS1b", "PS", "GNH3", "H3", "H4", "ALF2", "ALF4"
+#~ ]
 EOS_max18 = [
-    "SLy", "APR2", "APR3", "APR4", "FPS", "WFF1", "WFF2", "WFF3", "BBB2", "ENG",
-    "MPA1", "MS1", "MS2",  "MS1b", "PS", "GNH3", "H3", "H4", "ALF2", "ALF4"
+    "PS", "GNH3", "H3", "H4", "ALF2", "ALF4"
 ]
 #~ EOS_max2 = [
     #~ "SLy", "APR3", "APR4", "WFF1", "WFF2", "ENG",
@@ -265,10 +268,10 @@ for EOS_cur in EOS_mapping:
             __ for _, __ in enumerate(_file_data) if _ == 0 or __[0] != "#"
         ]
 
-        #~ RESET THEM ALL BECAUSE I WANT SO
         with open(os.path.join(RESULTS_path, EOS_all[EOS_cur], filename_base), "w") as f:
             f.writelines(_file_data)
 
+        #~ RESET THEM ALL BECAUSE I WANT SO
         ODE_content[P_C_line] = P_C_sub.format(P_C_init)
         ODE_content[PHISCAL_C_line] = PHISCAL_C_sub.format(PHISCAL_C_init)
         ODE_content[R_INF_line] = R_INF_sub.format(R_INF_init)

@@ -454,7 +454,8 @@ class plot_result:
     def get_severalEOS_uniTildeI_data(
         self,
         severalEOSs,
-        fname = "STT_phiScal_J"
+        fname = "STT_phiScal_J",
+        append = ""
     ):
         """
         for provided list of dictionaries called severalEOSs get the data for
@@ -485,6 +486,14 @@ class plot_result:
                 "beta{:.3e}".format(eos["beta"]),
                 "m{:.3e}".format(eos["m"]),
                 "lambda{:.3e}".format(eos["lambda"]),
+                "tildeI",
+                append
+            ] ) if append else "_".join( [
+                fname,
+                eos["name"],
+                "beta{:.3e}".format(eos["beta"]),
+                "m{:.3e}".format(eos["m"]),
+                "lambda{:.3e}".format(eos["lambda"]),
                 "tildeI"
             ] )
 
@@ -503,7 +512,8 @@ class plot_result:
     def get_severalEOS_uniBarI_data(
         self,
         severalEOSs,
-        fname = "STT_phiScal_J"
+        fname = "STT_phiScal_J",
+        append = ""
     ):
         """
         for provided list of dictionaries called severalEOSs get the data for
@@ -529,6 +539,14 @@ class plot_result:
         for eos in severalEOSs:
 
             EOSname_barI = "_".join( [
+                fname,
+                eos["name"],
+                "beta{:.3e}".format(eos["beta"]),
+                "m{:.3e}".format(eos["m"]),
+                "lambda{:.3e}".format(eos["lambda"]),
+                "barI",
+                append
+            ] ) if append else "_".join( [
                 fname,
                 eos["name"],
                 "beta{:.3e}".format(eos["beta"]),
@@ -606,6 +624,258 @@ class plot_result:
             fancybox=True,
             markerscale = 1,
             ncol = 3,
+            frameon = False,
+            mode = None
+        )
+
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_MvsR_stable(self, severalEOSs):
+        """
+        plot several EOSs by listing them in <severalEOSs> with dictionaries
+        see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_data(severalEOSs)
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "R [km]", "$M/M_{\odot}$")
+
+        markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            #~ we are interested only in stable modules - part of the graphs
+            #~ where the mass is increasing
+            #~ after the maximum mass we can cut them off
+            #~ the min mass we are interested is the one which is  at least 0.5 M sun
+            min_mass = 0.5
+            little_offset = 2
+
+            max_m_i = data[2].index(max(data[2]))
+
+            max_m_i = max_m_i + little_offset \
+            if max_m_i + little_offset < len(data[2]) - 1 else max_m_i
+
+            min_m_i = list(
+                map(lambda _: _ >= min_mass,  data[2][:max_m_i])
+            ).index(True)
+
+            min_m_i = min_m_i - little_offset \
+            if min_m_i - little_offset > 0 else min_m_i
+
+            stable_R = [ _*self.units["R"] for _ in data[3][min_m_i:max_m_i] ]
+
+            ax.plot(
+                stable_R,
+                data[2][min_m_i:max_m_i],
+                label = None,
+                linewidth = 1.5,
+                markersize = 5.5,
+                markevery = self._get_markevry(stable_R, data[2][min_m_i:max_m_i]),
+                **self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                )
+            )
+
+        lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
+            markers, colors, linestyles
+        )
+
+        ax.legend(
+            handles = [*lines_markers, *lines_colors, *lines_linestyles],
+            loc="best",
+            fontsize=8,
+            handlelength=2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1,
+            ncol = 3,
+            frameon = False,
+            mode = None
+        )
+
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_MvsR_GR(self, severalEOSs):
+        """
+        plot several EOSs by listing them in <severalEOSs> with dictionaries
+        see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_data(severalEOSs)
+
+        all_label_GR, all_headline_GR, all_data_GR = self.get_severalEOS_data( [
+                { "name": _, "beta": 0, "m": 0, "lambda": 0 }
+                for _ in set( [ _["name"] for _ in severalEOSs ] )
+            ]
+        )
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "R [km]", "$M/M_{\odot}$")
+
+        markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            #~ we are interested only in stable modules - part of the graphs
+            #~ where the mass is increasing
+            #~ after the maximum mass we can cut them off
+            #~ the min mass we are interested is the one which is  at least 0.5 M sun
+            min_mass = 0.5
+            little_offset = 2
+
+            max_m_i = data[2].index(max(data[2]))
+
+            max_m_i = max_m_i + little_offset \
+            if max_m_i + little_offset < len(data[2]) - 1 else max_m_i
+
+            min_m_i = list(
+                map(lambda _: _ >= min_mass,  data[2][:max_m_i])
+            ).index(True)
+
+            min_m_i = min_m_i - little_offset \
+            if min_m_i - little_offset > 0 else min_m_i
+
+            stable_R = [ _*self.units["R"] for _ in data[3][min_m_i:max_m_i] ]
+
+            ax.plot(
+                stable_R,
+                data[2][min_m_i:max_m_i],
+                label = None,
+                linewidth = 1.5,
+                markersize = 5.5,
+                markevery = self._get_markevry(stable_R, data[2][min_m_i:max_m_i]),
+                **self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                )
+            )
+
+            _tmp = self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                )
+
+            ax.plot(
+                [ _*self.units["R"] for _ in data[3][max_m_i:] ],
+                data[2][max_m_i:],
+                label = None,
+                linewidth = 1.5,
+                markersize = 5.5,
+                markevery = self._get_markevry(
+                    [ _*self.units["R"] for _ in data[3][max_m_i:] ],
+                    data[2][max_m_i:]
+                ),
+                marker = _tmp["marker"],
+                color = _tmp["color"],
+                linestyle = (0, (5,10)),
+            )
+
+        #~ GR_color_markers = "#ef4026"
+        GR_color_markers = "#c0022f"
+        #~ GR_color_markers = "#a9f971"
+        #~ GR_color_fit = "#ed0dd9"
+        GR_color_fit = GR_color_markers
+
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            #~ we are interested only in stable modules - part of the graphs
+            #~ where the mass is increasing
+            #~ after the maximum mass we can cut them off
+            #~ the min mass we are interested is the one which is  at least 0.5 M sun
+            min_mass = 0.5
+            little_offset = 2
+
+            max_m_i = data[2].index(max(data[2]))
+
+            max_m_i = max_m_i + little_offset \
+            if max_m_i + little_offset < len(data[2]) - 1 else max_m_i
+
+            min_m_i = list(
+                map(lambda _: _ >= min_mass,  data[2][:max_m_i])
+            ).index(True)
+
+            min_m_i = min_m_i - little_offset \
+            if min_m_i - little_offset > 0 else min_m_i
+
+            stable_R = [ _*self.units["R"] for _ in data[3][min_m_i:max_m_i] ]
+
+            ax.plot(
+                stable_R,
+                data[2][min_m_i:max_m_i],
+                label = None,
+                linewidth = 1.5,
+                markersize = 5.5,
+                markevery = self._get_markevry(stable_R, data[2][min_m_i:max_m_i]),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers,
+            )
+
+        lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
+            markers, colors, linestyles
+        )
+
+        ax.legend(
+            handles = [
+                *lines_markers, *lines_colors, *lines_linestyles,
+                Line2D(
+                    [0], [0], color = GR_color_fit, marker = None, linestyle
+                    = "-", linewidth = 1.5, label = "GR fit"
+                )
+            ],
+            loc="best",
+            fontsize=8,
+            handlelength=2.5,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.25,
+            ncol = 4,
             frameon = False,
             mode = None
         )
@@ -988,6 +1258,150 @@ class plot_result:
 
         return
 
+    def convert_to_fitting_stable(self, severalEOSs, fname = "STT_phiScal_J"):
+        """
+        for the provided list of dics of EOSs go over their results and create, by
+        appending [name of result]_tildeI and [name of result]_barI, the
+        neaceassery ceofficients for the fitting
+
+        IT WILL OVERWRITE EXISTING !!!!
+
+        Since I want to convert only the stable models I will get only those
+        entries in the data which have increasing Mass,
+        Strictly speaking - those entries up to the line with maximum mass
+
+        EXAMPLE
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        def _get_max_min_M_i(src_data_lines):
+            """
+            load all netries of column 2 - the mass
+            find the line with maximum mass and use only those
+            since we want only stable models
+            """
+
+            min_mass = 0.5
+
+            stable_m = []
+            for line in src_data_lines:
+                stable_m.append(
+                    [
+                        float(_) for _ in line.strip().split(" ") if len(_.strip())
+                    ][2]
+                )
+
+            little_offset = 2
+
+            max_m_i = stable_m.index(max(stable_m))
+
+            max_m_i = max_m_i + little_offset \
+            if max_m_i + little_offset < len(stable_m) - 1 else max_m_i
+
+            min_m_i = list(
+                map(lambda _: _ >= min_mass, stable_m[:max_m_i])
+            ).index(True)
+
+            min_m_i = min_m_i - little_offset \
+            if min_m_i - little_offset > 0 else min_m_i
+
+            return max_m_i, min_m_i
+
+        #~ min_M*Mass of Sun
+        min_M = 0.5
+        print(
+            "\n Since the minimum measured mass is 1 times the mass of Sun"
+            " will cut out masses smaller than {} \n".format(min_M)
+        )
+
+        for eos in severalEOSs:
+
+            result = os.path.join(
+                self.my_ResPath,
+                eos["name"],
+                "_".join( [
+                    fname,
+                    eos["name"],
+                    "beta{:.3e}".format(eos["beta"]),
+                    "m{:.3e}".format(eos["m"]),
+                    "lambda{:.3e}".format(eos["lambda"])
+                ] )
+            )
+
+            convert_tilde = "_tildeI_stable"
+            convert_bar = "_barI_stable"
+            convert_dir = "Fitting"
+
+            target_path = os.path.join(
+                self.my_ResPath, eos["name"], convert_dir
+            )
+            pathlib.Path( target_path ).mkdir(parents=True, exist_ok=True)
+
+            with open(result, "r") as src, \
+            open(
+                os.path.join( target_path, os.path.basename(result) + convert_tilde ),
+                "w"
+            ) as dst_tilde, \
+            open(
+                os.path.join( target_path, os.path.basename(result) + convert_bar ),
+                "w"
+            ) as dst_bar:
+
+                src_data_lines = src.readlines()
+
+                #~ first line is just headline
+                src_data_lines.pop(0)
+
+                max_M_i, min_M_i = _get_max_min_M_i(src_data_lines)
+
+                print(
+                    "\n Now converting from {}"
+                    "\n\t EOS {}"
+                    "\n\t model {}"
+                    "\n\t to tilde {}"
+                    "\n\t to bar {}".format(
+                        self.my_ResPath,
+                        eos["name"],
+                        result,
+                        dst_tilde.name,
+                        dst_bar.name
+                    )
+                )
+
+                dst_tilde.write("# M/R I/(MR**2) \n")
+                dst_bar.write("# (M/R)**-1 I/M**3 \n")
+
+                for line in src_data_lines[min_M_i:max_M_i]:
+
+                    if not line.strip():
+                        continue
+
+                    tmp = [
+                        float(_) for _ in line.strip().split(" ") if len(_.strip())
+                    ]
+
+                    dst_tilde.write(
+                        "{:.6e} {:.6e} \n".format(
+                            tmp[2]/tmp[3], tmp[5]/(tmp[2]*tmp[3]**2)
+                        )
+                    )
+                    dst_bar.write(
+                        "{:.6e} {:.6e} \n".format(
+                            tmp[2]/tmp[3], tmp[5]/(tmp[2]**3)
+                        )
+                    )
+        print(
+            "\n Since the minimum measured mass is 1 times the mass of Sun"
+            " will cut out masses smaller than {} \n".format(min_M)
+        )
+
+        return
+
     def plot_severalEOSs_uniTildeI(self, severalEOSs ):
         """
         plot severalEOS unifersal Tilde I relationships
@@ -1055,7 +1469,9 @@ class plot_result:
 
         return
 
-    def plot_severalEOSs_uniTildeI_polyFit(self, severalEOSs ):
+    def plot_severalEOSs_uniTildeI_polyFit(
+        self, severalEOSs, append_stable = "stable"
+    ):
         """
         plot severalEOS unifersal Tilde I relationships
         <severalEOSs> with dictionaries see get_severalEOS_data for the format
@@ -1070,8 +1486,11 @@ class plot_result:
         ]
         """
 
+        _get_max = lambda data, _: max(data) if max(data) > _ else _
+        _get_min = lambda data, _: min(data) if min(data) < _ else _
+
         all_label, all_headline, all_data = self.get_severalEOS_uniTildeI_data(
-            severalEOSs
+            severalEOSs, append = append_stable
         )
 
         fig, all_axes  = self._get_figure(
@@ -1085,18 +1504,32 @@ class plot_result:
 
         markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
 
-        max_x = 0
-        min_x = 1e9
+        max_x = max_y = 0
+        min_x = min_y = 1e9
+        min_compactness = 0.09
 
-        all_colors = []
+        #~ color_fit = "#fcc006"
+        color_fit = "#fa4224"
+        #~ color_avg = "#9f2305"
+        #~ color_avg_worst = "#dfc5fe"
 
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            if max(data[0]) > max_x:
-                max_x = max(data[0])
+            #~ we set mimimal compactenss threshold and cut out all entries
+            #~ who are below it only if we are interested in stable solutions
+            if append_stable:
+                _min_x = list(
+                    map(lambda _: _ >= min_compactness, data[0])
+                ).index(True)
 
-            if min(data[0]) < min_x:
-                min_x = min(data[0])
+                data[0] = [ _ for _ in data[0][_min_x:] ]
+                data[1] = [ _ for _ in data[1][_min_x:] ]
+
+            max_x = _get_max(data[0], max_x)
+            min_x = _get_min(data[0], min_x)
+
+            max_y = _get_max(data[1], max_y)
+            min_y = _get_min(data[1], min_y)
 
             ax_up.plot(
                 data[0],
@@ -1122,6 +1555,7 @@ class plot_result:
             w = np.sqrt(np.array([ __ for _ in all_data for __ in _[1] ])),
             full = True,
         )
+        chi_red = rest[0][0]/(len([ __ for _ in all_data for __ in _[0] ]) - 3)
 
         p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
 
@@ -1136,13 +1570,13 @@ class plot_result:
         lines_polyfit = [
             Line2D(
                 [0], [0],
-                color = "#ff81c0",
+                color = color_fit,
                 marker = None,
                 linewidth = 2,
                 linestyle = "-",
                 label = "poly fit, $\chi_r^2$ = {:.3e}"
                     "\n {:.3f} + {:.3f}x + {:.3f}$x^4$".format(
-                    rest[0][0]/(len([ __ for _ in all_data for __ in _[0] ]) - 3),
+                    chi_red,
                     coef[0],
                     coef[1],
                     coef[4]
@@ -1150,27 +1584,42 @@ class plot_result:
             )
         ]
 
-        ax_up.plot(
-            p_x,
-            p_y,
-            color = "#ff81c0",
-            marker = None,
-            linewidth = 2,
-            linestyle = "-",
-            label = None
-        )
-
         ax_up.get_shared_x_axes().join(ax_up, ax_down)
         ax_up.set_xticklabels([])
 
         ax_down.set_yscale("log")
         self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
 
+        max_y_down = 0
+        min_y_down = 1e9
+
+        #~ average over all EOSs of all the residuals
+        delta_all = 0
+        n_all = 0
+
+        #~ average over all EOSs of largest residual
+        delta_all_max = 0
+        n_all_max = 0
+
+        #~ the largest residual across all EOSs
+        delta_max = 0
+
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
             _data = [
                 abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
             ]
+
+            delta_all += sum(_data)
+            n_all += len(_data)
+
+            delta_all_max += max(_data)
+            n_all_max += 1
+
+            delta_max = _get_max(_data, delta_max)
+
+            max_y_down = _get_max(_data, max_y_down)
+            min_y_down = _get_min(_data, min_y_down)
 
             ax_down.plot(
                 data[0],
@@ -1189,6 +1638,36 @@ class plot_result:
                 )
             )
 
+        avg_L_1 = delta_all/n_all
+        avg_L_inf = delta_all_max/n_all_max
+        L_inf_worst = delta_max
+
+        ax_up.plot(
+            p_x,
+            p_y,
+            color = color_fit,
+            marker = None,
+            linewidth = 2,
+            linestyle = "-",
+            label = None
+        )
+
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*(1 + avg_L_inf),
+            np.array(p_y)*(1 - avg_L_inf),
+            facecolor=color_avg,
+            alpha=0.75
+        )
+
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*( 1 + L_inf_worst ),
+            np.array(p_y)*( 1 - L_inf_worst ),
+            facecolor=color_avg_worst,
+            alpha=0.5
+        )
+
         ax_up.legend(
             handles = [
                 *lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit
@@ -1204,18 +1683,51 @@ class plot_result:
             mode = None
         )
 
-        ax_up.set_xlim(0.09)
+        ax_up.set_xlim(min_x, max_x)
+        ax_up.set_ylim(min_y, max_y)
+
+        ax_down.set_ylim(1e-3, 1e0)
+
+        print(
+            "\n All fit information"
+            "\n\t $\chi_r^2$ = {:.3e}"
+            "\n\t $a_0$ = {:.3e}"
+            "\n\t $a_1$ = {:.3e}"
+            "\n\t $a_4$ = {:.3e}"
+            "\n\t $< L_1 >$ = {:.3e}"
+            "\n\t $< L_\inf >$ = {:.3e}"
+            "\n\t $ L_\inf $ = {:.3e}\n".format(
+                chi_red,
+                coef[0],
+                coef[1],
+                coef[4],
+                avg_L_1,
+                avg_L_inf,
+                L_inf_worst
+            )
+        )
+
+        if n_all_max != len(severalEOSs):
+            print(
+                "\n SOMETHING FISSHY, n_all = {}, len EOSs = {} \n".format(
+                n_all_max, len(severalEOSs))
+            )
 
         plt.show()
 
         return
 
-    def plot_severalEOSs_uniTildeI_polyFitAll_GR(self, severalEOSs ):
+    def plot_severalEOSs_uniTildeI_polyFitAll_GR(
+        self, severalEOSs, append_stable = "stable"
+    ):
         """
         plot severalEOS unifersal Tilde I relationships
         <severalEOSs> with dictionaries see get_severalEOS_data for the format
 
         EXAMPLE INPUT
+
+        append_stable = "stable" is set as default, so only stable solutions
+        will be calculated
 
         severalEOSs = [
             { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
@@ -1243,14 +1755,19 @@ class plot_result:
 
             return coef, chi_red, p
 
+        _get_max = lambda data, _: max(data) if max(data) > _ else _
+        _get_min = lambda data, _: min(data) if min(data) < _ else _
+
         all_label, all_headline, all_data = self.get_severalEOS_uniTildeI_data(
-            severalEOSs
+            severalEOSs, append = append_stable
         )
 
         all_label_GR, all_headline_GR, all_data_GR = self.get_severalEOS_uniTildeI_data( [
-            { "name": _, "beta": 0, "m": 0, "lambda": 0 }
-            for _ in set( [ _["name"] for _ in severalEOSs ] )
-        ] )
+                { "name": _, "beta": 0, "m": 0, "lambda": 0 }
+                for _ in set( [ _["name"] for _ in severalEOSs ] )
+            ],
+            append = append_stable
+        )
 
         fig, all_axes  = self._get_figure(
             2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
@@ -1259,25 +1776,46 @@ class plot_result:
         ax_up = all_axes[0]
         ax_down = all_axes[1]
 
+        ax_up.get_shared_x_axes().join(ax_up, ax_down)
+        ax_up.set_xticklabels([])
+
+        ax_down.set_yscale("log")
+        self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
+
         self._set_parms(ax_up, "", r"$I/(MR^2)$")
 
         markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
 
-        max_x = 0
-        min_x = 1e9
+        max_x = max_y = 0
+        min_x = min_y = 1e9
+        min_compactness = 0.09
 
-        GR_color_markers = "#a9f971"
+        #~ GR_color_markers = "#ef4026"
+        GR_color_markers = "#c0022f"
+        #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
-        GR_color_fit = "#a9f971"
+        GR_color_fit = GR_color_markers
 
-        #~ lets plot the regular stuff on up axes
+        plot_alpha = 0.75
+
+        #~ lets plot severEOSs on the up plot and eventually cut out data
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            if max(data[0]) > max_x:
-                max_x = max(data[0])
+            #~ we set mimimal compactenss threshold and cut out all entries
+            #~ who are below it only if we are interested in stable solutions
+            if append_stable:
+                _min_x = list(
+                    map(lambda _: _ >= min_compactness, data[0])
+                ).index(True)
 
-            if min(data[0]) < min_x:
-                min_x = min(data[0])
+                data[0] = [ _ for _ in data[0][_min_x:] ]
+                data[1] = [ _ for _ in data[1][_min_x:] ]
+
+            max_x = _get_max(data[0], max_x)
+            min_x = _get_min(data[0], min_x)
+
+            max_y = _get_max(data[1], max_y)
+            min_y = _get_min(data[1], min_y)
 
             ax_up.plot(
                 data[0],
@@ -1294,7 +1832,7 @@ class plot_result:
                         "lambda": eos["lambda"]
                     }
                 ),
-                alpha = 0.7
+                alpha = plot_alpha
             )
 
         #~ will use this foreach to fill the polyfit for GR
@@ -1309,6 +1847,22 @@ class plot_result:
             [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
         ):
 
+            #~ we set mimimal compactenss threshold and cut out all entries
+            #~ who are below it only if we are interested in stable solutions
+            if append_stable:
+                _min_x = list(
+                    map(lambda _: _ >= min_compactness, data[0])
+                ).index(True)
+
+                data[0] = [ _ for _ in data[0][_min_x:] ]
+                data[1] = [ _ for _ in data[1][_min_x:] ]
+
+            max_x = _get_max(data[0], max_x)
+            min_x = _get_min(data[0], min_x)
+
+            max_y = _get_max(data[1], max_y)
+            min_y = _get_min(data[1], min_y)
+
             ax_up.plot(
                 data[0],
                 data[1],
@@ -1320,7 +1874,7 @@ class plot_result:
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
                 markeredgecolor = GR_color_markers,
-                alpha = 0.7
+                alpha = plot_alpha
             )
 
             xp.append(data[0])
@@ -1328,10 +1882,97 @@ class plot_result:
 
         coef, chi_red, p = _get_polyfit_res(xp, yp)
 
+        max_y_down = 0
+        min_y_down = 1e9
+
+        #~ average over all EOSs of all the residuals
+        delta_all = 0
+        n_all = 0
+
+        #~ average over all EOSs of largest residual
+        delta_all_max = 0
+        n_all_max = 0
+
+        #~ the largest residual across all EOSs
+        delta_max = 0
+
+        #~ for the generated polyfit function calcualte the
+        #~ relative error and plot it donw for GR
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            _data = [
+                abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+            ]
+
+            delta_all += sum(_data)
+            n_all += len(_data)
+
+            delta_all_max += max(_data)
+            n_all_max += 1
+
+            delta_max = _get_max(_data, delta_max)
+
+            max_y_down = _get_max(_data, max_y_down)
+            min_y_down = _get_min(_data, min_y_down)
+
+            ax_down.plot(
+                data[0],
+                _data,
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], _data),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers
+            )
+
+        avg_L_1 = delta_all/n_all
+        avg_L_inf = delta_all_max/n_all_max
+        L_inf_worst = delta_max
+
+        print(
+            "\n GR fit"
+            "\n\t $\chi_r^2$ = {:.3e}"
+            "\n\t $a_0$ = {:.3e}"
+            "\n\t $a_1$ = {:.3e}"
+            "\n\t $a_4$ = {:.3e}"
+            "\n\t $< L_1 >$ = {:.3e}"
+            "\n\t $< L_\inf >$ = {:.3e}"
+            "\n\t $ L_\inf $ = {:.3e}\n".format(
+                chi_red,
+                coef[0],
+                coef[1],
+                coef[4],
+                avg_L_1,
+                avg_L_inf,
+                L_inf_worst
+            )
+        )
+
+        lines_polyfit = [
+            Line2D(
+                [0], [0],
+                color = GR_color_fit,
+                marker = None,
+                linestyle = "-",
+                linewidth = 1.5,
+                label = "GR fit"
+            )
+        ]
+
+        p_x = np.linspace(min_x, max_x, 100)
+        p_y = [ p(_) for _ in p_x ]
+
         #~ generate 100 points between min and max of x and plot it values
         ax_up.plot(
-            np.linspace(min_x, max_x, 100),
-            [ p(_) for _ in np.linspace(min_x, max_x, 100) ],
+            p_x,
+            p_y,
             label = None,
             linewidth = 2,
             linestyle = "-",
@@ -1341,48 +1982,23 @@ class plot_result:
             color = GR_color_fit,
         )
 
-        #~ add the polyfit lien as entry in polyfit lines to be displayed in legend
-        lines_polyfit = [
-            Line2D(
-                [0], [0],
-                color = GR_color_fit,
-                marker = None,
-                linewidth = 2,
-                linestyle = "-",
-                label = "GR fit"
-                    #~ "$\chi_r^2$ = {:.3e}"
-                    #~ "\n $a_0$ = {:.3e}; $a_1$ = {:.3e}; $a_4$ = {:.3e}".format(
-                    #~ chi_red,
-                    #~ coef[0],
-                    #~ coef[1],
-                    #~ coef[4]
-                #~ )
-            )
-        ]
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*(1 + avg_L_inf),
+            np.array(p_y)*(1 - avg_L_inf),
+            facecolor=GR_color_markers,
+            alpha= plot_alpha - 0.25
+        )
 
-        #~ for the generated polyfit function calcualte the relative error and plot it donw
-        for label, data, eos in zip(
-            all_label_GR,
-            all_data_GR,
-            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
-        ):
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*( 1 + L_inf_worst ),
+            np.array(p_y)*( 1 - L_inf_worst ),
+            facecolor=GR_color_markers,
+            alpha= plot_alpha - 0.5
+        )
 
-            ax_down.plot(
-                data[0],
-                [
-                    abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
-                ],
-                label = None,
-                linewidth = 0,
-                markersize = 5.5,
-                markevery = self._get_markevry(data[0], data[1]),
-                marker = markers.get(eos, None),
-                color = GR_color_markers,
-                markerfacecolor = GR_color_markers,
-                markeredgecolor = GR_color_markers
-            )
-
-        #~ now do the same for each color
+        #~ now do the same for each color if there are more than 1
         for k, v in colors.items():
 
             #~ the colors will have label key containing the name of parameter
@@ -1403,32 +2019,98 @@ class plot_result:
             #~ expand all the data into flat list to calculate the polyfit
             coef, chi_red, p = _get_polyfit_res(xp, yp)
 
+            max_y_down = 0
+            min_y_down = 1e9
+
+            #~ average over all EOSs of all the residuals
+            delta_all = 0
+            n_all = 0
+
+            #~ average over all EOSs of largest residual
+            delta_all_max = 0
+            n_all_max = 0
+
+            #~ the largest residual across all EOSs
+            delta_max = 0
+
+            for data, eos in zip(all_data, severalEOSs):
+                #~ if the current eos has parameter value equal to the current one
+                #~ lets append its data
+                if eos[colors["label"]] == k:
+
+                    _data = [
+                        abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+                    ]
+
+                    delta_all += sum(_data)
+                    n_all += len(_data)
+
+                    delta_all_max += max(_data)
+                    n_all_max += 1
+
+                    delta_max = _get_max(_data, delta_max)
+
+                    max_y_down = _get_max(_data, max_y_down)
+                    min_y_down = _get_min(_data, min_y_down)
+
+                    ax_down.plot(
+                        data[0],
+                        _data,
+                        label = None,
+                        linewidth = 0,
+                        markersize = 5.5,
+                        markevery = self._get_markevry(data[0], _data),
+                        marker = markers.get(eos["name"], None),
+                        color = v,
+                        markerfacecolor = v,
+                        markeredgecolor = v
+                    )
+
+            avg_L_1 = delta_all/n_all
+            avg_L_inf = delta_all_max/n_all_max
+            L_inf_worst = delta_max
+
+            print(
+                "\n {} {:.3e} fit"
+                "\n\t $\chi_r^2$ = {:.3e}"
+                "\n\t $a_0$ = {:.3e}"
+                "\n\t $a_1$ = {:.3e}"
+                "\n\t $a_4$ = {:.3e}"
+                "\n\t $< L_1 >$ = {:.3e}"
+                "\n\t $< L_\inf >$ = {:.3e}"
+                "\n\t $ L_\inf $ = {:.3e}\n".format(
+                    "$\\lambda =$ " if colors["label"] == "lambda" else "m =",
+                    k,
+                    chi_red,
+                    coef[0],
+                    coef[1],
+                    coef[4],
+                    avg_L_1,
+                    avg_L_inf,
+                    L_inf_worst
+                )
+            )
+
             lines_polyfit.append(
                 Line2D(
                     [0], [0],
                     color = v,
                     marker = None,
-                    linewidth = 2,
                     linestyle = "-",
+                    linewidth = 1.5,
                     label = "{} {:.3e} fit".format(
                         "$\\lambda =$ " if colors["label"] == "lambda" else "m =",
                         k
                     )
-                        #~ "$\chi_r^2$ = {:.3e}"
-                        #~ "\n $a_0$ = {:.3e}; $a_1$ = {:.3e}; $a_4$ = {:.3e}".format(
-                        #~ "$\\lambda =$ " if colors["label"] == "lambda" else "m ",
-                        #~ k,
-                        #~ chi_red,
-                        #~ coef[0],
-                        #~ coef[1],
-                        #~ coef[4]
-                    #~ )
                 )
             )
 
+            p_x = np.linspace(min_x, max_x, 100)
+            p_y = [ p(_) for _ in p_x ]
+
             ax_up.plot(
-                np.linspace(min_x, max_x, 100),
-                [ p(_) for _ in np.linspace(min_x, max_x, 100) ],
+                p_x,
+                p_y,
                 label = None,
                 linewidth = 2,
                 linestyle = "-",
@@ -1438,35 +2120,183 @@ class plot_result:
                 color = v,
             )
 
-            for data, eos in zip(all_data, severalEOSs):
-                #~ if the current eos has parameter value equal to the current one
-                #~ lets append its data
-                if eos[colors["label"]] == k:
+            ax_up.fill_between(
+                p_x,
+                np.array(p_y)*(1 + avg_L_inf),
+                np.array(p_y)*(1 - avg_L_inf),
+                facecolor=v,
+                alpha= plot_alpha - 0.25
+            )
 
-                    ax_down.plot(
-                        data[0],
-                        [
-                            abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
-                        ],
-                        label = None,
-                        linewidth = 0,
-                        markersize = 5.5,
-                        markevery = self._get_markevry(data[0], data[1]),
-                        marker = markers.get(eos["name"], None),
-                        color = v,
-                        markerfacecolor = v,
-                        markeredgecolor = v
-                    )
+            ax_up.fill_between(
+                p_x,
+                np.array(p_y)*( 1 + L_inf_worst ),
+                np.array(p_y)*( 1 - L_inf_worst ),
+                facecolor=v,
+                alpha= plot_alpha - 0.5
+            )
+
+        #####################################################################
+        #~ THE CODE BELOW CAN WORK FOR LINSTEYLES DO NOT DELETE
+        #####################################################################
+        #~ now do the same for each linestyle if there are more than 1
+        #for k, v in linestyles.items():
+
+            ##~ the linestyle will have label key containing the name of parameter
+            ##~ which they represetn
+            #if k == "label":
+                #continue
+
+            #xp = []
+            #yp = []
+
+            #for data, eos in zip(all_data, severalEOSs):
+                ##~ if the current eos has parameter value equal to the current one
+                ##~ lets append its data
+                #if eos[linestyles["label"]] == k:
+                    #xp.append( data[0] )
+                    #yp.append( data[1] )
+
+            ##~ expand all the data into flat list to calculate the polyfit
+            #coef, chi_red, p = _get_polyfit_res(xp, yp)
+
+            #max_y_down = 0
+            #min_y_down = 1e9
+
+            ##~ average over all EOSs of all the residuals
+            #delta_all = 0
+            #n_all = 0
+
+            ##~ average over all EOSs of largest residual
+            #delta_all_max = 0
+            #n_all_max = 0
+
+            ##~ the largest residual across all EOSs
+            #delta_max = 0
+
+            #for data, eos in zip(all_data, severalEOSs):
+                ##~ if the current eos has parameter value equal to the current one
+                ##~ lets append its data
+                #if eos[linestyles["label"]] == k:
+
+                    #_data = [
+                        #abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+                    #]
+
+                    #delta_all += sum(_data)
+                    #n_all += len(_data)
+
+                    #delta_all_max += max(_data)
+                    #n_all_max += 1
+
+                    #delta_max = _get_max(_data, delta_max)
+
+                    #max_y_down = _get_max(_data, max_y_down)
+                    #min_y_down = _get_min(_data, min_y_down)
+
+                    #ax_down.plot(
+                        #data[0],
+                        #_data,
+                        #label = None,
+                        #linewidth = 0,
+                        #markersize = 5.5,
+                        #markevery = self._get_markevry(data[0], _data),
+                        #marker = markers.get(eos["name"], None),
+                        #color = "k",
+                        #markerfacecolor = "k",
+                        #markeredgecolor = "k"
+                    #)
+
+            #avg_L_1 = delta_all/n_all
+            #avg_L_inf = delta_all_max/n_all_max
+            #L_inf_worst = delta_max
+
+            #print(
+                #"\n {} {:.3e} fit"
+                #"\n\t $\chi_r^2$ = {:.3e}"
+                #"\n\t $a_0$ = {:.3e}"
+                #"\n\t $a_1$ = {:.3e}"
+                #"\n\t $a_4$ = {:.3e}"
+                #"\n\t $< L_1 >$ = {:.3e}"
+                #"\n\t $< L_\inf >$ = {:.3e}"
+                #"\n\t $ L_\inf $ = {:.3e}\n".format(
+                    #"$\\lambda =$ " if linestyles["label"] == "lambda" else "m =",
+                    #k,
+                    #chi_red,
+                    #coef[0],
+                    #coef[1],
+                    #coef[4],
+                    #avg_L_1,
+                    #avg_L_inf,
+                    #L_inf_worst
+                #)
+            #)
+
+            #lines_polyfit.append(
+                #Line2D(
+                    #[0], [0],
+                    #color = "k",
+                    #marker = None,
+                    #linestyle = v,
+                    #linewidth = 1.5,
+                    #label = "{} {:.3e} fit".format(
+                        #"$\\lambda =$ " if linestyles["label"] == "lambda" else "m =",
+                        #k
+                    #)
+                #)
+            #)
+
+            #p_x = np.linspace(min_x, max_x, 100)
+            #p_y = [ p(_) for _ in p_x ]
+
+            #ax_up.plot(
+                #p_x,
+                #p_y,
+                #label = None,
+                #linewidth = 2,
+                #linestyle = v,
+                #markersize = 0,
+                #markevery = 0,
+                #marker = None,
+                #color = "k",
+            #)
+
+            #ax_up.fill_between(
+                #p_x,
+                #np.array(p_y)*(1 + avg_L_inf),
+                #np.array(p_y)*(1 - avg_L_inf),
+                #facecolor="k",
+                #alpha= plot_alpha - 0.25
+            #)
+
+            #ax_up.fill_between(
+                #p_x,
+                #np.array(p_y)*( 1 + L_inf_worst ),
+                #np.array(p_y)*( 1 - L_inf_worst ),
+                #facecolor="k",
+                #alpha= plot_alpha - 0.5
+            #)
 
         lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
             markers, colors, linestyles
         )
 
-        ax_up.get_shared_x_axes().join(ax_up, ax_down)
-        ax_up.set_xticklabels([])
-
-        ax_down.set_yscale("log")
-        self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
+        #~ I think the code below is copied by mistake
+        #~ commeting out for clearence
+        #~ ax_up.legend(
+            #~ handles = [
+                #~ *lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit
+            #~ ],
+            #~ loc="best",
+            #~ fontsize=8,
+            #~ handlelength=2,
+            #~ numpoints=1,
+            #~ fancybox=True,
+            #~ markerscale = 1.25,
+            #~ ncol = 3,
+            #~ frameon = False,
+            #~ mode = None
+        #~ )
 
         ax_up.legend(
             handles = [
@@ -1474,7 +2304,7 @@ class plot_result:
             ],
             loc="best",
             fontsize=8,
-            handlelength=2,
+            handlelength=2.5,
             numpoints=1,
             fancybox=True,
             markerscale = 1.25,
@@ -1483,20 +2313,26 @@ class plot_result:
             mode = None
         )
 
-        ax_up.set_xlim(9e-2, 3.2e-1)
-        ax_up.set_ylim(2.5e-1,6e-1)
-        ax_down.set_ylim(1e-3,1e0)
+        ax_up.set_xlim(min_x, max_x)
+        ax_up.set_ylim(min_y, max_y)
+
+        ax_down.set_ylim(1e-3, 1e0)
 
         plt.show()
 
         return
 
-    def plot_severalEOSs_uniTildeI_polyFitAll_GR_tmp(self, severalEOSs ):
+    def plot_severalEOSs_uniTildeI_polyFitAll_GR_ParmsProduct(
+        self, severalEOSs, append_stable = "stable"
+    ):
         """
         plot severalEOS unifersal Tilde I relationships
         <severalEOSs> with dictionaries see get_severalEOS_data for the format
 
         EXAMPLE INPUT
+
+        append_stable = "stable" is set as default, so only stable solutions
+        will be calculated
 
         severalEOSs = [
             { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
@@ -1524,14 +2360,19 @@ class plot_result:
 
             return coef, chi_red, p
 
+        _get_max = lambda data, _: max(data) if max(data) > _ else _
+        _get_min = lambda data, _: min(data) if min(data) < _ else _
+
         all_label, all_headline, all_data = self.get_severalEOS_uniTildeI_data(
-            severalEOSs
+            severalEOSs, append = append_stable
         )
 
         all_label_GR, all_headline_GR, all_data_GR = self.get_severalEOS_uniTildeI_data( [
-            { "name": _, "beta": 0, "m": 0, "lambda": 0 }
-            for _ in set( [ _["name"] for _ in severalEOSs ] )
-        ] )
+                { "name": _, "beta": 0, "m": 0, "lambda": 0 }
+                for _ in set( [ _["name"] for _ in severalEOSs ] )
+            ],
+            append = append_stable
+        )
 
         fig, all_axes  = self._get_figure(
             2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
@@ -1540,25 +2381,46 @@ class plot_result:
         ax_up = all_axes[0]
         ax_down = all_axes[1]
 
+        ax_up.get_shared_x_axes().join(ax_up, ax_down)
+        ax_up.set_xticklabels([])
+
+        ax_down.set_yscale("log")
+        self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
+
         self._set_parms(ax_up, "", r"$I/(MR^2)$")
 
         markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
 
-        max_x = 0
-        min_x = 1e9
+        max_x = max_y = 0
+        min_x = min_y = 1e9
+        min_compactness = 0.09
 
-        GR_color_markers = "#a9f971"
+        #~ GR_color_markers = "#ef4026"
+        GR_color_markers = "#c0022f"
+        #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
-        GR_color_fit = "#a9f971"
+        GR_color_fit = GR_color_markers
 
-        #~ lets plot the regular stuff on up axes
+        plot_alpha = 0.75
+
+        #~ lets plot severEOSs on the up plot and eventually cut out data
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            if max(data[0]) > max_x:
-                max_x = max(data[0])
+            #~ we set mimimal compactenss threshold and cut out all entries
+            #~ who are below it only if we are interested in stable solutions
+            if append_stable:
+                _min_x = list(
+                    map(lambda _: _ >= min_compactness, data[0])
+                ).index(True)
 
-            if min(data[0]) < min_x:
-                min_x = min(data[0])
+                data[0] = [ _ for _ in data[0][_min_x:] ]
+                data[1] = [ _ for _ in data[1][_min_x:] ]
+
+            max_x = _get_max(data[0], max_x)
+            min_x = _get_min(data[0], min_x)
+
+            max_y = _get_max(data[1], max_y)
+            min_y = _get_min(data[1], min_y)
 
             ax_up.plot(
                 data[0],
@@ -1575,7 +2437,7 @@ class plot_result:
                         "lambda": eos["lambda"]
                     }
                 ),
-                alpha = 0.7
+                alpha = plot_alpha
             )
 
         #~ will use this foreach to fill the polyfit for GR
@@ -1590,6 +2452,22 @@ class plot_result:
             [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
         ):
 
+            #~ we set mimimal compactenss threshold and cut out all entries
+            #~ who are below it only if we are interested in stable solutions
+            if append_stable:
+                _min_x = list(
+                    map(lambda _: _ >= min_compactness, data[0])
+                ).index(True)
+
+                data[0] = [ _ for _ in data[0][_min_x:] ]
+                data[1] = [ _ for _ in data[1][_min_x:] ]
+
+            max_x = _get_max(data[0], max_x)
+            min_x = _get_min(data[0], min_x)
+
+            max_y = _get_max(data[1], max_y)
+            min_y = _get_min(data[1], min_y)
+
             ax_up.plot(
                 data[0],
                 data[1],
@@ -1601,7 +2479,7 @@ class plot_result:
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
                 markeredgecolor = GR_color_markers,
-                alpha = 0.7
+                alpha = plot_alpha
             )
 
             xp.append(data[0])
@@ -1609,10 +2487,97 @@ class plot_result:
 
         coef, chi_red, p = _get_polyfit_res(xp, yp)
 
+        max_y_down = 0
+        min_y_down = 1e9
+
+        #~ average over all EOSs of all the residuals
+        delta_all = 0
+        n_all = 0
+
+        #~ average over all EOSs of largest residual
+        delta_all_max = 0
+        n_all_max = 0
+
+        #~ the largest residual across all EOSs
+        delta_max = 0
+
+        #~ for the generated polyfit function calcualte the
+        #~ relative error and plot it donw for GR
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            _data = [
+                abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+            ]
+
+            delta_all += sum(_data)
+            n_all += len(_data)
+
+            delta_all_max += max(_data)
+            n_all_max += 1
+
+            delta_max = _get_max(_data, delta_max)
+
+            max_y_down = _get_max(_data, max_y_down)
+            min_y_down = _get_min(_data, min_y_down)
+
+            ax_down.plot(
+                data[0],
+                _data,
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], _data),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers
+            )
+
+        avg_L_1 = delta_all/n_all
+        avg_L_inf = delta_all_max/n_all_max
+        L_inf_worst = delta_max
+
+        print(
+            "\n GR fit"
+            "\n\t $\chi_r^2$ = {:.3e}"
+            "\n\t $a_0$ = {:.3e}"
+            "\n\t $a_1$ = {:.3e}"
+            "\n\t $a_4$ = {:.3e}"
+            "\n\t $< L_1 >$ = {:.3e}"
+            "\n\t $< L_\inf >$ = {:.3e}"
+            "\n\t $ L_\inf $ = {:.3e}\n".format(
+                chi_red,
+                coef[0],
+                coef[1],
+                coef[4],
+                avg_L_1,
+                avg_L_inf,
+                L_inf_worst
+            )
+        )
+
+        lines_polyfit = [
+            Line2D(
+                [0], [0],
+                color = GR_color_fit,
+                marker = None,
+                linestyle = "-",
+                linewidth = 1.5,
+                label = "GR fit"
+            )
+        ]
+
+        p_x = np.linspace(min_x, max_x, 100)
+        p_y = [ p(_) for _ in p_x ]
+
         #~ generate 100 points between min and max of x and plot it values
         ax_up.plot(
-            np.linspace(min_x, max_x, 100),
-            [ p(_) for _ in np.linspace(min_x, max_x, 100) ],
+            p_x,
+            p_y,
             label = None,
             linewidth = 2,
             linestyle = "-",
@@ -1622,53 +2587,28 @@ class plot_result:
             color = GR_color_fit,
         )
 
-        #~ add the polyfit lien as entry in polyfit lines to be displayed in legend
-        lines_polyfit = [
-            Line2D(
-                [0], [0],
-                color = GR_color_fit,
-                marker = None,
-                linewidth = 2,
-                linestyle = "-",
-                label = "GR fit"
-                    #~ "$\chi_r^2$ = {:.3e}"
-                    #~ "\n $a_0$ = {:.3e}; $a_1$ = {:.3e}; $a_4$ = {:.3e}".format(
-                    #~ chi_red,
-                    #~ coef[0],
-                    #~ coef[1],
-                    #~ coef[4]
-                #~ )
-            )
-        ]
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*(1 + avg_L_inf),
+            np.array(p_y)*(1 - avg_L_inf),
+            facecolor=GR_color_markers,
+            alpha= plot_alpha - 0.25
+        )
 
-        #~ for the generated polyfit function calcualte the relative error and plot it donw
-        for label, data, eos in zip(
-            all_label_GR,
-            all_data_GR,
-            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
-        ):
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*( 1 + L_inf_worst ),
+            np.array(p_y)*( 1 - L_inf_worst ),
+            facecolor=GR_color_markers,
+            alpha= plot_alpha - 0.5
+        )
 
-            ax_down.plot(
-                data[0],
-                [
-                    abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
-                ],
-                label = None,
-                linewidth = 0,
-                markersize = 5.5,
-                markevery = self._get_markevry(data[0], data[1]),
-                marker = markers.get(eos, None),
-                color = GR_color_markers,
-                markerfacecolor = GR_color_markers,
-                markeredgecolor = GR_color_markers
-            )
-
-        #~ now do the same for each color
-        for k, v in colors.items():
+        #~ now do the same for each color if there are more than 1
+        for c, l in itertools.product(colors.items(), linestyles.items()):
 
             #~ the colors will have label key containing the name of parameter
             #~ which they represetn
-            if k == "label":
+            if c[0] == "label" or l[0] == "label":
                 continue
 
             xp = []
@@ -1677,85 +2617,141 @@ class plot_result:
             for data, eos in zip(all_data, severalEOSs):
                 #~ if the current eos has parameter value equal to the current one
                 #~ lets append its data
-                if eos[colors["label"]] == k:
+                if eos[colors["label"]] == c[0] and eos[linestyles["label"]] == l[0]:
                     xp.append( data[0] )
                     yp.append( data[1] )
 
             #~ expand all the data into flat list to calculate the polyfit
             coef, chi_red, p = _get_polyfit_res(xp, yp)
 
-            lines_polyfit.append(
-                Line2D(
-                    [0], [0],
-                    color = v,
-                    marker = None,
-                    linewidth = 2,
-                    linestyle = "-",
-                    label = "{} {:.3e} fit".format(
-                        "$\\lambda =$ " if colors["label"] == "lambda" else "m =",
-                        k
-                    )
-                        #~ "$\chi_r^2$ = {:.3e}"
-                        #~ "\n $a_0$ = {:.3e}; $a_1$ = {:.3e}; $a_4$ = {:.3e}".format(
-                        #~ "$\\lambda =$ " if colors["label"] == "lambda" else "m ",
-                        #~ k,
-                        #~ chi_red,
-                        #~ coef[0],
-                        #~ coef[1],
-                        #~ coef[4]
-                    #~ )
-                )
-            )
+            max_y_down = 0
+            min_y_down = 1e9
 
-            ax_up.plot(
-                np.linspace(min_x, max_x, 100),
-                [ p(_) for _ in np.linspace(min_x, max_x, 100) ],
-                label = None,
-                linewidth = 2,
-                linestyle = "-",
-                markersize = 0,
-                markevery = 0,
-                marker = None,
-                color = v,
-            )
+            #~ average over all EOSs of all the residuals
+            delta_all = 0
+            n_all = 0
+
+            #~ average over all EOSs of largest residual
+            delta_all_max = 0
+            n_all_max = 0
+
+            #~ the largest residual across all EOSs
+            delta_max = 0
 
             for data, eos in zip(all_data, severalEOSs):
                 #~ if the current eos has parameter value equal to the current one
                 #~ lets append its data
-                if eos[colors["label"]] == k:
+                if eos[colors["label"]] == c[0] and eos[linestyles["label"]] == l[0]:
+
+                    _data = [
+                        abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+                    ]
+
+                    delta_all += sum(_data)
+                    n_all += len(_data)
+
+                    delta_all_max += max(_data)
+                    n_all_max += 1
+
+                    delta_max = _get_max(_data, delta_max)
+
+                    max_y_down = _get_max(_data, max_y_down)
+                    min_y_down = _get_min(_data, min_y_down)
 
                     ax_down.plot(
                         data[0],
-                        [
-                            abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
-                        ],
+                        _data,
                         label = None,
                         linewidth = 0,
                         markersize = 5.5,
-                        markevery = self._get_markevry(data[0], data[1]),
+                        markevery = self._get_markevry(data[0], _data),
                         marker = markers.get(eos["name"], None),
-                        color = v,
-                        markerfacecolor = v,
-                        markeredgecolor = v
+                        color = c[1],
+                        markerfacecolor = c[1],
+                        markeredgecolor = c[1]
                     )
+
+            avg_L_1 = delta_all/n_all
+            avg_L_inf = delta_all_max/n_all_max
+            L_inf_worst = delta_max
+
+            print(
+                "\n lambda = {:.3e}, m = {:.3e} fit"
+                "\n\t $\chi_r^2$ = {:.3e}"
+                "\n\t $a_0$ = {:.3e}"
+                "\n\t $a_1$ = {:.3e}"
+                "\n\t $a_4$ = {:.3e}"
+                "\n\t $< L_1 >$ = {:.3e}"
+                "\n\t $< L_\inf >$ = {:.3e}"
+                "\n\t $ L_\inf $ = {:.3e}\n".format(
+                    l[0] if linestyles["label"] == "lambda" else c[0],
+                    c[0] if colors["label"] == "m" else l[0],
+                    chi_red,
+                    coef[0],
+                    coef[1],
+                    coef[4],
+                    avg_L_1,
+                    avg_L_inf,
+                    L_inf_worst
+                )
+            )
+
+            #~ lines_polyfit.append(
+                #~ Line2D(
+                    #~ [0], [0],
+                    #~ color = c[1],
+                    #~ marker = None,
+                    #~ linestyle = l[1],
+                    #~ linewidth = 1.5,
+                    #~ label = "$\\lambda$ = {:.3e},\n m = {:.3e} fit".format(
+                        #~ l[0] if linestyles["label"] == "lambda" else c[0],
+                        #~ c[0] if colors["label"] == "m" else l[0]
+                    #~ )
+                #~ )
+            #~ )
+
+            p_x = np.linspace(min_x, max_x, 100)
+            p_y = [ p(_) for _ in p_x ]
+
+            ax_up.plot(
+                p_x,
+                p_y,
+                label = None,
+                linewidth = 2,
+                linestyle = l[1],
+                markersize = 0,
+                markevery = 0,
+                marker = None,
+                color = c[1],
+            )
+
+            #~ ax_up.fill_between(
+                #~ p_x,
+                #~ np.array(p_y)*(1 + avg_L_inf),
+                #~ np.array(p_y)*(1 - avg_L_inf),
+                #~ facecolor=c[1],
+                #~ alpha= plot_alpha - 0.25
+            #~ )
+
+            #~ ax_up.fill_between(
+                #~ p_x,
+                #~ np.array(p_y)*( 1 + L_inf_worst ),
+                #~ np.array(p_y)*( 1 - L_inf_worst ),
+                #~ facecolor=c[1],
+                #~ alpha= plot_alpha - 0.5
+            #~ )
 
         lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
             markers, colors, linestyles
         )
 
-        ax_up.get_shared_x_axes().join(ax_up, ax_down)
-        ax_up.set_xticklabels([])
-
-        ax_down.set_yscale("log")
-        self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
-
         ax_up.legend(
             handles = [
-                *lines_markers, *lines_colors, *lines_polyfit
+                *lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit
             ],
             loc="best",
             fontsize=8,
-            handlelength=2,
+            handlelength=2.5,
             numpoints=1,
             fancybox=True,
             markerscale = 1.25,
@@ -1764,8 +2760,10 @@ class plot_result:
             mode = None
         )
 
-        ax_up.set_xlim(9e-2, 3.5e-1)
-        ax_up.set_ylim(2.5e-1,6e-1)
+        ax_up.set_xlim(min_x, max_x)
+        ax_up.set_ylim(min_y, max_y)
+
+        ax_down.set_ylim(1e-3, 1e0)
 
         plt.show()
 
@@ -1838,7 +2836,9 @@ class plot_result:
 
         return
 
-    def plot_severalEOSs_uniBarI_polyFit(self, severalEOSs ):
+    def plot_severalEOSs_uniBarI_polyFit(
+        self, severalEOSs, append_stable = "stable"
+    ):
         """
         plot severalEOS unifersal Tilde I relationships
         <severalEOSs> with dictionaries see get_severalEOS_data for the format
@@ -1853,7 +2853,12 @@ class plot_result:
         ]
         """
 
-        all_label, all_headline, all_data = self.get_severalEOS_uniBarI_data(severalEOSs)
+        _get_max = lambda data, _: max(data) if max(data) > _ else _
+        _get_min = lambda data, _: min(data) if min(data) < _ else _
+
+        all_label, all_headline, all_data = self.get_severalEOS_uniBarI_data(
+            severalEOSs, append = append_stable
+        )
 
         fig, all_axes  = self._get_figure(
             2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
@@ -1866,18 +2871,31 @@ class plot_result:
 
         markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
 
-        max_x = 0
-        min_x = 1e9
+        max_x = max_y = 0
+        min_x = min_y = 1e9
+        min_compactness = 0.09
 
-        all_colors = []
+        color_fit = "#fcc006"
+        color_avg = "#9f2305"
+        color_avg_worst = "#dfc5fe"
 
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            if max(data[0]) > max_x:
-                max_x = max(data[0])
+            #~ we set mimimal compactenss threshold and cut out all entries
+            #~ who are below it only if we are interested only in stable solutions
+            if append_stable:
+                _min_x = list(
+                    map(lambda _: _ >= min_compactness, data[0])
+                ).index(True)
 
-            if min(data[0]) < min_x:
-                min_x = min(data[0])
+                data[0] = [ _ for _ in data[0][_min_x:] ]
+                data[1] = [ _ for _ in data[1][_min_x:] ]
+
+            max_x = _get_max(data[0], max_x)
+            min_x = _get_min(data[0], min_x)
+
+            max_y = _get_max(data[1], max_y)
+            min_y = _get_min(data[1], min_y)
 
             ax_up.plot(
                 data[0],
@@ -1900,11 +2918,13 @@ class plot_result:
             x = [ __**-1 for _ in all_data for __ in _[0] ],
             y = [ __ for _ in all_data for __ in _[1] ],
             deg = [ 1, 2, 3, 4 ],
-            w = np.sqrt(np.array([ __ for _ in all_data for __ in _[1] ])),
+            #~ w = np.sqrt(np.array([ __ for _ in all_data for __ in _[1] ])),
             full = True
         )
+        chi_red = rest[0][0]/(len([ __ for _ in all_data for __ in _[0] ]) - 4)
 
-        p = lambda x: coef[1]*x**-1 + coef[2]*x**-2 + coef[3]*x**-3 + coef[4]*x**-4
+        p = lambda x: \
+        coef[1]*(1/x)**1 + coef[2]*(1/x)**2 + coef[3]*(1/x)**3 + coef[4]*(1/x)**4
 
         p_x = np.linspace(min_x, max_x, 100)
         p_y = [ p(_) for _ in p_x ]
@@ -1916,13 +2936,13 @@ class plot_result:
         lines_polyfit = [
             Line2D(
                 [0], [0],
-                color = "#ff81c0",
+                color = color_fit,
                 marker = None,
                 linewidth = 2,
                 linestyle = "-",
                 label = "poly fit, $\chi_r^2$ = {:.3e}"
                     "\n {:.3f}$(1/x)^1$ + {:.3f}$(1/x)^2$ + {:.3f}$(1/x)^3$ + {:.3f}$(1/x)^4$".format(
-                        rest[0][0]/(len([ __ for _ in all_data for __ in _[0] ]) - 4),
+                        chi_red,
                         coef[1],
                         coef[2],
                         coef[3],
@@ -1931,27 +2951,42 @@ class plot_result:
             )
         ]
 
-        ax_up.plot(
-            p_x,
-            p_y,
-            color = "#ff81c0",
-            marker = None,
-            linewidth = 2,
-            linestyle = "-",
-            label = None
-        )
-
         ax_up.get_shared_x_axes().join(ax_up, ax_down)
         ax_up.set_xticklabels([])
 
         ax_down.set_yscale("log")
         self._set_parms(ax_down, "M/R", r"$\left| 1 - \bar I/\bar I_{fit} \right|$")
 
+        max_y_down = 0
+        min_y_down = 1e9
+
+        #~ average over all EOSs of all the residuals
+        delta_all = 0
+        n_all = 0
+
+        #~ average over all EOSs of largest residual
+        delta_all_max = 0
+        n_all_max = 0
+
+        #~ the largest residual across all EOSs
+        delta_max = 0
+
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
             _data = [
-                abs(1 - _/p(__)) for _, __ in zip(data[1], data[0])
+                abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
             ]
+
+            delta_all += sum(_data)
+            n_all += len(_data)
+
+            delta_all_max += max(_data)
+            n_all_max += 1
+
+            delta_max = _get_max(_data, delta_max)
+
+            max_y_down = _get_max(_data, max_y_down)
+            min_y_down = _get_min(_data, min_y_down)
 
             ax_down.plot(
                 data[0],
@@ -1969,8 +3004,35 @@ class plot_result:
                     }
                 )
             )
+        avg_L_1 = delta_all/n_all
+        avg_L_inf = delta_all_max/n_all_max
+        L_inf_worst = delta_max
 
-        ax_up.set_xlim(0.09)
+        ax_up.plot(
+            p_x,
+            p_y,
+            color = color_fit,
+            marker = None,
+            linewidth = 2,
+            linestyle = "-",
+            label = None
+        )
+
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*( 1 + L_inf_worst ),
+            np.array(p_y)*( 1 - L_inf_worst ),
+            facecolor=color_avg_worst,
+            alpha=0.5
+        )
+
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*(1 + avg_L_inf),
+            np.array(p_y)*(1 - avg_L_inf),
+            facecolor=color_avg,
+            alpha=0.5
+        )
 
         ax_up.legend(
             handles = [
@@ -1987,16 +3049,53 @@ class plot_result:
             mode = None
         )
 
+        ax_up.set_xlim(min_x, max_x)
+        ax_up.set_ylim(min_y, max_y)
+
+        ax_down.set_ylim(1e-3, 1e0)
+
+        print(
+            "\n All fit information"
+            "\n\t $\chi_r^2$ = {:.3e}"
+            "\n\t $a_1$ = {:.3e}"
+            "\n\t $a_2$ = {:.3e}"
+            "\n\t $a_3$ = {:.3e}"
+            "\n\t $a_4$ = {:.3e}"
+            "\n\t $< L_1 >$ = {:.3e}"
+            "\n\t $< L_\inf >$ = {:.3e}"
+            "\n\t $ L_\inf $ = {:.3e}\n".format(
+                chi_red,
+                coef[1],
+                coef[2],
+                coef[3],
+                coef[4],
+                avg_L_1,
+                avg_L_inf,
+                L_inf_worst
+            )
+        )
+
+        if n_all_max != len(severalEOSs):
+            print(
+                "\n SOMETHING FISSHY, n_all = {}, len EOSs = {} \n".format(
+                n_all_max, len(severalEOSs))
+            )
+
         plt.show()
 
         return
 
-    def plot_severalEOSs_uniBarI_polyFitAll_GR(self, severalEOSs ):
+    def plot_severalEOSs_uniBarI_polyFitAll_GR(
+        self, severalEOSs, append_stable = "stable"
+    ):
         """
         plot severalEOS unifersal Tilde I relationships
         <severalEOSs> with dictionaries see get_severalEOS_data for the format
 
         EXAMPLE INPUT
+
+        append_stable = "stable" is set as default, so only stable solutions
+        will be calculated
 
         severalEOSs = [
             { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
@@ -2014,7 +3113,7 @@ class plot_result:
             coef, rest = polyfit(
                 x = xp, y = yp,
                 deg = [ 1, 2, 3, 4 ],
-                w = np.sqrt(yp),
+                #~ w = np.sqrt(yp),
                 full = True
             )
 
@@ -2024,14 +3123,19 @@ class plot_result:
 
             return coef, chi_red, p
 
+        _get_max = lambda data, _: max(data) if max(data) > _ else _
+        _get_min = lambda data, _: min(data) if min(data) < _ else _
+
         all_label, all_headline, all_data = self.get_severalEOS_uniBarI_data(
-            severalEOSs
+            severalEOSs, append = append_stable
         )
 
         all_label_GR, all_headline_GR, all_data_GR = self.get_severalEOS_uniBarI_data( [
-            { "name": _, "beta": 0, "m": 0, "lambda": 0 }
-            for _ in set( [ _["name"] for _ in severalEOSs ] )
-        ] )
+                { "name": _, "beta": 0, "m": 0, "lambda": 0 }
+                for _ in set( [ _["name"] for _ in severalEOSs ] )
+            ],
+            append = append_stable
+        )
 
         fig, all_axes  = self._get_figure(
             2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
@@ -2040,24 +3144,46 @@ class plot_result:
         ax_up = all_axes[0]
         ax_down = all_axes[1]
 
-        self._set_parms(ax_up, "", "$I/(M^3)$")
+        ax_up.get_shared_x_axes().join(ax_up, ax_down)
+        ax_up.set_xticklabels([])
+
+        ax_down.set_yscale("log")
+        self._set_parms(ax_down, "M/R", r"$\left| 1 - \bar I/\bar I_{fit} \right|$  ")
+
+        self._set_parms(ax_up, "", r"$I/(M^3)$")
 
         markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
 
-        max_x = 0
-        min_x = 1e9
+        max_x = max_y = 0
+        min_x = min_y = 1e9
+        min_compactness = 0.09
 
-        GR_color_markers = "#a9f971"
+        #~ GR_color_markers = "#ef4026"
+        GR_color_markers = "#c0022f"
+        #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
-        GR_color_fit = "#a9f971"
+        GR_color_fit = GR_color_markers
 
+        plot_alpha = 0.75
+
+        #~ lets plot severEOSs on the up plot and eventually cut out data
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
-            if max(data[0]) > max_x:
-                max_x = max(data[0])
+            #~ we set mimimal compactenss threshold and cut out all entries
+            #~ who are below it only if we are interested in stable solutions
+            if append_stable:
+                _min_x = list(
+                    map(lambda _: _ >= min_compactness, data[0])
+                ).index(True)
 
-            if min(data[0]) < min_x:
-                min_x = min(data[0])
+                data[0] = [ _ for _ in data[0][_min_x:] ]
+                data[1] = [ _ for _ in data[1][_min_x:] ]
+
+            max_x = _get_max(data[0], max_x)
+            min_x = _get_min(data[0], min_x)
+
+            max_y = _get_max(data[1], max_y)
+            min_y = _get_min(data[1], min_y)
 
             ax_up.plot(
                 data[0],
@@ -2074,7 +3200,7 @@ class plot_result:
                         "lambda": eos["lambda"]
                     }
                 ),
-                alpha = 0.7
+                alpha = plot_alpha
             )
 
         #~ will use this foreach to fill the polyfit for GR
@@ -2089,6 +3215,22 @@ class plot_result:
             [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
         ):
 
+            #~ we set mimimal compactenss threshold and cut out all entries
+            #~ who are below it only if we are interested in stable solutions
+            if append_stable:
+                _min_x = list(
+                    map(lambda _: _ >= min_compactness, data[0])
+                ).index(True)
+
+                data[0] = [ _ for _ in data[0][_min_x:] ]
+                data[1] = [ _ for _ in data[1][_min_x:] ]
+
+            max_x = _get_max(data[0], max_x)
+            min_x = _get_min(data[0], min_x)
+
+            max_y = _get_max(data[1], max_y)
+            min_y = _get_min(data[1], min_y)
+
             ax_up.plot(
                 data[0],
                 data[1],
@@ -2100,18 +3242,108 @@ class plot_result:
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
                 markeredgecolor = GR_color_markers,
-                alpha = 0.7
+                alpha = plot_alpha
             )
 
             xp.append(data[0])
             yp.append(data[1])
 
-        coef, chi_red, p = _get_polyfit_res(xp,yp)
+        coef, chi_red, p = _get_polyfit_res(xp, yp)
+
+        max_y_down = 0
+        min_y_down = 1e9
+
+        #~ average over all EOSs of all the residuals
+        delta_all = 0
+        n_all = 0
+
+        #~ average over all EOSs of largest residual
+        delta_all_max = 0
+        n_all_max = 0
+
+        #~ the largest residual across all EOSs
+        delta_max = 0
+
+        #~ for the generated polyfit function calcualte the
+        #~ relative error and plot it donw for GR
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            _data = [
+                abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+            ]
+
+            delta_all += sum(_data)
+            n_all += len(_data)
+
+            delta_all_max += max(_data)
+            n_all_max += 1
+
+            delta_max = _get_max(_data, delta_max)
+
+            max_y_down = _get_max(_data, max_y_down)
+            min_y_down = _get_min(_data, min_y_down)
+
+            ax_down.plot(
+                data[0],
+                _data,
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], _data),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers
+            )
+
+        avg_L_1 = delta_all/n_all
+        avg_L_inf = delta_all_max/n_all_max
+        L_inf_worst = delta_max
+
+        print(
+            "\n GR fit"
+            "\n\t $\chi_r^2$ = {:.3e}"
+            "\n\t $a_1$ = {:.3e}"
+            "\n\t $a_2$ = {:.3e}"
+            "\n\t $a_3$ = {:.3e}"
+            "\n\t $a_4$ = {:.3e}"
+            "\n\t $< L_1 >$ = {:.3e}"
+            "\n\t $< L_\inf >$ = {:.3e}"
+            "\n\t $ L_\inf $ = {:.3e}\n".format(
+                chi_red,
+                coef[1],
+                coef[2],
+                coef[3],
+                coef[4],
+                avg_L_1,
+                avg_L_inf,
+                L_inf_worst
+            )
+        )
+
+        #~ add the polyfit lien as entry in polyfit lines to be displayed in legend
+        lines_polyfit = [
+            Line2D(
+                [0], [0],
+                color = GR_color_fit,
+                marker = None,
+                linestyle = "-",
+                linewidth = 1.5,
+                label = "GR fit"
+            )
+        ]
+
+        p_x = np.linspace(min_x, max_x, 100)
+        p_y = [ p(_) for _ in p_x ]
 
         #~ generate 100 points between min and max of x and plot it values
         ax_up.plot(
-            np.linspace(min_x, max_x, 100),
-            [ p(_) for _ in np.linspace(min_x, max_x, 100) ],
+            p_x,
+            p_y,
             label = None,
             linewidth = 2,
             linestyle = "-",
@@ -2121,49 +3353,23 @@ class plot_result:
             color = GR_color_fit,
         )
 
-        #~ add the polyfit lien as entry in polyfit lines to be displayed in legend
-        lines_polyfit = [
-            Line2D(
-                [0], [0],
-                color = GR_color_fit,
-                marker = None,
-                linewidth = 2,
-                linestyle = "-",
-                label = "GR fit,"
-                    #~ "$\chi_r^2$ = {:.3e}"
-                    #~ "\n $a_1$ = {:.3e}; $a_2$ = {:.3e}; $a_3$ = {:.3e}; $a_4$ = {:.3e}".format(
-                    #~ chi_red,
-                    #~ coef[1],
-                    #~ coef[2],
-                    #~ coef[3],
-                    #~ coef[4]
-                #~ )
-            )
-        ]
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*(1 + avg_L_inf),
+            np.array(p_y)*(1 - avg_L_inf),
+            facecolor=GR_color_markers,
+            alpha= plot_alpha - 0.25
+        )
 
-        #~ for the generated polyfit function calcualte the relative error and plot it donw
-        for label, data, eos in zip(
-            all_label_GR,
-            all_data_GR,
-            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
-        ):
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*( 1 + L_inf_worst ),
+            np.array(p_y)*( 1 - L_inf_worst ),
+            facecolor=GR_color_markers,
+            alpha= plot_alpha - 0.5
+        )
 
-            ax_down.plot(
-                data[0],
-                [
-                    abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
-                ],
-                label = None,
-                linewidth = 0,
-                markersize = 5.5,
-                markevery = self._get_markevry(data[0], data[1]),
-                marker = markers.get(eos, None),
-                color = GR_color_markers,
-                markerfacecolor = GR_color_markers,
-                markeredgecolor = GR_color_markers
-            )
-
-        #~ now do the same for each color
+        #~ now do the same for each color if there are more than 1
         for k, v in colors.items():
 
             #~ the colors will have label key containing the name of parameter
@@ -2182,35 +3388,101 @@ class plot_result:
                     yp.append( data[1] )
 
             #~ expand all the data into flat list to calculate the polyfit
-            coef, chi_red, p = _get_polyfit_res(xp,yp)
+            coef, chi_red, p = _get_polyfit_res(xp, yp)
 
+            max_y_down = 0
+            min_y_down = 1e9
+
+            #~ average over all EOSs of all the residuals
+            delta_all = 0
+            n_all = 0
+
+            #~ average over all EOSs of largest residual
+            delta_all_max = 0
+            n_all_max = 0
+
+            #~ the largest residual across all EOSs
+            delta_max = 0
+
+            for data, eos in zip(all_data, severalEOSs):
+                #~ if the current eos has parameter value equal to the current one
+                #~ lets append its data
+                if eos[colors["label"]] == k:
+
+                    _data = [
+                        abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+                    ]
+
+                    delta_all += sum(_data)
+                    n_all += len(_data)
+
+                    delta_all_max += max(_data)
+                    n_all_max += 1
+
+                    delta_max = _get_max(_data, delta_max)
+
+                    max_y_down = _get_max(_data, max_y_down)
+                    min_y_down = _get_min(_data, min_y_down)
+
+                    ax_down.plot(
+                        data[0],
+                        _data,
+                        label = None,
+                        linewidth = 0,
+                        markersize = 5.5,
+                        markevery = self._get_markevry(data[0], _data),
+                        marker = markers.get(eos["name"], None),
+                        color = v,
+                        markerfacecolor = v,
+                        markeredgecolor = v
+                    )
+
+            avg_L_1 = delta_all/n_all
+            avg_L_inf = delta_all_max/n_all_max
+            L_inf_worst = delta_max
+
+            print(
+                "\n {} {:.3e} fit"
+                "\n\t $\chi_r^2$ = {:.3e}"
+                "\n\t $a_1$ = {:.3e}"
+                "\n\t $a_2$ = {:.3e}"
+                "\n\t $a_3$ = {:.3e}"
+                "\n\t $a_4$ = {:.3e}"
+                "\n\t $< L_1 >$ = {:.3e}"
+                "\n\t $< L_\inf >$ = {:.3e}"
+                "\n\t $ L_\inf $ = {:.3e}\n".format(
+                    "$\\lambda =$ " if colors["label"] == "lambda" else "m =",
+                    k,
+                    chi_red,
+                    coef[1],
+                    coef[2],
+                    coef[3],
+                    coef[4],
+                    avg_L_1,
+                    avg_L_inf,
+                    L_inf_worst
+                )
+            )
             lines_polyfit.append(
                 Line2D(
                     [0], [0],
                     color = v,
                     marker = None,
-                    linewidth = 2,
                     linestyle = "-",
+                    linewidth = 1.5,
                     label = "{} {:.3e} fit".format(
                         "$\\lambda =$ " if colors["label"] == "lambda" else "m =",
                         k
                     )
-                        #~ ", $\chi_r^2$ = {:.3e}"
-                        #~ "\n $a_1$ = {:.3e}; $a_2$ = {:.3e}; $a_3$ = {:.3e}; $a_4$ = {:.3e}".format(
-                        #~ "$\\lambda =$ " if colors["label"] == "lambda" else "m ",
-                        #~ k,
-                        #~ chi_red,
-                        #~ coef[1],
-                        #~ coef[2],
-                        #~ coef[3],
-                        #~ coef[4]
-                    #~ )
                 )
             )
 
+            p_x = np.linspace(min_x, max_x, 100)
+            p_y = [ p(_) for _ in p_x ]
+
             ax_up.plot(
-                np.linspace(min_x, max_x, 100),
-                [ p(_) for _ in np.linspace(min_x, max_x, 100) ],
+                p_x,
+                p_y,
                 label = None,
                 linewidth = 2,
                 linestyle = "-",
@@ -2220,35 +3492,27 @@ class plot_result:
                 color = v,
             )
 
-            for data, eos in zip(all_data, severalEOSs):
-                #~ if the current eos has parameter value equal to the current one
-                #~ lets append its data
-                if eos[colors["label"]] == k:
+            ax_up.fill_between(
+                p_x,
+                np.array(p_y)*(1 + avg_L_inf),
+                np.array(p_y)*(1 - avg_L_inf),
+                facecolor=v,
+                alpha= plot_alpha - 0.25
+            )
 
-                    ax_down.plot(
-                        data[0],
-                        [
-                            abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
-                        ],
-                        label = None,
-                        linewidth = 0,
-                        markersize = 5.5,
-                        markevery = self._get_markevry(data[0], data[1]),
-                        marker = markers.get(eos["name"], None),
-                        color = v,
-                        markerfacecolor = v,
-                        markeredgecolor = v
-                    )
+            ax_up.fill_between(
+                p_x,
+                np.array(p_y)*( 1 + L_inf_worst ),
+                np.array(p_y)*( 1 - L_inf_worst ),
+                facecolor=v,
+                alpha= plot_alpha - 0.5
+            )
+
+        #~ THERE IS ADDITIONAL CODE FOR LINSTYLES WHICH IS NOT TRANSFERED HERE
 
         lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
             markers, colors, linestyles
         )
-
-        ax_up.get_shared_x_axes().join(ax_up, ax_down)
-        ax_up.set_xticklabels([])
-
-        ax_down.set_yscale("log")
-        self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
 
         ax_up.legend(
             handles = [
@@ -2265,9 +3529,459 @@ class plot_result:
             mode = None
         )
 
-        ax_up.set_xlim(9e-2, 3.2e-1)
-        ax_up.set_ylim(4e0,3.6e1)
-        ax_down.set_ylim(1e-3,1e0)
+        ax_up.set_xlim(min_x, max_x)
+        ax_up.set_ylim(min_y, max_y)
+
+        ax_down.set_ylim(1e-3, 1e0)
+
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_uniBarI_polyFitAll_GR_ParmsProduct(
+        self, severalEOSs, append_stable = "stable"
+    ):
+        """
+        plot severalEOS unifersal Tilde I relationships
+        <severalEOSs> with dictionaries see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+
+        append_stable = "stable" is set as default, so only stable solutions
+        will be calculated
+
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        #~ expand the data and do the polyfit
+        def _get_polyfit_res(xp, yp):
+            xp = [ __**-1 for _ in xp for __ in _ ]
+            yp = [ __ for _ in yp for __ in _ ]
+
+            coef, rest = polyfit(
+                x = xp, y = yp,
+                deg = [ 1, 2, 3, 4 ],
+                #~ w = np.sqrt(yp),
+                full = True
+            )
+
+            #~ calcualte the chi reduce
+            chi_red = rest[0][0]/(len(xp) - 4)
+            p = lambda x: coef[1]*x**-1 + coef[2]*x**-2 + coef[3]*x**-3 + coef[4]*x**-4
+
+            return coef, chi_red, p
+
+        _get_max = lambda data, _: max(data) if max(data) > _ else _
+        _get_min = lambda data, _: min(data) if min(data) < _ else _
+
+        all_label, all_headline, all_data = self.get_severalEOS_uniBarI_data(
+            severalEOSs, append = append_stable
+        )
+
+        all_label_GR, all_headline_GR, all_data_GR = self.get_severalEOS_uniBarI_data( [
+                { "name": _, "beta": 0, "m": 0, "lambda": 0 }
+                for _ in set( [ _["name"] for _ in severalEOSs ] )
+            ],
+            append = append_stable
+        )
+
+        fig, all_axes  = self._get_figure(
+            2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
+        )
+
+        ax_up = all_axes[0]
+        ax_down = all_axes[1]
+
+        ax_up.get_shared_x_axes().join(ax_up, ax_down)
+        ax_up.set_xticklabels([])
+
+        ax_down.set_yscale("log")
+        self._set_parms(ax_down, "M/R", r"$\left| 1 - \bar I/\bar I_{fit} \right|$  ")
+
+        self._set_parms(ax_up, "", r"$I/(M^3)$")
+
+        markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
+
+        max_x = max_y = 0
+        min_x = min_y = 1e9
+        min_compactness = 0.09
+
+        #~ GR_color_markers = "#ef4026"
+        GR_color_markers = "#c0022f"
+        #~ GR_color_markers = "#a9f971"
+        #~ GR_color_fit = "#ed0dd9"
+        GR_color_fit = GR_color_markers
+
+        plot_alpha = 0.75
+
+        #~ lets plot severEOSs on the up plot and eventually cut out data
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
+
+            #~ we set mimimal compactenss threshold and cut out all entries
+            #~ who are below it only if we are interested in stable solutions
+            if append_stable:
+                _min_x = list(
+                    map(lambda _: _ >= min_compactness, data[0])
+                ).index(True)
+
+                data[0] = [ _ for _ in data[0][_min_x:] ]
+                data[1] = [ _ for _ in data[1][_min_x:] ]
+
+            max_x = _get_max(data[0], max_x)
+            min_x = _get_min(data[0], min_x)
+
+            max_y = _get_max(data[1], max_y)
+            min_y = _get_min(data[1], min_y)
+
+            ax_up.plot(
+                data[0],
+                data[1],
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], data[1]),
+                **self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                ),
+                alpha = plot_alpha
+            )
+
+        #~ will use this foreach to fill the polyfit for GR
+        polyfit_res = []
+        xp = []
+        yp = []
+
+        #~ plot all GR data and gather all x and y for evaluating the polyfit
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            #~ we set mimimal compactenss threshold and cut out all entries
+            #~ who are below it only if we are interested in stable solutions
+            if append_stable:
+                _min_x = list(
+                    map(lambda _: _ >= min_compactness, data[0])
+                ).index(True)
+
+                data[0] = [ _ for _ in data[0][_min_x:] ]
+                data[1] = [ _ for _ in data[1][_min_x:] ]
+
+            max_x = _get_max(data[0], max_x)
+            min_x = _get_min(data[0], min_x)
+
+            max_y = _get_max(data[1], max_y)
+            min_y = _get_min(data[1], min_y)
+
+            ax_up.plot(
+                data[0],
+                data[1],
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], data[1]),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers,
+                alpha = plot_alpha
+            )
+
+            xp.append(data[0])
+            yp.append(data[1])
+
+        coef, chi_red, p = _get_polyfit_res(xp, yp)
+
+        max_y_down = 0
+        min_y_down = 1e9
+
+        #~ average over all EOSs of all the residuals
+        delta_all = 0
+        n_all = 0
+
+        #~ average over all EOSs of largest residual
+        delta_all_max = 0
+        n_all_max = 0
+
+        #~ the largest residual across all EOSs
+        delta_max = 0
+
+        #~ for the generated polyfit function calcualte the
+        #~ relative error and plot it donw for GR
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            _data = [
+                abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+            ]
+
+            delta_all += sum(_data)
+            n_all += len(_data)
+
+            delta_all_max += max(_data)
+            n_all_max += 1
+
+            delta_max = _get_max(_data, delta_max)
+
+            max_y_down = _get_max(_data, max_y_down)
+            min_y_down = _get_min(_data, min_y_down)
+
+            ax_down.plot(
+                data[0],
+                _data,
+                label = None,
+                linewidth = 0,
+                markersize = 5.5,
+                markevery = self._get_markevry(data[0], _data),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers
+            )
+
+        avg_L_1 = delta_all/n_all
+        avg_L_inf = delta_all_max/n_all_max
+        L_inf_worst = delta_max
+
+        print(
+            "\n GR fit"
+            "\n\t $\chi_r^2$ = {:.3e}"
+            "\n\t $a_1$ = {:.3e}"
+            "\n\t $a_2$ = {:.3e}"
+            "\n\t $a_3$ = {:.3e}"
+            "\n\t $a_4$ = {:.3e}"
+            "\n\t $< L_1 >$ = {:.3e}"
+            "\n\t $< L_\inf >$ = {:.3e}"
+            "\n\t $ L_\inf $ = {:.3e}\n".format(
+                chi_red,
+                coef[1],
+                coef[2],
+                coef[3],
+                coef[4],
+                avg_L_1,
+                avg_L_inf,
+                L_inf_worst
+            )
+        )
+
+        lines_polyfit = [
+            Line2D(
+                [0], [0],
+                color = GR_color_fit,
+                marker = None,
+                linestyle = "-",
+                linewidth = 1.5,
+                label = "GR fit"
+            )
+        ]
+
+        p_x = np.linspace(min_x, max_x, 100)
+        p_y = [ p(_) for _ in p_x ]
+
+        #~ generate 100 points between min and max of x and plot it values
+        ax_up.plot(
+            p_x,
+            p_y,
+            label = None,
+            linewidth = 2,
+            linestyle = "-",
+            markersize = 0,
+            markevery = 0,
+            marker = None,
+            color = GR_color_fit,
+        )
+
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*(1 + avg_L_inf),
+            np.array(p_y)*(1 - avg_L_inf),
+            facecolor=GR_color_markers,
+            alpha= plot_alpha - 0.25
+        )
+
+        ax_up.fill_between(
+            p_x,
+            np.array(p_y)*( 1 + L_inf_worst ),
+            np.array(p_y)*( 1 - L_inf_worst ),
+            facecolor=GR_color_markers,
+            alpha= plot_alpha - 0.5
+        )
+
+        #~ now do the same for each color if there are more than 1
+        for c, l in itertools.product(colors.items(), linestyles.items()):
+
+            #~ the colors will have label key containing the name of parameter
+            #~ which they represetn
+            if c[0] == "label" or l[0] == "label":
+                continue
+
+            xp = []
+            yp = []
+
+            for data, eos in zip(all_data, severalEOSs):
+                #~ if the current eos has parameter value equal to the current one
+                #~ lets append its data
+                if eos[colors["label"]] == c[0] and eos[linestyles["label"]] == l[0]:
+                    xp.append( data[0] )
+                    yp.append( data[1] )
+
+            #~ expand all the data into flat list to calculate the polyfit
+            coef, chi_red, p = _get_polyfit_res(xp, yp)
+
+            max_y_down = 0
+            min_y_down = 1e9
+
+            #~ average over all EOSs of all the residuals
+            delta_all = 0
+            n_all = 0
+
+            #~ average over all EOSs of largest residual
+            delta_all_max = 0
+            n_all_max = 0
+
+            #~ the largest residual across all EOSs
+            delta_max = 0
+
+            for data, eos in zip(all_data, severalEOSs):
+                #~ if the current eos has parameter value equal to the current one
+                #~ lets append its data
+                if eos[colors["label"]] == c[0] and eos[linestyles["label"]] == l[0]:
+
+                    _data = [
+                        abs(1 - _/p(__)) for _,__ in zip(data[1], data[0])
+                    ]
+
+                    delta_all += sum(_data)
+                    n_all += len(_data)
+
+                    delta_all_max += max(_data)
+                    n_all_max += 1
+
+                    delta_max = _get_max(_data, delta_max)
+
+                    max_y_down = _get_max(_data, max_y_down)
+                    min_y_down = _get_min(_data, min_y_down)
+
+                    ax_down.plot(
+                        data[0],
+                        _data,
+                        label = None,
+                        linewidth = 0,
+                        markersize = 5.5,
+                        markevery = self._get_markevry(data[0], _data),
+                        marker = markers.get(eos["name"], None),
+                        color = c[1],
+                        markerfacecolor = c[1],
+                        markeredgecolor = c[1]
+                    )
+
+            avg_L_1 = delta_all/n_all
+            avg_L_inf = delta_all_max/n_all_max
+            L_inf_worst = delta_max
+
+            print(
+                "\n lambda = {:.3e}, m = {:.3e} fit"
+                "\n\t $\chi_r^2$ = {:.3e}"
+                "\n\t $a_0$ = {:.3e}"
+                "\n\t $a_1$ = {:.3e}"
+                "\n\t $a_4$ = {:.3e}"
+                "\n\t $< L_1 >$ = {:.3e}"
+                "\n\t $< L_\inf >$ = {:.3e}"
+                "\n\t $ L_\inf $ = {:.3e}\n".format(
+                    l[0] if linestyles["label"] == "lambda" else c[0],
+                    c[0] if colors["label"] == "m" else l[0],
+                    chi_red,
+                    coef[0],
+                    coef[1],
+                    coef[4],
+                    avg_L_1,
+                    avg_L_inf,
+                    L_inf_worst
+                )
+            )
+
+            #~ lines_polyfit.append(
+                #~ Line2D(
+                    #~ [0], [0],
+                    #~ color = c[1],
+                    #~ marker = None,
+                    #~ linestyle = l[1],
+                    #~ linewidth = 1.5,
+                    #~ label = "$\\lambda$ = {:.3e},\n m = {:.3e} fit".format(
+                        #~ l[0] if linestyles["label"] == "lambda" else c[0],
+                        #~ c[0] if colors["label"] == "m" else l[0]
+                    #~ )
+                #~ )
+            #~ )
+
+            p_x = np.linspace(min_x, max_x, 100)
+            p_y = [ p(_) for _ in p_x ]
+
+            ax_up.plot(
+                p_x,
+                p_y,
+                label = None,
+                linewidth = 2,
+                linestyle = l[1],
+                markersize = 0,
+                markevery = 0,
+                marker = None,
+                color = c[1],
+            )
+
+            #~ ax_up.fill_between(
+                #~ p_x,
+                #~ np.array(p_y)*(1 + avg_L_inf),
+                #~ np.array(p_y)*(1 - avg_L_inf),
+                #~ facecolor=c[1],
+                #~ alpha= plot_alpha - 0.25
+            #~ )
+
+            #~ ax_up.fill_between(
+                #~ p_x,
+                #~ np.array(p_y)*( 1 + L_inf_worst ),
+                #~ np.array(p_y)*( 1 - L_inf_worst ),
+                #~ facecolor=c[1],
+                #~ alpha= plot_alpha - 0.5
+            #~ )
+
+        lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
+            markers, colors, linestyles
+        )
+
+        ax_up.legend(
+            handles = [
+                *lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit
+            ],
+            loc="best",
+            fontsize=8,
+            handlelength=2.5,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.25,
+            ncol = 4,
+            frameon = False,
+            mode = None
+        )
+
+        ax_up.set_xlim(min_x, max_x)
+        ax_up.set_ylim(min_y, max_y)
+
+        ax_down.set_ylim(1e-3, 1e0)
 
         plt.show()
 
@@ -2576,7 +4290,10 @@ class plot_result:
             return self.specific_ls
 
         all_line_styles = [
-            ":", "-.", "--"
+            ":", "-.", "--",
+            (0, (5, 1, 1, 1, 1, 1)),
+            (0, (5, 1, 1, 1, 1, 1,1,1)),
+            (0, (8, 1, 1, 1, 3, 1, 1, 1))
         ]
 
         if len(map_me) > len(all_line_styles):
@@ -2612,7 +4329,7 @@ class plot_result:
             return self.specific_c
 
         all_colors = [
-            "b", "g", "r", "c", "m", "y", "k"
+            "b", "g", "r", "c", "m", "y"
         ]
 
         if len(map_me) > len(all_colors):
@@ -2670,10 +4387,19 @@ class plot_result:
 
             return evenly_spaced_idx
 
-        idx_x = _get_EvenlySpacedIdxs(data_x, amount_points/2)
-        idx_y = _get_EvenlySpacedIdxs(data_y, amount_points/2)
+        idx_x = _get_EvenlySpacedIdxs(data_x, amount_points)
+        idx_y = _get_EvenlySpacedIdxs(data_y, amount_points)
 
-        return list( set(idx_x).union(idx_y) )
+        #~ return list( set(idx_x).union(idx_y) )
+        all_i = list( set(idx_x).union(idx_y) )
+
+        return np.linspace(
+            min(all_i),
+            max(all_i),
+            amount_points,
+            endpoint=True,
+            dtype=int
+        ).tolist()
 
     @staticmethod
     def _get_plot_keywords( markers, colors, linestyles, current ):
