@@ -52,9 +52,30 @@ class plot_result:
 
         return
 
+    def _luminosity_color(self, color, amount=0.5):
+        """
+        Lightens the given color by multiplying (1-luminosity) by the given amount.
+        Input can be matplotlib color string, hex string, or RGB tuple.
+
+        Examples:
+        >> lighten_color('g', 0.3)
+        >> lighten_color('#F034A3', 0.6)
+        >> lighten_color((.3,.55,.1), 0.5)
+        """
+        import matplotlib.colors as mc
+        import colorsys
+        try:
+            c = mc.cnames[color]
+        except:
+            c = color
+
+        c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+
+        return colorsys.hls_to_rgb(abs(c[0]), abs(1 - amount * (1 - c[1])), abs(c[2]))
+
     def set_my_ResPath(
         self,
-        my_ResPath = "~/projects/STT_theories/results/TO_WATCH_OUT_1e-8"
+        my_ResPath = "~/projects/STT_theories/results/"
     ):
         """
         path to the results of the shootings
@@ -804,9 +825,12 @@ class plot_result:
                 markersize = 5.5,
                 markevery = self._get_markevry(
                     [ _*self.units["R"] for _ in data[3][max_m_i:] ],
-                    data[2][max_m_i:]
+                    data[2][max_m_i:],
+                    amount_points=5
                 ),
                 marker = _tmp["marker"],
+                markerfacecolor = _tmp["color"],
+                markeredgecolor = _tmp["color"],
                 color = _tmp["color"],
                 linestyle = (0, (5,10)),
             )
@@ -822,6 +846,106 @@ class plot_result:
             all_data_GR,
             [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
         ):
+
+            #~ we are interested only in stable modules - part of the graphs
+            #~ where the mass is increasing
+            #~ after the maximum mass we can cut them off
+            #~ the min mass we are interested is the one which is  at least 0.5 M sun
+            min_mass = 0.5
+            little_offset = 2
+
+            #~ max_m_i = data[2].index(max(data[2]))
+            max_m_i = data[2].index(data[2][-1])
+
+            max_m_i = max_m_i + little_offset \
+            if max_m_i + little_offset < len(data[2]) - 1 else max_m_i
+
+            min_m_i = list(
+                map(lambda _: _ >= min_mass,  data[2][:max_m_i])
+            ).index(True)
+
+            min_m_i = min_m_i - little_offset \
+            if min_m_i - little_offset > 0 else min_m_i
+
+            stable_R = [ _*self.units["R"] for _ in data[3][min_m_i:max_m_i] ]
+
+            ax.plot(
+                stable_R,
+                data[2][min_m_i:max_m_i],
+                label = None,
+                linewidth = 1.5,
+                markersize = 5.5,
+                markevery = self._get_markevry(
+                    stable_R,
+                    data[2][min_m_i:max_m_i]
+                ),
+                marker = markers.get(eos, None),
+                color = GR_color_markers,
+                markerfacecolor = GR_color_markers,
+                markeredgecolor = GR_color_markers,
+            )
+
+        lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
+            markers, colors, linestyles, severalEOSs
+        )
+
+        #~ ax.set_xlim(9,15)
+        #~ ax.set_ylim(0.5,3.2)
+
+        ax.legend(
+            handles = [
+                *lines_markers, *lines_colors, *lines_linestyles,
+                Line2D(
+                    [0], [0], color = GR_color_fit, marker = None, linestyle
+                    = "-", linewidth = 1.5, label = "GR"
+                )
+            ],
+            loc="best",
+            fontsize=8,
+            handlelength=3,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.25,
+            ncol = 4,
+            frameon = False,
+            mode = None
+        )
+
+        plt.show()
+
+        return
+
+    def plot_severalEOSs_MvsR_GR_Ifunc(self, severalEOSs):
+        """
+        plot several EOSs by listing them in <severalEOSs> with dictionaries
+        see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        all_label, all_headline, all_data = self.get_severalEOS_data(severalEOSs)
+
+        all_label_GR, all_headline_GR, all_data_GR = self.get_severalEOS_data( [
+                { "name": _, "beta": 0, "m": 0, "lambda": 0 }
+                for _ in set( [ _["name"] for _ in severalEOSs ] )
+            ]
+        )
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "R [km]", "$M/M_{\odot}$")
+
+        markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
+
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
 
             #~ we are interested only in stable modules - part of the graphs
             #~ where the mass is increasing
@@ -851,6 +975,86 @@ class plot_result:
                 linewidth = 1.5,
                 markersize = 5.5,
                 markevery = self._get_markevry(stable_R, data[2][min_m_i:max_m_i]),
+                **self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                )
+            )
+
+            _tmp = self._get_plot_keywords(
+                    markers, colors, linestyles,
+                    {
+                        "name": eos["name"],
+                        "m": eos["m"],
+                        "lambda": eos["lambda"]
+                    }
+                )
+
+            ax.plot(
+                [ _*self.units["R"] for _ in data[3][max_m_i:] ],
+                data[2][max_m_i:],
+                label = None,
+                linewidth = 1.5,
+                markersize = 5.5,
+                markevery = self._get_markevry(
+                    [ _*self.units["R"] for _ in data[3][max_m_i:] ],
+                    data[2][max_m_i:],
+                    amount_points = 5
+                ),
+                marker = _tmp["marker"],
+                markerfacecolor = _tmp["color"],
+                markeredgecolor = _tmp["color"],
+                color = _tmp["color"],
+                linestyle = (0, (5,10)),
+            )
+
+        #~ GR_color_markers = "#ef4026"
+        GR_color_markers = "#c0022f"
+        #~ GR_color_markers = "#a9f971"
+        #~ GR_color_fit = "#ed0dd9"
+        GR_color_fit = GR_color_markers
+
+        for label, data, eos in zip(
+            all_label_GR,
+            all_data_GR,
+            [ _ for _ in set( [ _["name"] for _ in severalEOSs ] ) ]
+        ):
+
+            #~ we are interested only in stable modules - part of the graphs
+            #~ where the mass is increasing
+            #~ after the maximum mass we can cut them off
+            #~ the min mass we are interested is the one which is  at least 0.5 M sun
+            min_mass = 0.5
+            little_offset = 2
+
+            #~ max_m_i = data[2].index(max(data[2]))
+            max_m_i = data[2].index(data[2][-1])
+
+            max_m_i = max_m_i + little_offset \
+            if max_m_i + little_offset < len(data[2]) - 1 else max_m_i
+
+            min_m_i = list(
+                map(lambda _: _ >= min_mass,  data[2][:max_m_i])
+            ).index(True)
+
+            min_m_i = min_m_i - little_offset \
+            if min_m_i - little_offset > 0 else min_m_i
+
+            stable_R = [ _*self.units["R"] for _ in data[3][min_m_i:max_m_i] ]
+
+            ax.plot(
+                stable_R,
+                data[2][min_m_i:max_m_i],
+                label = None,
+                linewidth = 1.5,
+                markersize = 5.5,
+                markevery = self._get_markevry(
+                    stable_R, data[2][min_m_i:max_m_i]
+                ),
                 marker = markers.get(eos, None),
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
@@ -860,6 +1064,29 @@ class plot_result:
         lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
             markers, colors, linestyles
         )
+
+        #~ reduce the uncessasery markers, colors and labels
+        #~ as they may be not be part of severalEOSs
+        lines_markers = [
+            _ for _ in lines_markers if _.get_label() in [
+                _["name"] for _ in severalEOSs
+            ]
+        ]
+
+        lines_colors = [
+            _ for _ in lines_colors if _.get_color() in [
+                colors[_[colors["label"]]] for _ in severalEOSs
+            ]
+        ]
+
+        lines_linestyles = [
+            _ for _ in lines_linestyles if str(_.get_linestyle()) in [
+                str(linestyles[_[linestyles["label"]]]) for _ in severalEOSs
+            ]
+        ]
+
+        ax.set_xlim(9,15)
+        ax.set_ylim(0.5,3.2)
 
         ax.legend(
             handles = [
@@ -2399,9 +2626,9 @@ class plot_result:
         GR_color_markers = "#c0022f"
         #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
-        GR_color_fit = GR_color_markers
+        GR_color_fit = self._luminosity_color(GR_color_markers, 1.1)
 
-        plot_alpha = 0.75
+        plot_alpha = 0.6
 
         #~ lets plot severEOSs on the up plot and eventually cut out data
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
@@ -2534,7 +2761,8 @@ class plot_result:
                 marker = markers.get(eos, None),
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
-                markeredgecolor = GR_color_markers
+                markeredgecolor = GR_color_markers,
+                alpha = plot_alpha
             )
 
         avg_L_1 = delta_all/n_all
@@ -2579,7 +2807,7 @@ class plot_result:
             p_x,
             p_y,
             label = None,
-            linewidth = 2,
+            linewidth = 2.5,
             linestyle = "-",
             markersize = 0,
             markevery = 0,
@@ -2592,7 +2820,7 @@ class plot_result:
             np.array(p_y)*(1 + avg_L_inf),
             np.array(p_y)*(1 - avg_L_inf),
             facecolor=GR_color_markers,
-            alpha= plot_alpha - 0.25
+            alpha= plot_alpha - 0.2
         )
 
         ax_up.fill_between(
@@ -2600,7 +2828,7 @@ class plot_result:
             np.array(p_y)*( 1 + L_inf_worst ),
             np.array(p_y)*( 1 - L_inf_worst ),
             facecolor=GR_color_markers,
-            alpha= plot_alpha - 0.5
+            alpha= plot_alpha - 0.4
         )
 
         #~ now do the same for each color if there are more than 1
@@ -2620,6 +2848,12 @@ class plot_result:
                 if eos[colors["label"]] == c[0] and eos[linestyles["label"]] == l[0]:
                     xp.append( data[0] )
                     yp.append( data[1] )
+
+            #~ colors and linestyles have all possible combinations of EOSs
+            #~ but we may not need all of them but only porsion determineed
+            #~ by severalEOSs, so a quick fix, if no points added we just continue
+            if not xp:
+                continue
 
             #~ expand all the data into flat list to calculate the polyfit
             coef, chi_red, p = _get_polyfit_res(xp, yp)
@@ -2668,7 +2902,8 @@ class plot_result:
                         marker = markers.get(eos["name"], None),
                         color = c[1],
                         markerfacecolor = c[1],
-                        markeredgecolor = c[1]
+                        markeredgecolor = c[1],
+                        alpha = plot_alpha - 0.1
                     )
 
             avg_L_1 = delta_all/n_all
@@ -2717,12 +2952,12 @@ class plot_result:
                 p_x,
                 p_y,
                 label = None,
-                linewidth = 2,
+                linewidth = 2.5,
                 linestyle = l[1],
                 markersize = 0,
                 markevery = 0,
                 marker = None,
-                color = c[1],
+                color = self._luminosity_color(c[1], 1.1)
             )
 
             #~ ax_up.fill_between(
@@ -2742,7 +2977,7 @@ class plot_result:
             #~ )
 
         lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
-            markers, colors, linestyles
+            markers, colors, linestyles, severalEOSs
         )
 
         ax_up.legend(
@@ -2751,10 +2986,10 @@ class plot_result:
             ],
             loc="best",
             fontsize=8,
-            handlelength=2.5,
+            handlelength=3,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.25,
+            markerscale = 1,
             ncol = 4,
             frameon = False,
             mode = None
@@ -3615,9 +3850,9 @@ class plot_result:
         GR_color_markers = "#c0022f"
         #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
-        GR_color_fit = GR_color_markers
+        GR_color_fit = self._luminosity_color(GR_color_markers, 1.1)
 
-        plot_alpha = 0.75
+        plot_alpha = 0.6
 
         #~ lets plot severEOSs on the up plot and eventually cut out data
         for label, data, eos in zip( all_label, all_data, severalEOSs ):
@@ -3750,7 +3985,8 @@ class plot_result:
                 marker = markers.get(eos, None),
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
-                markeredgecolor = GR_color_markers
+                markeredgecolor = GR_color_markers,
+                alpha = plot_alpha
             )
 
         avg_L_1 = delta_all/n_all
@@ -3797,7 +4033,7 @@ class plot_result:
             p_x,
             p_y,
             label = None,
-            linewidth = 2,
+            linewidth = 2.5,
             linestyle = "-",
             markersize = 0,
             markevery = 0,
@@ -3810,7 +4046,7 @@ class plot_result:
             np.array(p_y)*(1 + avg_L_inf),
             np.array(p_y)*(1 - avg_L_inf),
             facecolor=GR_color_markers,
-            alpha= plot_alpha - 0.25
+            alpha= plot_alpha - 0.2
         )
 
         ax_up.fill_between(
@@ -3818,7 +4054,7 @@ class plot_result:
             np.array(p_y)*( 1 + L_inf_worst ),
             np.array(p_y)*( 1 - L_inf_worst ),
             facecolor=GR_color_markers,
-            alpha= plot_alpha - 0.5
+            alpha= plot_alpha - 0.4
         )
 
         #~ now do the same for each color if there are more than 1
@@ -3838,6 +4074,12 @@ class plot_result:
                 if eos[colors["label"]] == c[0] and eos[linestyles["label"]] == l[0]:
                     xp.append( data[0] )
                     yp.append( data[1] )
+
+            #~ colors and linestyles have all possible combinations of EOSs
+            #~ but we may not need all of them but only porsion determineed
+            #~ by severalEOSs, so a quick fix, if no points added we just continue
+            if not xp:
+                continue
 
             #~ expand all the data into flat list to calculate the polyfit
             coef, chi_red, p = _get_polyfit_res(xp, yp)
@@ -3886,7 +4128,8 @@ class plot_result:
                         marker = markers.get(eos["name"], None),
                         color = c[1],
                         markerfacecolor = c[1],
-                        markeredgecolor = c[1]
+                        markeredgecolor = c[1],
+                        alpha = plot_alpha - 0.1
                     )
 
             avg_L_1 = delta_all/n_all
@@ -3896,8 +4139,9 @@ class plot_result:
             print(
                 "\n lambda = {:.3e}, m = {:.3e} fit"
                 "\n\t $\chi_r^2$ = {:.3e}"
-                "\n\t $a_0$ = {:.3e}"
                 "\n\t $a_1$ = {:.3e}"
+                "\n\t $a_2$ = {:.3e}"
+                "\n\t $a_3$ = {:.3e}"
                 "\n\t $a_4$ = {:.3e}"
                 "\n\t $< L_1 >$ = {:.3e}"
                 "\n\t $< L_\inf >$ = {:.3e}"
@@ -3905,8 +4149,9 @@ class plot_result:
                     l[0] if linestyles["label"] == "lambda" else c[0],
                     c[0] if colors["label"] == "m" else l[0],
                     chi_red,
-                    coef[0],
                     coef[1],
+                    coef[2],
+                    coef[3],
                     coef[4],
                     avg_L_1,
                     avg_L_inf,
@@ -3935,12 +4180,12 @@ class plot_result:
                 p_x,
                 p_y,
                 label = None,
-                linewidth = 2,
+                linewidth = 2.5,
                 linestyle = l[1],
                 markersize = 0,
                 markevery = 0,
                 marker = None,
-                color = c[1],
+                color = self._luminosity_color(c[1], 1.1)
             )
 
             #~ ax_up.fill_between(
@@ -3960,7 +4205,7 @@ class plot_result:
             #~ )
 
         lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
-            markers, colors, linestyles
+            markers, colors, linestyles, severalEOSs
         )
 
         ax_up.legend(
@@ -3969,10 +4214,10 @@ class plot_result:
             ],
             loc="best",
             fontsize=8,
-            handlelength=2.5,
+            handlelength=3,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.25,
+            markerscale = 1,
             ncol = 4,
             frameon = False,
             mode = None
@@ -4292,7 +4537,8 @@ class plot_result:
         all_line_styles = [
             ":", "-.", "--",
             (0, (5, 1, 1, 1, 1, 1)),
-            (0, (5, 1, 1, 1, 1, 1,1,1)),
+            (0, (5, 1, 1, 1, 1, 1, 1, 1)),
+            (0, (5, 1, 1, 1, 1, 1, 1, 1, 1, 1)),
             (0, (8, 1, 1, 1, 3, 1, 1, 1))
         ]
 
@@ -4475,45 +4721,83 @@ class plot_result:
         return tmp_ms, tmp_c, tmp_ls
 
     @staticmethod
-    def _get_lines_MSs_Cs_LSs(markers, colors, linestyles):
+    def _get_lines_MSs_Cs_LSs(markers, colors, linestyles, severalEOSs = None ):
 
         chs_lambda_m = lambda _: "$\\lambda =$ " if _ == "lambda" else "m "
 
-        lines_markers = [
-            Line2D(
-                [0], [0],
-                color="b",
-                marker = __,
-                linewidth = 0,
-                label = _
-            )
-            for _, __ in markers.items() if _ != "label"
-        ]
+        if not severalEOSs:
 
-        lines_colors = [
-            Line2D(
-                [0], [0],
-                color=__,
-                marker = None,
-                linewidth = 1.5,
-                linestyle = "-",
-                label = chs_lambda_m(colors["label"]) + "{:.2e}".format(_)
-            )
-            for _, __ in colors.items() if _ != "label"
-        ]
+            lines_markers = [
+                Line2D(
+                    [0], [0],
+                    color="k",
+                    marker = __,
+                    linewidth = 0,
+                    label = _
+                )
+                for _, __ in markers.items() if _ != "label"
+            ]
 
-        lines_linestyles = [
-            Line2D(
-                [0], [0],
-                color="b",
-                marker = None,
-                linewidth = 1.5,
-                linestyle = __,
-                label = chs_lambda_m(linestyles["label"]) + "{:.2e}".format(_)
+            lines_colors = [
+                Line2D(
+                    [0], [0],
+                    color=__,
+                    marker = None,
+                    linewidth = 1.5,
+                    linestyle = "-",
+                    label = chs_lambda_m(colors["label"]) + "{:.2e}".format(_)
+                )
+                for _, __ in colors.items() if _ != "label"
+            ]
 
-            )
-            for _, __ in linestyles.items() if _ != "label"
-        ]
+            lines_linestyles = [
+                Line2D(
+                    [0], [0],
+                    color="k",
+                    marker = None,
+                    linewidth = 1.5,
+                    linestyle = __,
+                    label = chs_lambda_m(linestyles["label"]) + "{:.2e}".format(_)
+
+                )
+                for _, __ in linestyles.items() if _ != "label"
+            ]
+        else:
+            lines_markers = [
+                Line2D(
+                    [0], [0],
+                    color="k",
+                    marker = markers[_],
+                    linewidth = 0,
+                    label = _
+                )
+                for _ in list( set( [ _["name"] for _ in severalEOSs ] ) )
+            ]
+
+            lines_colors = [
+                Line2D(
+                    [0], [0],
+                    color=colors[_],
+                    marker = None,
+                    linewidth = 1.5,
+                    linestyle = "-",
+                    label = chs_lambda_m(colors["label"]) + "{:.2e}".format(_)
+                )
+                for _ in list( set( [ _[colors["label"]] for _ in severalEOSs ] ) )
+            ]
+
+            lines_linestyles = [
+                Line2D(
+                    [0], [0],
+                    color="k",
+                    marker = None,
+                    linewidth = 1.5,
+                    linestyle = linestyles[_],
+                    label = chs_lambda_m(linestyles["label"]) + "{:.2e}".format(_)
+
+                )
+                for _ in list( set( [ _[linestyles["label"]] for _ in severalEOSs ] ) )
+            ]
 
         return lines_markers, lines_colors, lines_linestyles
 

@@ -28,13 +28,13 @@ EOS_all = [
 
 #~ only those who have max mass in units of the sun of 2
 #~ the list i would like to use
-#~ EOS_max18 = [
-    #~ "SLy", "APR2", "APR3", "APR4", "FPS", "WFF1", "WFF2", "WFF3", "BBB2", "ENG",
-    #~ "MPA1", "MS1", "MS2",  "MS1b", "PS", "GNH3", "H3", "H4", "ALF2", "ALF4"
-#~ ]
 EOS_max18 = [
-    "PS", "GNH3", "H3", "H4", "ALF2", "ALF4"
+    "SLy", "APR2", "APR3", "APR4", "FPS", "WFF1", "WFF2", "WFF3", "BBB2", "ENG",
+    "MPA1", "MS1", "MS2",  "MS1b", "GNH3", "H3", "H4", "ALF2", "ALF4"
 ]
+#~ EOS_max18 = [
+#~    "PS", "GNH3", "H3", "H4", "ALF2", "ALF4"
+#~]
 #~ EOS_max2 = [
     #~ "SLy", "APR3", "APR4", "WFF1", "WFF2", "ENG",
     #~ "MPA1", "MS1", "MS1", "MS1b", "H4", "ALF2"
@@ -45,7 +45,7 @@ EOS_max18 = [
 EOS_mapping = [
     EOS_all.index(_) for _ in EOS_max18
 ]
-
+print(EOS_mapping)
 #~ the source file for EOS
 EOS_file = "/home/dimitar/projects/STT_theories/src/EOS.c"
 
@@ -116,9 +116,9 @@ for EOS_cur in EOS_mapping:
     #~ with open(ODE_PATH, "w") as f:
         #~ f.writelines(ODE_content)
 
-    all_beta = [ -6 ]
-    all_m = [ 0, 5e-3, 1e-2, 5e-2 ]
-    all_lambda = [ 0, 1e-1, 1e0, 1e1 ]
+    all_beta = [ 0 ]
+    all_m = [ 0 ]
+    all_lambda = [ 0 ]
 
     for p_beta, p_m, p_lambda in itertools.product(
         all_beta,all_m, all_lambda, repeat=1

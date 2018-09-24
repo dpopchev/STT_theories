@@ -13,7 +13,7 @@
 #define R_INF 1e9
 
 // parameters of the scalar field
-#define BETA -6.00e+00
+#define BETA 0.00e+00
 #define M 0.00e+00
 #define LAMBDA 0.00e+00
 
