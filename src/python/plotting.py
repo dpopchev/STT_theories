@@ -16,7 +16,9 @@ from matplotlib import style
 from matplotlib.gridspec import GridSpec
 from numpy.polynomial.polynomial import polyfit
 
-get_ipython().run_line_magic("matplotlib", "qt")
+#~ get_ipython().run_line_magic("matplotlib", "qt")
+#~ import matplotlib
+#~ matplotlib.use('Qt5Agg')
 
 class plot_result:
 
@@ -2605,6 +2607,12 @@ class plot_result:
             2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
         )
 
+        #~ turn off the tight layout since it does not permit sticking the two axes
+        #~ but can do it manually
+        fig.set_tight_layout(False)
+        fig.set_rasterized(True)
+        fig.subplots_adjust(wspace=0, hspace=0)
+
         ax_up = all_axes[0]
         ax_down = all_axes[1]
 
@@ -2612,7 +2620,11 @@ class plot_result:
         ax_up.set_xticklabels([])
 
         ax_down.set_yscale("log")
-        self._set_parms(ax_down, "M/R", r"$\left| 1 - \tilde I/\tilde I_{fit} \right|$  ")
+        self._set_parms(
+            ax_down,
+            "M/R",
+            "$\\left| 1 - \\tilde I/\\tilde I_{{fit}} \\right|$"
+        )
 
         self._set_parms(ax_up, "", r"$I/(MR^2)$")
 
@@ -2623,7 +2635,7 @@ class plot_result:
         min_compactness = 0.09
 
         #~ GR_color_markers = "#ef4026"
-        GR_color_markers = "#c0022f"
+        GR_color_markers = "#469990"
         #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
         GR_color_fit = self._luminosity_color(GR_color_markers, 1.1)
@@ -2980,25 +2992,47 @@ class plot_result:
             markers, colors, linestyles, severalEOSs
         )
 
-        ax_up.legend(
+        ax_up.add_artist( ax_up.legend(
             handles = [
-                *lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit
+                *lines_markers
             ],
-            loc="best",
+            loc="upper left",
             fontsize=8,
             handlelength=3,
             numpoints=1,
             fancybox=True,
             markerscale = 1,
-            ncol = 4,
+            ncol = 3,
             frameon = False,
             mode = None
-        )
+        ) )
+
+        ax_up.add_artist( ax_up.legend(
+            handles = [
+                *lines_colors, *lines_polyfit, *lines_linestyles
+            ],
+            loc="lower right",
+            fontsize=8,
+            handlelength=3,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1,
+            ncol = 2,
+            frameon = False,
+            mode = None
+        ) )
 
         ax_up.set_xlim(min_x, max_x)
         ax_up.set_ylim(min_y, max_y)
 
-        ax_down.set_ylim(1e-3, 1e0)
+        ax_down.set_ylim(1e-3, 1.5e0)
+
+        plt.savefig(
+            'uniTilde.eps', format="eps",
+            bbox_inches='tight',
+            dpi=1200,
+            pad_inches=0
+        )
 
         plt.show()
 
@@ -3829,6 +3863,12 @@ class plot_result:
             2,  1,  self._3by1_shareX_grid_placement, height_ratios = [2,1]
         )
 
+        #~ turn off the tight layout since it does not permit sticking the two axes
+        #~ but can do it manually
+        fig.set_tight_layout(False)
+        fig.set_rasterized(True)
+        fig.subplots_adjust(wspace=0, hspace=0)
+
         ax_up = all_axes[0]
         ax_down = all_axes[1]
 
@@ -3847,7 +3887,7 @@ class plot_result:
         min_compactness = 0.09
 
         #~ GR_color_markers = "#ef4026"
-        GR_color_markers = "#c0022f"
+        GR_color_markers = "#469990"
         #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
         GR_color_fit = self._luminosity_color(GR_color_markers, 1.1)
@@ -4208,25 +4248,47 @@ class plot_result:
             markers, colors, linestyles, severalEOSs
         )
 
-        ax_up.legend(
+        ax_up.add_artist( ax_up.legend(
             handles = [
-                *lines_markers, *lines_colors, *lines_linestyles, *lines_polyfit
+                *lines_markers
             ],
-            loc="best",
+            loc="upper right",
             fontsize=8,
             handlelength=3,
             numpoints=1,
             fancybox=True,
             markerscale = 1,
-            ncol = 4,
+            ncol = 3,
             frameon = False,
             mode = None
-        )
+        ) )
+
+        ax_up.add_artist( ax_up.legend(
+            handles = [
+                *lines_colors, *lines_polyfit, *lines_linestyles
+            ],
+            loc="center right",
+            fontsize=8,
+            handlelength=3,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1,
+            ncol = 2,
+            frameon = False,
+            mode = None
+        ) )
 
         ax_up.set_xlim(min_x, max_x)
         ax_up.set_ylim(min_y, max_y)
 
-        ax_down.set_ylim(1e-3, 1e0)
+        ax_down.set_ylim(1e-3, 1.5e0)
+
+        plt.savefig(
+            'uniBar.eps', format="eps",
+            bbox_inches='tight',
+            dpi=1200,
+            pad_inches=0
+        )
 
         plt.show()
 
@@ -4281,7 +4343,7 @@ class plot_result:
         gs = GridSpec(nrows=nrows, ncols=ncols, height_ratios = height_ratios)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif')
-        fig = plt.figure()
+        fig = plt.figure(figsize=(8,6))
         fig.set_tight_layout(True)
 
         return fig, grid_placement(fig, gs)
@@ -4375,6 +4437,8 @@ class plot_result:
         """
 
         from matplotlib.ticker import FormatStrFormatter
+
+        ax.tick_params(direction="in")
 
         if label_x:
             ax.set_xlabel(label_x, fontsize=fontsize)
@@ -4534,11 +4598,18 @@ class plot_result:
         if self.specific_ls:
             return self.specific_ls
 
+        #~ all_line_styles = [
+            #~ ":", "-.", "--",
+            #~ (0, (5, 1, 1, 1, 1, 1)),
+            #~ (0, (5, 1, 1, 1, 1, 1, 1, 1)),
+            #~ (0, (5, 1, 1, 1, 1, 1, 1, 1, 1, 1)),
+            #~ (0, (8, 1, 1, 1, 3, 1, 1, 1))
+        #~ ]
         all_line_styles = [
-            ":", "-.", "--",
-            (0, (5, 1, 1, 1, 1, 1)),
+            "-.", "--",
+            #~ (0, (5, 1, 1, 1, 1, 1)),
             (0, (5, 1, 1, 1, 1, 1, 1, 1)),
-            (0, (5, 1, 1, 1, 1, 1, 1, 1, 1, 1)),
+            #~ (0, (5, 1, 1, 1, 1, 1, 1, 1, 1, 1)),
             (0, (8, 1, 1, 1, 3, 1, 1, 1))
         ]
 
@@ -4574,8 +4645,15 @@ class plot_result:
         if self.specific_c:
             return self.specific_c
 
+        #~ all_colors = [
+            #~ "b", "g", "r", "c", "m", "y"
+        #~ ]
+        #~ all_colors = [
+            #~ "#e6194B", "#3cb44b", "#4363d8"
+        #~ ]
+
         all_colors = [
-            "b", "g", "r", "c", "m", "y"
+            "#800000", "#4363d8", "#f58231"
         ]
 
         if len(map_me) > len(all_colors):
@@ -4723,7 +4801,22 @@ class plot_result:
     @staticmethod
     def _get_lines_MSs_Cs_LSs(markers, colors, linestyles, severalEOSs = None ):
 
-        chs_lambda_m = lambda _: "$\\lambda =$ " if _ == "lambda" else "m "
+        def _convert_sci(num):
+
+            snum = "{:.2e}".format(num)
+            mantisa, power = snum.split("e")
+
+            mantisa = "{}".format(mantisa)
+            power = "{}".format(power)
+
+            return " ${{{:.0f}}} \\times 10^{{{:.0f}}}$".format(
+                float(mantisa), float(power)
+            ) if float(mantisa) \
+            else " ${{{:.0f}}}$".format(
+                float(mantisa)
+            )
+
+        chs_lambda_m = lambda _: "$\\lambda =$ " if _ == "lambda" else "m = "
 
         if not severalEOSs:
 
@@ -4745,7 +4838,7 @@ class plot_result:
                     marker = None,
                     linewidth = 1.5,
                     linestyle = "-",
-                    label = chs_lambda_m(colors["label"]) + "{:.2e}".format(_)
+                    label = chs_lambda_m(colors["label"]) + _convert_sci(_)
                 )
                 for _, __ in colors.items() if _ != "label"
             ]
@@ -4757,8 +4850,7 @@ class plot_result:
                     marker = None,
                     linewidth = 1.5,
                     linestyle = __,
-                    label = chs_lambda_m(linestyles["label"]) + "{:.2e}".format(_)
-
+                    label = chs_lambda_m(linestyles["label"]) + _convert_sci(_)
                 )
                 for _, __ in linestyles.items() if _ != "label"
             ]
@@ -4781,7 +4873,7 @@ class plot_result:
                     marker = None,
                     linewidth = 1.5,
                     linestyle = "-",
-                    label = chs_lambda_m(colors["label"]) + "{:.2e}".format(_)
+                    label = chs_lambda_m(colors["label"]) + _convert_sci(_)
                 )
                 for _ in list( set( [ _[colors["label"]] for _ in severalEOSs ] ) )
             ]
@@ -4793,8 +4885,8 @@ class plot_result:
                     marker = None,
                     linewidth = 1.5,
                     linestyle = linestyles[_],
-                    label = chs_lambda_m(linestyles["label"]) + "{:.2e}".format(_)
 
+                    label = chs_lambda_m(linestyles["label"]) + _convert_sci(_)
                 )
                 for _ in list( set( [ _[linestyles["label"]] for _ in severalEOSs ] ) )
             ]
