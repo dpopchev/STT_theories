@@ -655,6 +655,99 @@ class plot_result:
 
         return
 
+    def plot_severalEOSs_MvsR_costume(self, severalEOSs):
+        """
+        plot several EOSs by listing them in <severalEOSs> with dictionaries
+        see get_severalEOS_data for the format
+
+        EXAMPLE INPUT
+        severalEOSs = [
+            { "name": "SLy4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "APR4", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "FPS", "beta": 0, "m": 0, "lambda": 0 },
+            { "name": "WFF2", "beta": 0, "m": 0, "lambda": 0 }
+        ]
+        """
+
+        def _get_color():
+
+            colors = [
+                "#800000", "#9A6324", "#808000", "#469990", "#000075",
+                "#e6194B", "#f58231", "#ffe119", "#bfef45", "#3cb44b", "#42d4f4",
+                "#4363d8", "#911eb4", "#f032e6", "#a9a9a9", "#fabebe", "#ffd8b1",
+                "#aaffc3", "#e6beff"
+            ]
+
+            for _ in range(5):
+                random.shuffle(colors)
+
+            for _ in colors:
+                yield _
+
+        all_label, all_headline, all_data = self.get_severalEOS_data(severalEOSs)
+
+        fig, all_axes = self._get_figure(1,1,self._1by1_grid_placement)
+
+        ax = all_axes[0]
+
+        self._set_parms(ax, "R [km]", "$M/M_{\odot}$")
+
+        markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
+
+        for label, data, eos, c in zip( all_label, all_data, severalEOSs, _get_color()):
+            data[3] = [ _*self.units["R"] for _ in data[3] ]
+
+            _tmp = self._get_plot_keywords(
+                markers, colors, linestyles,
+                {
+                    "name": eos["name"],
+                    "m": eos["m"],
+                    "lambda": eos["lambda"]
+                }
+            )
+
+            ax.plot(
+                data[3],
+                data[2],
+                label = None,
+                linewidth = 2,
+                markersize = 10,
+                markevery = self._get_markevry(data[3], data[2]),
+                color = c,
+                linestyle = "-",
+                marker = _tmp["marker"],
+                markerfacecolor = c,
+                markeredgecolor = c
+            )
+
+        lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
+            markers, colors, linestyles
+        )
+
+        ax.add_artist( ax.legend(
+            handles = [*lines_markers],
+            loc="best",
+            fontsize=10,
+            handlelength=2,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5,
+            ncol = 2,
+            frameon = False,
+            mode = None
+        ) )
+
+        plt.savefig(
+            'MvsR_costume.eps', format="eps",
+            bbox_inches='tight',
+            dpi=200,
+            pad_inches=0
+        )
+
+        plt.show()
+
+        return
+
     def plot_severalEOSs_MvsR_stable(self, severalEOSs):
         """
         plot several EOSs by listing them in <severalEOSs> with dictionaries
@@ -791,15 +884,15 @@ class plot_result:
             min_m_i = min_m_i - little_offset \
             if min_m_i - little_offset > 0 else min_m_i
 
-            stable_R = [ _*self.units["R"] for _ in data[3][min_m_i:max_m_i] ]
+            stable_R = [ _*self.units["R"] for _ in data[3][min_m_i:] ]
 
             ax.plot(
                 stable_R,
-                data[2][min_m_i:max_m_i],
+                data[2][min_m_i:],
                 label = None,
-                linewidth = 1.5,
-                markersize = 5.5,
-                markevery = self._get_markevry(stable_R, data[2][min_m_i:max_m_i]),
+                linewidth = 2,
+                markersize = 10,
+                markevery = self._get_markevry(stable_R, data[2][min_m_i:]),
                 **self._get_plot_keywords(
                     markers, colors, linestyles,
                     {
@@ -810,35 +903,35 @@ class plot_result:
                 )
             )
 
-            _tmp = self._get_plot_keywords(
-                    markers, colors, linestyles,
-                    {
-                        "name": eos["name"],
-                        "m": eos["m"],
-                        "lambda": eos["lambda"]
-                    }
-                )
+            #~ _tmp = self._get_plot_keywords(
+                    #~ markers, colors, linestyles,
+                    #~ {
+                        #~ "name": eos["name"],
+                        #~ "m": eos["m"],
+                        #~ "lambda": eos["lambda"]
+                    #~ }
+                #~ )
 
-            ax.plot(
-                [ _*self.units["R"] for _ in data[3][max_m_i:] ],
-                data[2][max_m_i:],
-                label = None,
-                linewidth = 1.5,
-                markersize = 5.5,
-                markevery = self._get_markevry(
-                    [ _*self.units["R"] for _ in data[3][max_m_i:] ],
-                    data[2][max_m_i:],
-                    amount_points=5
-                ),
-                marker = _tmp["marker"],
-                markerfacecolor = _tmp["color"],
-                markeredgecolor = _tmp["color"],
-                color = _tmp["color"],
-                linestyle = (0, (5,10)),
-            )
+            #~ ax.plot(
+                #~ [ _*self.units["R"] for _ in data[3][max_m_i:] ],
+                #~ data[2][max_m_i:],
+                #~ label = None,
+                #~ linewidth = 1.5,
+                #~ markersize = 5.5,
+                #~ markevery = self._get_markevry(
+                    #~ [ _*self.units["R"] for _ in data[3][max_m_i:] ],
+                    #~ data[2][max_m_i:],
+                    #~ amount_points=5
+                #~ ),
+                #~ marker = _tmp["marker"],
+                #~ markerfacecolor = _tmp["color"],
+                #~ markeredgecolor = _tmp["color"],
+                #~ color = _tmp["color"],
+                #~ linestyle = (0, (5,10)),
+            #~ )
 
         #~ GR_color_markers = "#ef4026"
-        GR_color_markers = "#c0022f"
+        GR_color_markers = "#f58231"
         #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
         GR_color_fit = GR_color_markers
@@ -875,8 +968,8 @@ class plot_result:
                 stable_R,
                 data[2][min_m_i:max_m_i],
                 label = None,
-                linewidth = 1.5,
-                markersize = 5.5,
+                linewidth = 2,
+                markersize = 10,
                 markevery = self._get_markevry(
                     stable_R,
                     data[2][min_m_i:max_m_i]
@@ -894,23 +987,45 @@ class plot_result:
         #~ ax.set_xlim(9,15)
         #~ ax.set_ylim(0.5,3.2)
 
-        ax.legend(
+        ax.add_artist( ax.legend(
             handles = [
-                *lines_markers, *lines_colors, *lines_linestyles,
+                *lines_linestyles, *lines_colors,
                 Line2D(
                     [0], [0], color = GR_color_fit, marker = None, linestyle
                     = "-", linewidth = 1.5, label = "GR"
                 )
             ],
-            loc="best",
-            fontsize=8,
+            loc="upper left",
+            fontsize=10,
             handlelength=3,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.25,
-            ncol = 4,
+            markerscale = 1.5,
+            ncol = 1,
             frameon = False,
             mode = None
+        ) )
+
+        ax.add_artist( ax.legend(
+            handles = [
+                *lines_markers,
+            ],
+            loc="lower right",
+            fontsize=10,
+            handlelength=3,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5,
+            ncol = 1,
+            frameon = False,
+            mode = None
+        ) )
+
+        plt.savefig(
+            'MvsR_STT_GR.eps', format="eps",
+            bbox_inches='tight',
+            dpi=200,
+            pad_inches=0
         )
 
         plt.show()
@@ -2609,8 +2724,6 @@ class plot_result:
 
         #~ turn off the tight layout since it does not permit sticking the two axes
         #~ but can do it manually
-        fig.set_tight_layout(False)
-        fig.set_rasterized(True)
         fig.subplots_adjust(wspace=0, hspace=0)
 
         ax_up = all_axes[0]
@@ -2635,7 +2748,8 @@ class plot_result:
         min_compactness = 0.09
 
         #~ GR_color_markers = "#ef4026"
-        GR_color_markers = "#469990"
+        #~ GR_color_markers = "#469990"
+        GR_color_markers = "#f58231"
         #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
         GR_color_fit = self._luminosity_color(GR_color_markers, 1.1)
@@ -2769,7 +2883,7 @@ class plot_result:
                 label = None,
                 linewidth = 0,
                 markersize = 5.5,
-                markevery = self._get_markevry(data[0], _data),
+                markevery = self._get_markevry(data[0], _data, amount_points=5),
                 marker = markers.get(eos, None),
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
@@ -2825,6 +2939,7 @@ class plot_result:
             markevery = 0,
             marker = None,
             color = GR_color_fit,
+            zorder = 100
         )
 
         ax_up.fill_between(
@@ -2910,7 +3025,7 @@ class plot_result:
                         label = None,
                         linewidth = 0,
                         markersize = 5.5,
-                        markevery = self._get_markevry(data[0], _data),
+                        markevery = self._get_markevry(data[0], _data,amount_points=5),
                         marker = markers.get(eos["name"], None),
                         color = c[1],
                         markerfacecolor = c[1],
@@ -2969,7 +3084,8 @@ class plot_result:
                 markersize = 0,
                 markevery = 0,
                 marker = None,
-                color = self._luminosity_color(c[1], 1.1)
+                color = self._luminosity_color(c[1], 1.1),
+                zorder = 90
             )
 
             #~ ax_up.fill_between(
@@ -2997,11 +3113,11 @@ class plot_result:
                 *lines_markers
             ],
             loc="upper left",
-            fontsize=8,
+            fontsize=10,
             handlelength=3,
             numpoints=1,
             fancybox=True,
-            markerscale = 1,
+            markerscale = 1.5,
             ncol = 3,
             frameon = False,
             mode = None
@@ -3012,11 +3128,11 @@ class plot_result:
                 *lines_colors, *lines_polyfit, *lines_linestyles
             ],
             loc="lower right",
-            fontsize=8,
+            fontsize=10,
             handlelength=3,
             numpoints=1,
             fancybox=True,
-            markerscale = 1,
+            markerscale = 1.5,
             ncol = 2,
             frameon = False,
             mode = None
@@ -3865,8 +3981,6 @@ class plot_result:
 
         #~ turn off the tight layout since it does not permit sticking the two axes
         #~ but can do it manually
-        fig.set_tight_layout(False)
-        fig.set_rasterized(True)
         fig.subplots_adjust(wspace=0, hspace=0)
 
         ax_up = all_axes[0]
@@ -3887,7 +4001,8 @@ class plot_result:
         min_compactness = 0.09
 
         #~ GR_color_markers = "#ef4026"
-        GR_color_markers = "#469990"
+        #~ GR_color_markers = "#469990"
+        GR_color_markers = "#f58231"
         #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
         GR_color_fit = self._luminosity_color(GR_color_markers, 1.1)
@@ -4021,7 +4136,7 @@ class plot_result:
                 label = None,
                 linewidth = 0,
                 markersize = 5.5,
-                markevery = self._get_markevry(data[0], _data),
+                markevery = self._get_markevry(data[0], _data, amount_points=5),
                 marker = markers.get(eos, None),
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
@@ -4079,6 +4194,7 @@ class plot_result:
             markevery = 0,
             marker = None,
             color = GR_color_fit,
+            zorder = 100
         )
 
         ax_up.fill_between(
@@ -4164,7 +4280,7 @@ class plot_result:
                         label = None,
                         linewidth = 0,
                         markersize = 5.5,
-                        markevery = self._get_markevry(data[0], _data),
+                        markevery = self._get_markevry(data[0], _data, amount_points=5),
                         marker = markers.get(eos["name"], None),
                         color = c[1],
                         markerfacecolor = c[1],
@@ -4225,7 +4341,8 @@ class plot_result:
                 markersize = 0,
                 markevery = 0,
                 marker = None,
-                color = self._luminosity_color(c[1], 1.1)
+                color = self._luminosity_color(c[1], 1.1),
+                zorder = 90
             )
 
             #~ ax_up.fill_between(
@@ -4253,11 +4370,11 @@ class plot_result:
                 *lines_markers
             ],
             loc="upper right",
-            fontsize=8,
+            fontsize=10,
             handlelength=3,
             numpoints=1,
             fancybox=True,
-            markerscale = 1,
+            markerscale = 1.5,
             ncol = 3,
             frameon = False,
             mode = None
@@ -4268,11 +4385,11 @@ class plot_result:
                 *lines_colors, *lines_polyfit, *lines_linestyles
             ],
             loc="center right",
-            fontsize=8,
+            fontsize=10,
             handlelength=3,
             numpoints=1,
             fancybox=True,
-            markerscale = 1,
+            markerscale = 1.5,
             ncol = 2,
             frameon = False,
             mode = None
@@ -4343,8 +4460,9 @@ class plot_result:
         gs = GridSpec(nrows=nrows, ncols=ncols, height_ratios = height_ratios)
         plt.rc('text', usetex=True)
         plt.rc('font', family='serif')
-        fig = plt.figure(figsize=(8,6))
-        fig.set_tight_layout(True)
+        fig = plt.figure(figsize=(9.60,7.20))
+        fig.set_tight_layout(False)
+        fig.set_rasterized(True)
 
         return fig, grid_placement(fig, gs)
 
@@ -4411,7 +4529,7 @@ class plot_result:
 
     @staticmethod
     def _set_parms(
-        ax, label_x, label_y, fontsize=10, x_ticksize = 8, y_ticksize = 8,
+        ax, label_x, label_y, fontsize=14, x_ticksize = 14, y_ticksize = 14,
         x_format_str = "", y_format_str = ""
     ):
         """
@@ -4652,8 +4770,11 @@ class plot_result:
             #~ "#e6194B", "#3cb44b", "#4363d8"
         #~ ]
 
+        #~ all_colors = [
+            #~ "#800000", "#4363d8", "#f58231"
+        #~ ]
         all_colors = [
-            "#800000", "#4363d8", "#f58231"
+            "#e6194B", "#3cb44b", "#4363d8"
         ]
 
         if len(map_me) > len(all_colors):
@@ -4678,7 +4799,7 @@ class plot_result:
         return res
 
     @staticmethod
-    def _get_markevry(data_x, data_y, amount_points = 20):
+    def _get_markevry(data_x, data_y, amount_points = 15):
         """
         for provided data list get the difference between the max and min to
         evluate the stem for getting amount_points and return list of
@@ -4711,19 +4832,32 @@ class plot_result:
 
             return evenly_spaced_idx
 
-        idx_x = _get_EvenlySpacedIdxs(data_x, amount_points)
-        idx_y = _get_EvenlySpacedIdxs(data_y, amount_points)
+        #~ Valid for the above function
+        #~ idx_x = _get_EvenlySpacedIdxs(data_x, amount_points)
+        #~ idx_y = _get_EvenlySpacedIdxs(data_y, amount_points)
 
         #~ return list( set(idx_x).union(idx_y) )
-        all_i = list( set(idx_x).union(idx_y) )
 
-        return np.linspace(
-            min(all_i),
-            max(all_i),
-            amount_points,
-            endpoint=True,
-            dtype=int
-        ).tolist()
+        def _get_CummalativeEvenlySpacedIdxs(data_x, data_y, amount_points):
+
+            step_x = abs(max(data_x, key=abs) - min(data_x, key=abs))/amount_points
+            step_y = abs(max(data_y, key=abs) - min(data_y, key=abs))/amount_points
+
+            idx = [ 0 ]
+            cumitv_step_x = 0
+            cumitv_step_y = 0
+
+            for i, (v_x, v_y) in enumerate(zip(np.diff(data_x), np.diff(data_y))):
+                cumitv_step_x += abs(v_x)
+                cumitv_step_y += abs(v_y)
+                if cumitv_step_x > step_x or cumitv_step_y > step_y:
+                    idx.append(i)
+                    cumitv_step_x = 0
+                    cumitv_step_y = 0
+
+            return idx
+
+        return _get_CummalativeEvenlySpacedIdxs(data_x, data_y, amount_points/2)
 
     @staticmethod
     def _get_plot_keywords( markers, colors, linestyles, current ):
