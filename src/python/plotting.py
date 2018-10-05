@@ -1010,7 +1010,7 @@ class plot_result:
             handles = [
                 *lines_markers,
             ],
-            loc="lower right",
+            loc="upper center",
             fontsize=10,
             handlelength=3,
             numpoints=1,
@@ -4369,7 +4369,7 @@ class plot_result:
             handles = [
                 *lines_markers
             ],
-            loc="upper right",
+            loc="upper center",
             fontsize=10,
             handlelength=3,
             numpoints=1,
@@ -4384,13 +4384,13 @@ class plot_result:
             handles = [
                 *lines_colors, *lines_polyfit, *lines_linestyles
             ],
-            loc="center right",
+            loc="upper right",
             fontsize=10,
             handlelength=3,
             numpoints=1,
             fancybox=True,
             markerscale = 1.5,
-            ncol = 2,
+            ncol = 1,
             frameon = False,
             mode = None
         ) )
