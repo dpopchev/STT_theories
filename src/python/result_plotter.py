@@ -468,7 +468,7 @@ def create_uniI_data(config):
             comments="# "
         )
 
-        target = os.path.join(fullModelPath, "_".join([EOSmodel, "barI2"]))
+        target = os.path.join(fullModelPath, "_".join([EOSmodel, "barI"]))
         print("\n\t will convert universal I \n\t\t {} \n".format( target ) )
         np.savetxt(
             target,
@@ -481,6 +481,10 @@ def create_uniI_data(config):
         )
 
     return
+
+def plot_tildeI_GR(config):
+
+    print("HALLO")
 
 if __name__ == "__main__":
 
@@ -495,7 +499,7 @@ if __name__ == "__main__":
             """
         )
 
-        #argument for the config file
+        # the config file
         parser.add_argument(
             "--config",
             action = "store",
@@ -508,7 +512,7 @@ if __name__ == "__main__":
             help = "path to configuration file for each option, presented as args"
         )
 
-        #argument for MvsR with GR included
+        # MvsR with GR included
         parser.add_argument(
             "--MvsR_GR",
             action = "store_const",
@@ -525,7 +529,7 @@ if __name__ == "__main__":
             """
         )
 
-        #argument for creating all uni I in separated directories
+        # creating all uni I in separated directories
         parser.add_argument(
             "--create_uniI_data",
             action = "store_const",
@@ -543,7 +547,7 @@ if __name__ == "__main__":
             """
         )
 
-        #argument for uni I
+        # create tildeI_GR
         parser.add_argument(
             "--tildeI_GR",
             action = "store_const",
@@ -585,6 +589,10 @@ if __name__ == "__main__":
     elif args.ConfigSection == "create_uniI_data":
 
         create_uniI_data(config.items(args.ConfigSection))
+
+    elif args.ConfigSection == "tildeI_GR":
+
+        plot_tildeI_GR(config.items(args.ConfigSection))
 
     else:
         print("\n {} unknown, terminating... \n", args.ConfigSection)
