@@ -7,3 +7,4 @@ results/
 __pycache__/
 src/EOS.c_backup
 src/ODE_phiScal_J.c_backup
+*.eps

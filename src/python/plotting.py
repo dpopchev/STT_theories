@@ -694,7 +694,7 @@ class plot_result:
 
         markers, colors, linestyles = self._get_MSs_Cs_LSs(severalEOSs)
 
-        for label, data, eos, c in zip( all_label, all_data, severalEOSs, _get_color()):
+        for label, data, eos in zip( all_label, all_data, severalEOSs ):
             data[3] = [ _*self.units["R"] for _ in data[3] ]
 
             _tmp = self._get_plot_keywords(
@@ -713,16 +713,22 @@ class plot_result:
                 linewidth = 2,
                 markersize = 10,
                 markevery = self._get_markevry(data[3], data[2]),
-                color = c,
+                color = "#f58231",
                 linestyle = "-",
                 marker = _tmp["marker"],
-                markerfacecolor = c,
-                markeredgecolor = c
+                markerfacecolor = "#f58231",
+                markeredgecolor = "#f58231"
             )
 
         lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
             markers, colors, linestyles
         )
+
+        #~ ax.fill([9.8, 15.3, 15.3, 9.8], [1.3, 1.3, 1.5, 1.5], fill=False, hatch='//')
+        #~ ax.fill([8.8, 15.3, 15.3, 8.8], [1.9, 1.9, 2.1, 2.1], fill=False, hatch='\\')
+
+        ax.set_xlim(7.5,15.5)
+        ax.set_ylim(0.4,3)
 
         ax.add_artist( ax.legend(
             handles = [*lines_markers],
@@ -903,33 +909,6 @@ class plot_result:
                 )
             )
 
-            #~ _tmp = self._get_plot_keywords(
-                    #~ markers, colors, linestyles,
-                    #~ {
-                        #~ "name": eos["name"],
-                        #~ "m": eos["m"],
-                        #~ "lambda": eos["lambda"]
-                    #~ }
-                #~ )
-
-            #~ ax.plot(
-                #~ [ _*self.units["R"] for _ in data[3][max_m_i:] ],
-                #~ data[2][max_m_i:],
-                #~ label = None,
-                #~ linewidth = 1.5,
-                #~ markersize = 5.5,
-                #~ markevery = self._get_markevry(
-                    #~ [ _*self.units["R"] for _ in data[3][max_m_i:] ],
-                    #~ data[2][max_m_i:],
-                    #~ amount_points=5
-                #~ ),
-                #~ marker = _tmp["marker"],
-                #~ markerfacecolor = _tmp["color"],
-                #~ markeredgecolor = _tmp["color"],
-                #~ color = _tmp["color"],
-                #~ linestyle = (0, (5,10)),
-            #~ )
-
         #~ GR_color_markers = "#ef4026"
         GR_color_markers = "#f58231"
         #~ GR_color_markers = "#a9f971"
@@ -984,8 +963,11 @@ class plot_result:
             markers, colors, linestyles, severalEOSs
         )
 
-        #~ ax.set_xlim(9,15)
-        #~ ax.set_ylim(0.5,3.2)
+        #~ ax.fill([9.8, 15.3, 15.3, 9.8], [1.3, 1.3, 1.5, 1.5], fill=False, hatch='//')
+        #~ ax.fill([8.8, 15.3, 15.3, 8.8], [1.9, 1.9, 2.1, 2.1], fill=False, hatch='\\')
+
+        ax.set_xlim(7.5,15.5)
+        ax.set_ylim(0.4,3)
 
         ax.add_artist( ax.legend(
             handles = [
@@ -1083,15 +1065,15 @@ class plot_result:
             min_m_i = min_m_i - little_offset \
             if min_m_i - little_offset > 0 else min_m_i
 
-            stable_R = [ _*self.units["R"] for _ in data[3][min_m_i:max_m_i] ]
+            stable_R = [ _*self.units["R"] for _ in data[3][min_m_i:] ]
 
             ax.plot(
                 stable_R,
-                data[2][min_m_i:max_m_i],
+                data[2][min_m_i:],
                 label = None,
-                linewidth = 1.5,
-                markersize = 5.5,
-                markevery = self._get_markevry(stable_R, data[2][min_m_i:max_m_i]),
+                linewidth = 2,
+                markersize = 10,
+                markevery = self._get_markevry(stable_R, data[2][min_m_i:]),
                 **self._get_plot_keywords(
                     markers, colors, linestyles,
                     {
@@ -1102,35 +1084,8 @@ class plot_result:
                 )
             )
 
-            _tmp = self._get_plot_keywords(
-                    markers, colors, linestyles,
-                    {
-                        "name": eos["name"],
-                        "m": eos["m"],
-                        "lambda": eos["lambda"]
-                    }
-                )
-
-            ax.plot(
-                [ _*self.units["R"] for _ in data[3][max_m_i:] ],
-                data[2][max_m_i:],
-                label = None,
-                linewidth = 1.5,
-                markersize = 5.5,
-                markevery = self._get_markevry(
-                    [ _*self.units["R"] for _ in data[3][max_m_i:] ],
-                    data[2][max_m_i:],
-                    amount_points = 5
-                ),
-                marker = _tmp["marker"],
-                markerfacecolor = _tmp["color"],
-                markeredgecolor = _tmp["color"],
-                color = _tmp["color"],
-                linestyle = (0, (5,10)),
-            )
-
         #~ GR_color_markers = "#ef4026"
-        GR_color_markers = "#c0022f"
+        GR_color_markers = "#f58231"
         #~ GR_color_markers = "#a9f971"
         #~ GR_color_fit = "#ed0dd9"
         GR_color_fit = GR_color_markers
@@ -1167,10 +1122,11 @@ class plot_result:
                 stable_R,
                 data[2][min_m_i:max_m_i],
                 label = None,
-                linewidth = 1.5,
-                markersize = 5.5,
+                linewidth = 2,
+                markersize = 10,
                 markevery = self._get_markevry(
-                    stable_R, data[2][min_m_i:max_m_i]
+                    stable_R,
+                    data[2][min_m_i:max_m_i]
                 ),
                 marker = markers.get(eos, None),
                 color = GR_color_markers,
@@ -1179,49 +1135,51 @@ class plot_result:
             )
 
         lines_markers, lines_colors, lines_linestyles = self._get_lines_MSs_Cs_LSs(
-            markers, colors, linestyles
+            markers, colors, linestyles, severalEOSs
         )
 
-        #~ reduce the uncessasery markers, colors and labels
-        #~ as they may be not be part of severalEOSs
-        lines_markers = [
-            _ for _ in lines_markers if _.get_label() in [
-                _["name"] for _ in severalEOSs
-            ]
-        ]
+        #~ ax.set_xlim(9,15)
+        #~ ax.set_ylim(0.5,3.2)
 
-        lines_colors = [
-            _ for _ in lines_colors if _.get_color() in [
-                colors[_[colors["label"]]] for _ in severalEOSs
-            ]
-        ]
-
-        lines_linestyles = [
-            _ for _ in lines_linestyles if str(_.get_linestyle()) in [
-                str(linestyles[_[linestyles["label"]]]) for _ in severalEOSs
-            ]
-        ]
-
-        ax.set_xlim(9,15)
-        ax.set_ylim(0.5,3.2)
-
-        ax.legend(
+        ax.add_artist( ax.legend(
             handles = [
-                *lines_markers, *lines_colors, *lines_linestyles,
+                *lines_linestyles, *lines_colors,
                 Line2D(
                     [0], [0], color = GR_color_fit, marker = None, linestyle
-                    = "-", linewidth = 1.5, label = "GR fit"
+                    = "-", linewidth = 1.5, label = "GR"
                 )
             ],
-            loc="best",
-            fontsize=8,
-            handlelength=2.5,
+            loc="upper left",
+            fontsize=10,
+            handlelength=3,
             numpoints=1,
             fancybox=True,
-            markerscale = 1.25,
-            ncol = 4,
+            markerscale = 1.5,
+            ncol = 1,
             frameon = False,
             mode = None
+        ) )
+
+        ax.add_artist( ax.legend(
+            handles = [
+                *lines_markers,
+            ],
+            loc="upper center",
+            fontsize=10,
+            handlelength=3,
+            numpoints=1,
+            fancybox=True,
+            markerscale = 1.5,
+            ncol = 1,
+            frameon = False,
+            mode = None
+        ) )
+
+        plt.savefig(
+            'MvsR_STT_GR.eps', format="eps",
+            bbox_inches='tight',
+            dpi=200,
+            pad_inches=0
         )
 
         plt.show()
@@ -1488,6 +1446,9 @@ class plot_result:
             frameon = False,
             mode = None
         )
+
+        ax.set_xlim(0.9, 2.75)
+        ax.set_ylim(0.5, 3.25)
 
         plt.show()
 
@@ -2781,7 +2742,7 @@ class plot_result:
                 label = None,
                 linewidth = 0,
                 markersize = 5.5,
-                markevery = self._get_markevry(data[0], data[1]),
+                markevery = self._get_markevry(data[0], data[1], amount_points=20),
                 **self._get_plot_keywords(
                     markers, colors, linestyles,
                     {
@@ -2827,7 +2788,7 @@ class plot_result:
                 label = None,
                 linewidth = 0,
                 markersize = 5.5,
-                markevery = self._get_markevry(data[0], data[1]),
+                markevery = self._get_markevry(data[0], data[1], amount_points=20),
                 marker = markers.get(eos, None),
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
@@ -2883,7 +2844,7 @@ class plot_result:
                 label = None,
                 linewidth = 0,
                 markersize = 5.5,
-                markevery = self._get_markevry(data[0], _data, amount_points=5),
+                markevery = self._get_markevry(data[0], _data),
                 marker = markers.get(eos, None),
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
@@ -3025,7 +2986,7 @@ class plot_result:
                         label = None,
                         linewidth = 0,
                         markersize = 5.5,
-                        markevery = self._get_markevry(data[0], _data,amount_points=5),
+                        markevery = self._get_markevry(data[0], _data),
                         marker = markers.get(eos["name"], None),
                         color = c[1],
                         markerfacecolor = c[1],
@@ -4034,7 +3995,7 @@ class plot_result:
                 label = None,
                 linewidth = 0,
                 markersize = 5.5,
-                markevery = self._get_markevry(data[0], data[1]),
+                markevery = self._get_markevry(data[0], data[1],amount_points=15),
                 **self._get_plot_keywords(
                     markers, colors, linestyles,
                     {
@@ -4080,7 +4041,7 @@ class plot_result:
                 label = None,
                 linewidth = 0,
                 markersize = 5.5,
-                markevery = self._get_markevry(data[0], data[1]),
+                markevery = self._get_markevry(data[0], data[1],amount_points=15),
                 marker = markers.get(eos, None),
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
@@ -4136,7 +4097,7 @@ class plot_result:
                 label = None,
                 linewidth = 0,
                 markersize = 5.5,
-                markevery = self._get_markevry(data[0], _data, amount_points=5),
+                markevery = self._get_markevry(data[0], _data),
                 marker = markers.get(eos, None),
                 color = GR_color_markers,
                 markerfacecolor = GR_color_markers,
@@ -4280,7 +4241,7 @@ class plot_result:
                         label = None,
                         linewidth = 0,
                         markersize = 5.5,
-                        markevery = self._get_markevry(data[0], _data, amount_points=5),
+                        markevery = self._get_markevry(data[0], _data),
                         marker = markers.get(eos["name"], None),
                         color = c[1],
                         markerfacecolor = c[1],
@@ -4799,7 +4760,7 @@ class plot_result:
         return res
 
     @staticmethod
-    def _get_markevry(data_x, data_y, amount_points = 15):
+    def _get_markevry(data_x, data_y, amount_points = 5):
         """
         for provided data list get the difference between the max and min to
         evluate the stem for getting amount_points and return list of
