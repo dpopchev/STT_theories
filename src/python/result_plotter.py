@@ -114,6 +114,27 @@ def map_ms_ls_c():
 
     return
 
+def luminosity_color(color, amount=1.1):
+    """
+    Lightens the given color by multiplying (1-luminosity) by the given amount.
+    Input can be matplotlib color string, hex string, or RGB tuple.
+
+    Examples:
+    >> lighten_color('g', 0.3)
+    >> lighten_color('#F034A3', 0.6)
+    >> lighten_color((.3,.55,.1), 0.5)
+    """
+    import matplotlib.colors as mc
+    import colorsys
+    try:
+        c = mc.cnames[color]
+    except:
+        c = color
+
+    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+
+    return colorsys.hls_to_rgb(abs(c[0]), abs(1 - amount * (1 - c[1])), abs(c[2]))
+
 def load_YvsX_config(config):
     """
     the input is a list of tuples, each of them having as first element as
@@ -351,7 +372,7 @@ def plot_MvsR_GR(config):
     plt.savefig(
         'MvsR_STT_GR.eps', format="eps",
         #~ bbox_inches='tight',
-        dpi=200,
+        pi=1200,
         pad_inches=0
     )
 
@@ -488,7 +509,7 @@ def create_uniI_data(config):
 
 def plot_tildeI_GR(config):
 
-    def _get_tildeI_ax():
+    def _get_ax():
         """
         set plot variables and return axes to created figure
         """
@@ -554,33 +575,32 @@ def plot_tildeI_GR(config):
 
         return data
 
-    def _get_polyfit_res(xp, yp):
-        coef, rest = polyfit(
-            x = xp, y = yp,
-            deg = [ 0, 1, 4 ],
-            w = np.sqrt(yp),
-            full = True
-        )
+    def _plotMarkers_getFits(
+        config, pars, tilde, ax_up, ax_down, fit_results = {}
+    ):
 
-        #~ calcualte the chi reduce
-        chi_red = rest[0][0]/(len(xp) - 3)
-        p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
+        def _get_polyfit_res(xp, yp):
 
-        return coef, chi_red, p
+            coef, rest = polyfit(
+                x = xp, y = yp,
+                deg = [ 0, 1, 4 ],
+                w = np.sqrt(yp),
+                full = True
+            )
 
-    config = load_YvsX_config(config)
+            #~ calcualte the chi reduce
+            chi_red = rest[0][0]/(len(xp) - 3)
+            p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
 
-    ax_up, ax_down = _get_tildeI_ax()
+            return coef, chi_red, p
 
-    set_axYvsX_parms(ax_up, x_label = "", y_label = config["y_up_label"])
-    set_axYvsX_parms(ax_down, x_label = config["x_label"], y_label = config["y_down_label"])
-    ax_down.set_yscale("log")
+        # TODO this choice is arbitrary, it should not be hardcoded
+        # MS2 is soft; SLy is moderate; APR3 is stiff
+        PlaceMarkersForEOS = ["MS2", "SLy", "APR3"]
 
-    tmp = 0.1 # it will serve as random step for markevery
-    plot_alpha = 0.5 # give some transperancy
-    fit_results = {} # to print what we have achieved at the end for the model
-
-    for pars in itertools.product(config["beta"], config["m"], config["lambda"]):
+        tmp = 0.025 # it will serve as random step for markevery
+        plot_alpha = 0.6 # give some transperancy
+        #~ fit_results = {} # to print what we have achieved at the end for the model
 
         # accumulate data for the model here, and use them to make the fit
         data_to_fit = np.empty(shape=(0,2))
@@ -589,25 +609,26 @@ def plot_tildeI_GR(config):
         for EOSname in config["eos_name"]:
 
             # change the markevery a little bit random
-            tmp += 0.0015 * (1 if random() < 0.5 else -1 )
+            #~ tmp += 0.0015 * (1 if random() < 0.5 else -1 )
 
             data = _get_tildeI_data(
                 config["path_main"], config["path_fitting"],
                 config["base_name"], EOSname, pars[0], pars[1], pars[2],
-                config["x_col"], config["y_col"], "tildeI"
+                config["x_col"], config["y_col"], tilde
             )
 
-            #~ maybe no makrers here?
-            ax_up.plot(
-                data[:,0], data[:,1],
-                label = None,
-                markevery = tmp,
-                linewidth = 0,
-                marker = map_ms.get(EOSname, None),
-                color = map_c.get(pars[1], None),
-                linestyle = None,
-                alpha = plot_alpha
-            )
+            if EOSname in PlaceMarkersForEOS and pars[0] == 0:
+                ax_up.plot(
+                    data[:,0], data[:,1],
+                    label = None,
+                    markevery = tmp,
+                    markersize = 6,
+                    linewidth = 0,
+                    marker = map_ms.get(EOSname, None),
+                    color = map_c.get("GR",None),
+                    linestyle = None,
+                    alpha = 1
+                )
 
             data_to_fit = np.append(data_to_fit, data, axis=0)
 
@@ -625,13 +646,18 @@ def plot_tildeI_GR(config):
         # the largest residual over all EOS
         delta_max = 0
 
+        tmp = 0.2
         # fill the down plot with residiums while gathering data for avreages
         for EOSname in config["eos_name"]:
+
+            tmp += 0.05 * (1 if random() < 0.5 else -1 )
+            if tmp < 0.01:
+                tmp = 0.2
 
             data = _get_tildeI_data(
                 config["path_main"], config["path_fitting"],
                 config["base_name"], EOSname, pars[0], pars[1], pars[2],
-                config["x_col"], config["y_col"], "tildeI"
+                config["x_col"], config["y_col"], tilde
             )
 
             _data = np.abs( 1 - data[:,1]/p(data[:,0]) )
@@ -652,9 +678,10 @@ def plot_tildeI_GR(config):
                 #~ markersize = 5.5,
                 markevery = tmp,
                 marker = map_ms.get(EOSname, None),
-                #~ color = map_c.get(pars[1], None),
+                color = map_c.get(pars[1] if pars[0] else "GR", None),
                 linestyle = None,
-                alpha = plot_alpha
+                alpha = plot_alpha,
+                zorder = 90 if pars[0] == 0 else 10
             )
 
         avg_L_1 = delta_all/n_all
@@ -663,40 +690,339 @@ def plot_tildeI_GR(config):
 
         fit_results.update({
             "beta {}, m = {}, lambda = {}".format(pars[0], pars[1], pars[2]):\
-            "a0 = {}, a1 = {}, a4 = {}; chi = {}; L1 = {}, Linf = {}; LinfW = {}".format(
+            "a0 = {:.3e}, a1 = {:.3e}, a4 = {:.3e}, chi = {:.3e}, L1 = {:.3e}, Linf = {:.3e}, LinfW = {:.3e}".format(
                 coef[0], coef[1], coef[4], chi_red, avg_L_1, avg_L_inf, L_inf_worst
             )
         } )
 
-        ax_up.plot(
-            np.linspace(np.amin(data_to_fit[:,0]), np.amax(data_to_fit[:,0]), 100),
-            p(np.linspace(np.amin(data_to_fit[:,0]), np.amax(data_to_fit[:,0]), 100)),
-            label = None,
-            color = map_c.get(pars[1], None),
-            linestyle = map_ls.get(pars[2], None)
-        )
-
-    data_to_fit = np.empty(shape=(0,2))
-
-    #~ same procedure for GR
-    for EOSname in config["eos_name"]:
-
-        data = _get_tildeI_data(
-            config["path_main"], config["path_fitting"],
-            config["base_name"], EOSname, 0, 0, 0,
-            config["x_col"], config["y_col"], "tildeI"
-        )
+        #give min and max compactnesses by hand
+        #~ p_x = np.linspace(np.amin(data_to_fit[:,0]), np.amax(data_to_fit[:,0]), 100)
+        # TODO maybe not hardcode the compactneses like that? now 0.09 to 0.35
+        p_x = np.linspace(0.09, 0.35, 100)
 
         ax_up.plot(
-            data[:,0], data[:,1],
+            p_x,
+            p(p_x),
             label = None,
-            markevery = tmp,
-            linewidth = 0,
-            marker = map_ms.get(EOSname, None),
-            color = map_c.get("GR", None),
-            linestyle = map_ls.get("GR", None),
-            alpha = plot_alpha
+            color = luminosity_color(map_c.get(pars[1] if pars[0] else "GR", None)),
+            linestyle = map_ls.get(pars[2] if pars[0] else "GR", None),
+            zorder = 90 if pars[0] == 0 else 85
         )
+
+        # beta = 0 means GR, then make the worst and not so worst fit
+        if pars[0] == 0:
+
+            ax_up.fill_between(
+                p_x,
+                p(p_x)*(1 + avg_L_inf),
+                p(p_x)*(1 - avg_L_inf),
+                facecolor=map_c.get("GR", None),
+                alpha= plot_alpha - 0.2,
+                zorder = 0
+            )
+
+            ax_up.fill_between(
+                p_x,
+                p(p_x)*( 1 + L_inf_worst ),
+                p(p_x)*( 1 - L_inf_worst ),
+                facecolor=map_c.get("GR", None),
+                alpha= plot_alpha - 0.3,
+                zorder = 0
+            )
+
+        return fit_results
+
+    config = load_YvsX_config(config)
+
+    ax_up, ax_down = _get_ax()
+
+    set_axYvsX_parms(ax_up, x_label = "", y_label = config["y_up_label"])
+    set_axYvsX_parms(ax_down, x_label = config["x_label"], y_label = config["y_down_label"])
+    ax_down.set_yscale("log")
+
+    FitResults = {}
+
+    for pars in itertools.product(config["beta"], config["m"], config["lambda"]):
+
+        FitResults = _plotMarkers_getFits(config, pars, "tildeI", ax_up, ax_down)
+
+    FitResults.update(_plotMarkers_getFits(config, [0,0,0], "tildeI", ax_up, ax_down))
+
+    for k, v in FitResults.items():
+        print("\n\t {} \n\t\t {}".format(k, v))
+
+    ax_up.set_xlim(0.09, 0.325)
+    ax_up.set_ylim(0.28, 0.55)
+
+    ax_down.set_ylim(1e-3, 1.5e0)
+    #~ ax_down.axhline(y=0.1, linewidth=2, color='r', alpha = 0.5)
+
+    plt.savefig(
+        'tildeI_GR.eps', format="eps",
+        #~ bbox_inches='tight',
+        dpi=1200,
+        pad_inches=0
+    )
+
+    plt.show()
+
+    return
+
+def plot_barI_GR(config):
+
+    def _get_ax():
+        """
+        set plot variables and return axes to created figure
+        """
+
+        plt.rc('xtick', labelsize=16)
+        plt.rc('ytick', labelsize=16)
+
+        plt.rc('font', size=15)
+
+        #~ plt.rc('figure', autolayout=True)
+        plt.rc('figure', figsize=(7.2,4.45))
+
+        plt.rc('axes', titlesize=16)
+        plt.rc('axes', labelsize=17)
+
+        plt.rc('lines', linewidth=2)
+        plt.rc('lines', markersize=10)
+
+        plt.rc('legend', fontsize=13)
+
+        plt.rc('text', usetex=True)
+        plt.rc('mathtext', fontset="stix")
+
+        #~ plt.rc('font', family='serif')
+        plt.rc('font', family='STIXGeneral')
+
+        fig, (ax_up, ax_down) = plt.subplots(
+            2,1, sharex=True,
+            gridspec_kw=dict(height_ratios=[2, 1])
+        )
+
+        fig.set_rasterized(True)
+        fig.tight_layout(h_pad=0, w_pad=0)
+        fig.subplots_adjust(hspace=0)
+
+        return ax_up, ax_down
+
+    def _get_barI_data( fpath_main, fpath_fitting, fname, EOSname, EOSbeta,
+    EOSm, EOSlambda, col_x, col_y, tilde ):
+        """
+        retrieve the data of the model
+        """
+
+        EOSmodel = "_".join( [
+            fname,
+            EOSname,
+            "beta{:.3e}".format(EOSbeta),
+            "m{:.3e}".format(EOSm),
+            "lambda{:.3e}".format(EOSlambda),
+            tilde
+        ] )
+
+        fullPathModel = os.path.join( fpath_main, EOSname, fpath_fitting, EOSmodel)
+
+        print("\n Will load data for: \n\t {} \n".format(fullPathModel))
+
+        # TODO if file not exists what do
+        data = np.loadtxt(fullPathModel, comments="#", delimiter=" ",
+        usecols=(col_x, col_y))
+
+        min_compactness = 0.09
+        data = data[~(data[:,0]<min_compactness), :]
+
+        return data
+
+    def _plotMarkers_getFits(
+        config, pars, tilde, ax_up, ax_down, fit_results = {}
+    ):
+
+        def _get_polyfit_res(xp, yp):
+            coef, rest = polyfit(
+                x = xp, y = yp,
+                deg = [ 1, 2, 3, 4 ],
+                #~ w = np.sqrt(yp),
+                full = True
+            )
+
+            #~ calcualte the chi reduce
+            chi_red = rest[0][0]/(len(xp) - 4)
+            p = lambda x: coef[1]*x**-1 + coef[2]*x**-2 + coef[3]*x**-3 + coef[4]*x**-4
+
+            return coef, chi_red, p
+
+        # TODO this choice is arbitrary, it should not be hardcoded
+        # MS2 is soft; SLy is moderate; APR3 is stiff
+        PlaceMarkersForEOS = ["MS2", "SLy", "APR3"]
+
+        tmp = 0.025 # it will serve as random step for markevery
+        plot_alpha = 0.6 # give some transperancy
+        #~ fit_results = {} # to print what we have achieved at the end for the model
+
+        # accumulate data for the model here, and use them to make the fit
+        data_to_fit = np.empty(shape=(0,2))
+
+        # fill the up plot with markers while gathering data for the fit
+        for EOSname in config["eos_name"]:
+
+            # change the markevery a little bit random
+            #~ tmp += 0.0015 * (1 if random() < 0.5 else -1 )
+
+            data = _get_barI_data(
+                config["path_main"], config["path_fitting"],
+                config["base_name"], EOSname, pars[0], pars[1], pars[2],
+                config["x_col"], config["y_col"], tilde
+            )
+
+            if EOSname in PlaceMarkersForEOS and pars[0] == 0:
+                ax_up.plot(
+                    data[:,0], data[:,1],
+                    label = None,
+                    markevery = tmp,
+                    markersize = 6,
+                    linewidth = 0,
+                    marker = map_ms.get(EOSname, None),
+                    color = map_c.get("GR",None),
+                    linestyle = None,
+                    alpha = 1
+                )
+
+            data_to_fit = np.append(data_to_fit, data, axis=0)
+
+        # get the coef in list, the Chi reduced score, and the polynom itself
+        coef, chi_red, p = _get_polyfit_res(data_to_fit[:,0]**-1, data_to_fit[:,1])
+
+        # average over all EOS of all the residuals
+        delta_all = 0
+        n_all = 0
+
+        # average over all EOS of largest residual per EOS
+        n_all_max = 0
+        delta_all_max = 0
+
+        # the largest residual over all EOS
+        delta_max = 0
+
+        tmp = 0.2
+        # fill the down plot with residiums while gathering data for avreages
+        for EOSname in config["eos_name"]:
+
+            tmp += 0.05 * (1 if random() < 0.5 else -1 )
+            if tmp < 0.01:
+                tmp = 0.2
+
+            data = _get_barI_data(
+                config["path_main"], config["path_fitting"],
+                config["base_name"], EOSname, pars[0], pars[1], pars[2],
+                config["x_col"], config["y_col"], tilde
+            )
+
+            _data = np.abs( 1 - data[:,1]/p(data[:,0]) )
+
+            delta_all += np.sum(_data)
+            n_all += _data.size
+
+            delta_all_max += np.amax(_data)
+            n_all_max += 1
+
+            delta_max = delta_max if delta_max > np.amax(_data) else np.amax(_data)
+
+            ax_down.plot(
+                data[:,0],
+                _data,
+                label = None,
+                linewidth = 0,
+                #~ markersize = 5.5,
+                markevery = tmp,
+                marker = map_ms.get(EOSname, None),
+                color = map_c.get(pars[1] if pars[0] else "GR", None),
+                linestyle = None,
+                alpha = plot_alpha,
+                zorder = 90 if pars[0] == 0 else 10
+            )
+
+        avg_L_1 = delta_all/n_all
+        avg_L_inf = delta_all_max/n_all_max
+        L_inf_worst = delta_max
+
+        fit_results.update({
+            "beta {}, m = {}, lambda = {}".format(pars[0], pars[1], pars[2]):\
+            "a1 = {:.3e}, a2 = {:.3e}, a3 = {:.3e}, a4 = {:.3e}, chi = {:.3e}, L1 = {:.3e}, Linf = {:.3e}, LinfW = {:.3e}".format(
+                coef[1], coef[2], coef[3], coef[4], chi_red, avg_L_1, avg_L_inf, L_inf_worst
+            )
+        } )
+
+        #give min and max compactnesses by hand
+        #~ p_x = np.linspace(np.amin(data_to_fit[:,0]), np.amax(data_to_fit[:,0]), 100)
+        # TODO maybe not hardcode the compactneses like that? now 0.09 to 0.35
+        p_x = np.linspace(0.09, 0.35, 100)
+
+        ax_up.plot(
+            p_x,
+            p(p_x),
+            label = None,
+            color = luminosity_color(map_c.get(pars[1] if pars[0] else "GR", None)),
+            linestyle = map_ls.get(pars[2] if pars[0] else "GR", None),
+            zorder = 90 if pars[0] == 0 else 85
+        )
+
+        # beta = 0 means GR, then make the worst and not so worst fit
+        if pars[0] == 0:
+
+            ax_up.fill_between(
+                p_x,
+                p(p_x)*(1 + avg_L_inf),
+                p(p_x)*(1 - avg_L_inf),
+                facecolor=map_c.get("GR", None),
+                alpha= plot_alpha - 0.2,
+                zorder = 0
+            )
+
+            ax_up.fill_between(
+                p_x,
+                p(p_x)*( 1 + L_inf_worst ),
+                p(p_x)*( 1 - L_inf_worst ),
+                facecolor=map_c.get("GR", None),
+                alpha= plot_alpha - 0.3,
+                zorder = 0
+            )
+
+        return fit_results
+
+    config = load_YvsX_config(config)
+
+    ax_up, ax_down = _get_ax()
+
+    set_axYvsX_parms(ax_up, x_label = "", y_label = config["y_up_label"])
+    set_axYvsX_parms(ax_down, x_label = config["x_label"], y_label = config["y_down_label"])
+    ax_down.set_yscale("log")
+
+    FitResults = {}
+
+    for pars in itertools.product(config["beta"], config["m"], config["lambda"]):
+
+        FitResults = _plotMarkers_getFits(config, pars, "barI", ax_up, ax_down)
+
+    FitResults.update(_plotMarkers_getFits(config, [0,0,0], "barI", ax_up, ax_down))
+
+    for k, v in FitResults.items():
+        print("\n\t {} \n\t\t {}".format(k, v))
+
+    ax_up.set_xlim(0.09, 0.325)
+    ax_up.set_ylim(3, 35)
+
+    ax_down.set_ylim(1e-3, 1.5e0)
+    #~ ax_down.axhline(y=0.1, linewidth=2, color='r', alpha = 0.5)
+
+    plt.savefig(
+        'barI_GR.eps', format="eps",
+        #~ bbox_inches='tight',
+        dpi=1200,
+        pad_inches=0
+    )
 
     plt.show()
 
@@ -780,6 +1106,23 @@ if __name__ == "__main__":
             """
         )
 
+        # create barI_GR
+        parser.add_argument(
+            "--barI_GR",
+            action = "store_const",
+            #~ nargs = "?",
+            #~ type = str,
+            #~ default = "quick_plotter.config",
+            const = "barI_GR",
+            #~ metavar = "",
+            dest = "ConfigSection",
+            required = False,
+            help = """
+                if called, it will use barI_GR section in config file to produce
+                a plot
+            """
+        )
+
         return parser
 
     def _get_config(ConfigFile):
@@ -809,6 +1152,10 @@ if __name__ == "__main__":
     elif args.ConfigSection == "tildeI_GR":
 
         plot_tildeI_GR(config.items(args.ConfigSection))
+
+    elif args.ConfigSection == "barI_GR":
+
+        plot_barI_GR(config.items(args.ConfigSection))
 
     else:
         print("\n {} unknown, terminating... \n", args.ConfigSection)
