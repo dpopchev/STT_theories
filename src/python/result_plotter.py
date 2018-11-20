@@ -427,16 +427,42 @@ def plotMarkers_getFits_uniI(
     avg_L_inf = delta_all_max/n_all_max
     L_inf_worst = delta_max
 
+    strFormat_BetaMLambda = "beta {}, m = {}, lambda = {}"
+
+    strFormat_tildeI_coef = (
+        "a_0 &= {:.3e} \\\\\n"
+        "a_1 &= {:.3e} \\\\\n"
+        "a_4 &= {:.3e} \\\\\n"
+        "{} &= {:.3e} \\\\\n\n"
+    )
+
+    strFormat_barI_coef = (
+        "a_1 &= {:.3e} \\\\\n"
+        "a_2 &= {:.3e} \\\\\n"
+        "a_3 &= {:.3e} \\\\\n"
+        "a_4 &= {:.3e} \\\\\n"
+        "{} &= {:.3e} \\\\\n\n"
+    )
+
+    strFormat_L = (
+        "<&L> = {:.3e} \\\\\n"
+        "<&L_{}> = {:.3e} \\\\\n"
+        "&L_{} = {:.3e} \\\\\n\n"
+    )
+
     fit_results.update(
         {
-            "beta {}, m = {}, lambda = {}".format(pars[0], pars[1], pars[2]):
-            "a0 = {:.3e}, a1 = {:.3e}, a4 = {:.3e}, chi = {:.3e}, L1 = {:.3e}, Linf = {:.3e}, LinfW = {:.3e}".format(
-                coef[0], coef[1], coef[4], chi_red, avg_L_1, avg_L_inf, L_inf_worst
-        ) } if tilde == "tildeI"
+            strFormat_BetaMLambda.format(pars[0], pars[1], pars[2]):
+            "\n".join([strFormat_tildeI_coef, strFormat_L]).format(
+                coef[0], coef[1], coef[4], "\chi_r^2", chi_red,
+                avg_L_1, "\infty", avg_L_inf, "\infty", L_inf_worst,
+            )
+        } if tilde == "tildeI"
         else {
-            "beta {}, m = {}, lambda = {}".format(pars[0], pars[1], pars[2]):\
-            "a1 = {:.3e}, a2 = {:.3e}, a3 = {:.3e}, a4 = {:.3e}, chi = {:.3e}, L1 = {:.3e}, Linf = {:.3e}, LinfW = {:.3e}".format(
-            coef[1], coef[2], coef[3], coef[4], chi_red, avg_L_1, avg_L_inf, L_inf_worst
+            strFormat_BetaMLambda.format(pars[0], pars[1], pars[2]):
+            "\n".join([strFormat_barI_coef, strFormat_L]).format(
+            coef[1], coef[2], coef[3], coef[4], "\chi_r^2", chi_red,
+            avg_L_1, "\infty", avg_L_inf, "\infty", L_inf_worst,
         ) }
     )
 
@@ -837,7 +863,7 @@ def plot_tildeI_GR_zoomBox(config):
     FitResults.update(plotMarkers_getFits_uniI(config, [0,0,0], "tildeI", ax_up, ax_down, ax_in))
 
     for k, v in FitResults.items():
-        print("\n\t {} \n\t\t {}".format(k, v))
+        print("\n{}\n{}".format(k, v))
 
     handle_EOSnames = [
         Line2D(
@@ -992,7 +1018,7 @@ def plot_tildeI_GR(config):
     FitResults.update(plotMarkers_getFits_uniI(config, [0,0,0], "tildeI", ax_up, ax_down))
 
     for k, v in FitResults.items():
-        print("\n\t {} \n\t\t {}".format(k, v))
+        print("\n{}\n{}".format(k, v))
 
     handle_EOSnames = [
         Line2D(
@@ -1111,6 +1137,164 @@ def plot_tildeI_GR(config):
 
     return
 
+def plot_barI_GR_zoomBox(config):
+
+    config = load_YvsX_config(config)
+
+    ax_up, ax_down = get_uniI_ax()
+
+    ax_in = zoomed_inset_axes(ax_up, 5, loc=9)
+
+    set_axYvsX_parms(ax_up, x_label = "", y_label = config["y_up_label"])
+    set_axYvsX_parms(ax_down, x_label = config["x_label"], y_label = config["y_down_label"])
+    ax_down.set_yscale("log")
+
+    FitResults = {}
+
+    for pars in itertools.product(config["beta"], config["m"], config["lambda"]):
+
+        FitResults = plotMarkers_getFits_uniI(config, pars, "barI", ax_up, ax_down, ax_in)
+
+    FitResults.update(plotMarkers_getFits_uniI(config, [0,0,0], "barI", ax_up, ax_down, ax_in))
+
+    for k, v in FitResults.items():
+        print("\n{}\n{}".format(k, v))
+
+    handle_EOSnames = [
+        Line2D(
+            [], [],
+            color = "k",
+            marker = map_ms.get( _, None),
+            linewidth = 0,
+            linestyle = None,
+            label = _
+        ) for _ in config["eos_name"]
+    ]
+
+    handle_linestyles = [
+        Line2D(
+            [], [],
+            color = "k",
+            marker = None,
+            linestyle = map_ls.get(_, None),
+            label = (
+                "$\lambda = {}$".format(_)
+                if _ != "GR" else "GR" )
+        ) for _ in [ *config["lambda"], "GR" ]
+    ]
+
+    # colors will be presented as patches
+    handle_colors = [
+        mpatches.Patch(
+            color = map_c.get(_, None),
+            label = (
+                "$m= $ {}".format(convert_NumScientific(_))
+                if _ != "GR" else "GR"
+            )
+        ) for _ in [ *config["m"], "GR" ]
+    ]
+
+    # colors will be presented as solid lines
+    #~ handle_colors = [
+        #~ Line2D(
+            #~ [], [],
+            #~ color = map_c.get(_, None),
+            #~ marker = None,
+            #~ label = (
+                #~ "$\lambda = {}$".format(_)
+                #~ if _ != "GR" else "GR" )
+        #~ ) for _ in [ *config["lambda"], "GR" ]
+    #~ ]
+
+    legend_markers = ax_up.legend(
+        handles = [ *handle_EOSnames ],
+        loc = 2,
+        ncol = 1,
+        frameon = False,
+        markerscale = 0.6,
+        fancybox=True,
+        #~ framealpha = 0.5,
+        handlelength = 4,
+        bbox_to_anchor=(1, 1),
+        #~ borderaxespad=0.1,
+    )
+
+    legend_linestyles = ax_up.legend(
+        handles = [ *handle_linestyles ],
+        loc = 1,
+        ncol = 1,
+        frameon = True,
+        markerscale = 0.6,
+        fancybox=True,
+        framealpha = 0.5,
+        handlelength = 4,
+        title = "Line patterns"
+        #~ bbox_to_anchor=(0.79, 0.5),
+        #~ borderaxespad=0.1
+    )
+
+    #~ depricated way of seting font size of tittle of legend
+    #~ seem not the way any more in matplotlib 3
+    #~ legend_linestyles.set_title('location', prop={"size":10})
+    legend_linestyles.get_title().set_fontsize(10)
+
+    legend_colors = ax_up.legend(
+        handles = [ *handle_colors ],
+        loc = 3,
+        ncol = 1,
+        frameon = True,
+        markerscale = 0.6,
+        fancybox=True,
+        framealpha = 0.5,
+        handlelength = 4,
+        title = "Line colours"
+        #~ bbox_to_anchor=(0.99, 0.22),
+        #~ borderaxespad=0.1
+    )
+
+    legend_colors.get_title().set_fontsize(10)
+    legend_colors.set_zorder(115)
+
+    ax_up.add_artist(legend_markers)
+
+    ax_up.add_artist( legend_linestyles )
+
+    ax_up.add_artist( legend_colors )
+
+    ax_up.set_xlim(0.09, 0.325)
+    ax_up.set_ylim(4.75, 35)
+
+    ax_in.set_xlim(0.185, 0.205)
+    ax_in.set_ylim(9, 11.5)
+    ax_in.xaxis.set_visible(False)
+    ax_in.yaxis.set_visible(False)
+    #~ ax_in.xaxis.set_tick_params(labelsize=8)
+    #~ ax_in.yaxis.set_tick_params(labelsize=8)
+    #~ ax_in.tick_params(axis="both",direction="in", pad=-10)
+
+    mark_inset(
+        ax_up, ax_in,
+        loc1=3, loc2=4,
+        fc="black", ec="black",
+        zorder=110
+    )
+
+    ax_down.set_ylim(1e-3, 1.5e0)
+    #~ ax_down.axhline(y=0.1, linewidth=2, color='r', alpha = 0.5)
+
+    plt.savefig(
+        'BarI_all.eps', format="eps",
+        dpi=600,
+        pad_inches=0,
+        bbox_inches='tight',
+        papertype = "a4",
+        bbox_extra_artists=(legend_markers,),
+    )
+
+    plt.show()
+
+    return
+
 def plot_barI_GR(config):
 
     config = load_YvsX_config(config)
@@ -1130,7 +1314,7 @@ def plot_barI_GR(config):
     FitResults.update(plotMarkers_getFits_uniI(config, [0,0,0], "barI", ax_up, ax_down))
 
     for k, v in FitResults.items():
-        print("\n\t {} \n\t\t {}".format(k, v))
+        print("\n{}\n{}".format(k, v))
 
     handle_EOSnames = [
         Line2D(
@@ -1165,8 +1349,8 @@ def plot_barI_GR(config):
         ) for _ in [ *config["m"], "GR" ]
     ]
 
+    # colors will be presented as solid lines
     #~ handle_colors = [
-
         #~ Line2D(
             #~ [], [],
             #~ color = map_c.get(_, None),
@@ -1175,62 +1359,74 @@ def plot_barI_GR(config):
                 #~ "$\lambda = {}$".format(_)
                 #~ if _ != "GR" else "GR" )
         #~ ) for _ in [ *config["lambda"], "GR" ]
-
     #~ ]
 
-    ax_up.add_artist( ax_up.legend(
+    legend_markers = ax_up.legend(
         handles = [ *handle_EOSnames ],
-        loc = 2,
-        ncol = 2,
+        loc = 9,
+        ncol = 3,
         frameon = True,
         markerscale = 0.6,
         fancybox=True,
         framealpha = 0.5,
         handlelength = 4,
-        #~ bbox_to_anchor=(1, 1),
-        #~ borderaxespad=0.1
-    ) )
+        bbox_to_anchor=(0.45, 1),
+        #~ borderaxespad=0.1,
+    )
 
-    ax_up.add_artist( ax_up.legend(
-        handles = [ *handle_linestyles ],
-        loc = 7,
-        ncol = 1,
-        frameon = True,
-        markerscale = 0.6,
-        fancybox=True,
-        framealpha = 0.5,
-        handlelength = 4,
-        #~ bbox_to_anchor=(0.79, 0.5),
-        #~ borderaxespad=0.1
-    ) )
+    ax_up.add_artist(legend_markers)
 
-    ax_up.add_artist( ax_up.legend(
-        handles = [ *handle_colors ],
-        loc = 4,
-        ncol = 1,
-        frameon = True,
-        markerscale = 0.6,
-        fancybox=True,
-        framealpha = 0.5,
-        handlelength = 4,
-        #~ bbox_to_anchor=(0.99, 0.22),
-        #~ borderaxespad=0.1
-    ) )
+    if len(handle_linestyles) > 2:
+        legend_linestyles = ax_up.legend(
+            handles = [ *handle_linestyles ],
+            loc = 3,
+            ncol = 1,
+            frameon = True,
+            markerscale = 0.6,
+            fancybox=True,
+            framealpha = 0.5,
+            handlelength = 4,
+            title = r"$m_\varphi = 5\times10^{-3}$"
+            #~ bbox_to_anchor=(0.79, 0.5),
+            #~ borderaxespad=0.1
+        )
 
-    # lets add a legend for marker styles
+        legend_linestyles.get_title().set_fontsize(10)
+
+        ax_up.add_artist( legend_linestyles )
+
+    if len(handle_colors) > 2:
+        legend_colors = ax_up.legend(
+            handles = [ *handle_colors ],
+            loc = 1,
+            ncol = 1,
+            frameon = True,
+            markerscale = 0.6,
+            fancybox=True,
+            framealpha = 0.5,
+            handlelength = 4,
+            title = r"$\lambda = 0.1$"
+            #~ bbox_to_anchor=(0.99, 0.22),
+            #~ borderaxespad=0.1
+        )
+
+        ax_up.add_artist( legend_colors )
+
+        legend_colors.get_title().set_fontsize(10)
 
     ax_up.set_xlim(0.09, 0.325)
-    ax_up.set_ylim(5, 35)
+    ax_up.set_ylim(4.75, 35)
 
     ax_down.set_ylim(1e-3, 1.5e0)
     #~ ax_down.axhline(y=0.1, linewidth=2, color='r', alpha = 0.5)
 
     plt.savefig(
-        'barI_GR.eps', format="eps",
+        'BarI_lambda1e-1.eps', format="eps",
         dpi=600,
         pad_inches=0,
-        bbox_inches = "tight",
-        papertype = "a4"
+        bbox_inches='tight',
+        papertype = "a4",
+        bbox_extra_artists=(legend_markers,)
     )
 
     plt.show()
@@ -1315,7 +1511,7 @@ if __name__ == "__main__":
             """
         )
 
-        # create tildeI_GR
+        # create tildeI_GR_zoomBox
         parser.add_argument(
             "--tildeI_GR_zoomBox",
             action = "store_const",
@@ -1328,6 +1524,22 @@ if __name__ == "__main__":
             required = False,
             help = """
                 it will use the tilde I section
+            """
+        )
+
+        # create barI_GR_zoomBox
+        parser.add_argument(
+            "--barI_GR_zoomBox",
+            action = "store_const",
+            #~ nargs = "?",
+            #~ type = str,
+            #~ default = "quick_plotter.config",
+            const = "barI_GR_zoomBox",
+            #~ metavar = "",
+            dest = "ConfigSection",
+            required = False,
+            help = """
+                it will use the bar I section
             """
         )
 
@@ -1382,6 +1594,11 @@ if __name__ == "__main__":
         #TODO Documentation for this needed
 
         plot_tildeI_GR_zoomBox(config.items("tildeI_GR"))
+
+    elif args.ConfigSection == "barI_GR_zoomBox":
+        #TODO Documentation for this needed
+
+        plot_barI_GR_zoomBox(config.items("barI_GR"))
 
     elif args.ConfigSection == "barI_GR":
 
