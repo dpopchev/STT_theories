@@ -5,6 +5,7 @@ import configparser
 import os
 import itertools
 import pathlib
+import random
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,7 +13,6 @@ import matplotlib.patches as mpatches
 
 from matplotlib.lines import Line2D
 from matplotlib import gridspec
-from random import random
 from numpy.polynomial.polynomial import polyfit
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
@@ -214,6 +214,301 @@ def get_YvsX_ax():
 
     return ax
 
+def get_uniI_ax():
+    """
+    set plot variables and return axes to created figure
+    """
+
+    plt.rc('xtick', labelsize=16)
+    plt.rc('ytick', labelsize=16)
+
+    plt.rc('font', size=15)
+
+    plt.rc('figure', figsize=(7.2,4.8))
+
+    plt.rc('axes', titlesize=16)
+    plt.rc('axes', labelsize=16)
+
+    plt.rc('lines', linewidth=2)
+    plt.rc('lines', markersize=10)
+
+    plt.rc('legend', fontsize=8)
+
+    plt.rc('text', usetex=True)
+    plt.rc('mathtext', fontset="stix")
+
+    #~ plt.rc('font', family='serif')
+    plt.rc('font', family='STIXGeneral')
+
+    fig, (ax_up, ax_down) = plt.subplots(
+        2,1, sharex=True,
+        gridspec_kw=dict(height_ratios=[2, 1])
+    )
+
+    fig.subplots_adjust(hspace=0)
+    fig.set_rasterized(True)
+    fig.set_tight_layout(False)
+
+    return ax_up, ax_down
+
+def get_uniI_data( fpath_main, fpath_fitting, fname, EOSname, EOSbeta, EOSm,
+EOSlambda, col_x, col_y, tilde ):
+    """
+    retrieve the data of the model
+    """
+
+    EOSmodel = "_".join( [
+        fname,
+        EOSname,
+        "beta{:.3e}".format(EOSbeta),
+        "m{:.3e}".format(EOSm),
+        "lambda{:.3e}".format(EOSlambda),
+        tilde
+    ] )
+
+    fullPathModel = os.path.join( fpath_main, EOSname, fpath_fitting, EOSmodel)
+
+    print("\n Will load data for: \n\t {} \n".format(fullPathModel))
+
+    # TODO if file not exists what do
+    data = np.loadtxt(fullPathModel, comments="#", delimiter=" ",
+    usecols=(col_x, col_y))
+
+    min_compactness = 0.09
+    data = data[~(data[:,0]<min_compactness), :]
+
+    return data
+
+def plotMarkers_getFits_uniI(
+    config, pars, tilde, ax_up, ax_down, ax_in = None, fit_results = {}
+):
+
+    def _get_polyfit_res_tildeI(xp, yp):
+
+        coef, rest = polyfit(
+            x = xp, y = yp,
+            deg = [ 0, 1, 4 ],
+            w = np.sqrt(yp),
+            full = True
+        )
+
+        #~ calcualte the chi reduce
+        chi_red = rest[0][0]/(len(xp) - 3)
+        p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
+
+        return coef, chi_red, p
+
+    def _get_polyfit_res_barI(xp, yp):
+
+        coef, rest = polyfit(
+            x = xp, y = yp,
+            deg = [ 1, 2, 3, 4 ],
+            #~ w = np.sqrt(yp),
+            full = True
+        )
+
+        #~ calcualte the chi reduce
+        chi_red = rest[0][0]/(len(xp) - 4)
+        p = lambda x: coef[1]*x**-1 + coef[2]*x**-2 + coef[3]*x**-3 + coef[4]*x**-4
+
+        return coef, chi_red, p
+
+    # TODO this choice is arbitrary, it should not be hardcoded
+    # MS2 is soft; SLy is moderate; APR3 is stiff
+    #~ PlaceMarkersForEOS = ["MS2", "SLy", "APR3"]
+
+    plot_alpha = 0.5 # give some transperancy
+    #~ fit_results = {} # to print what we have achieved at the end for the model
+
+    # accumulate data for the model here, and use them to make the fit
+    data_to_fit = np.empty(shape=(0,2))
+
+    # fill the up plot with markers while gathering data for the fit
+    for EOSname in config["eos_name"]:
+
+        data = get_uniI_data(
+            config["path_main"], config["path_fitting"],
+            config["base_name"], EOSname, pars[0], pars[1], pars[2],
+            config["x_col"], config["y_col"], tilde
+        )
+
+        data_to_fit = np.append(data_to_fit, data, axis=0)
+        if pars[2] > 1:
+            continue
+
+        ax_up.plot(
+            data[:,0], data[:,1],
+            label = None,
+            markevery = random.uniform(0.14,0.18),
+            markersize = 6,
+            linewidth = 0,
+            marker = map_ms.get(EOSname, None),
+            color = map_c.get(
+                pars[1] if pars[0] else "GR",None
+            ),
+            linestyle = None,
+            alpha = plot_alpha
+        )
+
+        # do not want any markers in the zoomed box
+        if ax_in and False:
+            ax_in.plot(
+                data[:,0], data[:,1],
+                label = None,
+                markevery = None,
+                markersize = 6,
+                linewidth = 0,
+                marker = map_ms.get(EOSname, None),
+                color = map_c.get(pars[1],None),
+                linestyle = None,
+                alpha = plot_alpha
+            )
+
+    # get the coef in list, the Chi reduced score, and the polynom itself
+    coef, chi_red, p = (
+        _get_polyfit_res_tildeI(
+            data_to_fit[:,0], data_to_fit[:,1]
+        )  if tilde == "tildeI"
+        else  _get_polyfit_res_barI(
+            data_to_fit[:,0]**-1, data_to_fit[:,1]
+        )
+    )
+
+    # average over all EOS of all the residuals
+    delta_all = 0
+    n_all = 0
+
+    # average over all EOS of largest residual per EOS
+    n_all_max = 0
+    delta_all_max = 0
+
+    # the largest residual over all EOS
+    delta_max = 0
+
+    # fill the down plot with residiums while gathering data for avreages
+    for EOSname in config["eos_name"]:
+
+        # change the markevery a little bit random
+
+        data = get_uniI_data(
+            config["path_main"], config["path_fitting"],
+            config["base_name"], EOSname, pars[0], pars[1], pars[2],
+            config["x_col"], config["y_col"], tilde
+        )
+
+        _data = np.abs( 1 - data[:,1]/p(data[:,0]) )
+
+        delta_all += np.sum(_data)
+        n_all += _data.size
+
+        delta_all_max += np.amax(_data)
+        n_all_max += 1
+
+        delta_max = delta_max if delta_max > np.amax(_data) else np.amax(_data)
+
+        if pars[2] >= 1:
+            continue
+
+        ax_down.plot(
+            data[:,0],
+            _data,
+            label = None,
+            linewidth = 0,
+            markersize = 6,
+            markevery = random.uniform(0.14,0.18),
+            marker = map_ms.get(EOSname, None),
+            color = map_c.get(pars[1] if pars[0] else "GR", None),
+            linestyle = None,
+            alpha = plot_alpha,
+            zorder = 90 if pars[0] == 0 else 10
+        )
+
+    avg_L_1 = delta_all/n_all
+    avg_L_inf = delta_all_max/n_all_max
+    L_inf_worst = delta_max
+
+    fit_results.update(
+        {
+            "beta {}, m = {}, lambda = {}".format(pars[0], pars[1], pars[2]):
+            "a0 = {:.3e}, a1 = {:.3e}, a4 = {:.3e}, chi = {:.3e}, L1 = {:.3e}, Linf = {:.3e}, LinfW = {:.3e}".format(
+                coef[0], coef[1], coef[4], chi_red, avg_L_1, avg_L_inf, L_inf_worst
+        ) } if tilde == "tildeI"
+        else {
+            "beta {}, m = {}, lambda = {}".format(pars[0], pars[1], pars[2]):\
+            "a1 = {:.3e}, a2 = {:.3e}, a3 = {:.3e}, a4 = {:.3e}, chi = {:.3e}, L1 = {:.3e}, Linf = {:.3e}, LinfW = {:.3e}".format(
+            coef[1], coef[2], coef[3], coef[4], chi_red, avg_L_1, avg_L_inf, L_inf_worst
+        ) }
+    )
+
+    #give min and max compactnesses by hand
+    #~ p_x = np.linspace(np.amin(data_to_fit[:,0]), np.amax(data_to_fit[:,0]), 100)
+    # TODO maybe not hardcode the compactneses like that? now 0.09 to 0.35
+    p_x = np.linspace(0.09, 0.35, 100)
+
+    ax_up.plot(
+        p_x,
+        p(p_x),
+        label = None,
+        color = luminosity_color(map_c.get(pars[1] if pars[0] else "GR", None)),
+        linestyle = map_ls.get(pars[2] if pars[0] else "GR", None),
+        zorder = 90 if pars[0] == 0 else 85,
+        linewidth = 2.5
+    )
+
+    if ax_in:
+        ax_in.plot(
+            p_x,
+            p(p_x),
+            label = None,
+            color = luminosity_color(map_c.get(pars[1] if pars[0] else "GR", None)),
+            linestyle = map_ls.get(pars[2] if pars[0] else "GR", None),
+            zorder = 90 if pars[0] == 0 else 85,
+            linewidth = 2.5
+        )
+
+    # beta = 0 means GR, then make the worst and not so worst fit
+    if pars[0] == 0:
+
+        ax_up.fill_between(
+            p_x,
+            p(p_x)*(1 + avg_L_inf),
+            p(p_x)*(1 - avg_L_inf),
+            facecolor=map_c.get("GR", None),
+            alpha= 0.4,
+            zorder = 0
+        )
+
+        if ax_in:
+            ax_in.fill_between(
+                p_x,
+                p(p_x)*(1 + avg_L_inf),
+                p(p_x)*(1 - avg_L_inf),
+                facecolor=map_c.get("GR", None),
+                alpha= 0.4,
+                zorder = 0
+            )
+
+        ax_up.fill_between(
+            p_x,
+            p(p_x)*( 1 + L_inf_worst ),
+            p(p_x)*( 1 - L_inf_worst ),
+            facecolor=map_c.get("GR", None),
+            alpha= 0.3,
+            zorder = 0
+        )
+
+        if ax_in:
+            ax_in.fill_between(
+                p_x,
+                p(p_x)*( 1 + L_inf_worst ),
+                p(p_x)*( 1 - L_inf_worst ),
+                facecolor=map_c.get("GR", None),
+                alpha= 0.3,
+                zorder = 0
+            )
+
+    return fit_results
+
 def set_axYvsX_parms(ax, x_label = "", y_label = ""):
 
     #~ fontsize=16
@@ -327,7 +622,8 @@ def plot_MvsR_GR(config, GRonly = False):
             markevery = 0.1,
             marker = map_ms.get(model[0], None),
             color = map_c.get("GR", None),
-            linestyle = map_ls.get("GR", None)
+            linestyle = map_ls.get("GR", None),
+            zorder = 100
         )
 
     handle_EOSnames = [
@@ -522,264 +818,9 @@ def create_uniI_data(config):
 
 def plot_tildeI_GR_zoomBox(config):
 
-    def _get_ax():
-        """
-        set plot variables and return axes to created figure
-        """
-
-        plt.rc('xtick', labelsize=16)
-        plt.rc('ytick', labelsize=16)
-
-        plt.rc('font', size=15)
-
-        plt.rc('figure', figsize=(7.2,4.8))
-
-        plt.rc('axes', titlesize=16)
-        plt.rc('axes', labelsize=16)
-
-        plt.rc('lines', linewidth=2)
-        plt.rc('lines', markersize=10)
-
-        plt.rc('legend', fontsize=8)
-
-        plt.rc('text', usetex=True)
-        plt.rc('mathtext', fontset="stix")
-
-        #~ plt.rc('font', family='serif')
-        plt.rc('font', family='STIXGeneral')
-
-        fig, (ax_up, ax_down) = plt.subplots(
-            2,1, sharex=True,
-            gridspec_kw=dict(height_ratios=[2, 1])
-        )
-
-        fig.subplots_adjust(hspace=0)
-        fig.set_rasterized(True)
-        fig.set_tight_layout(False)
-
-        return ax_up, ax_down
-
-    def _get_tildeI_data( fpath_main, fpath_fitting, fname, EOSname, EOSbeta,
-    EOSm, EOSlambda, col_x, col_y, tilde ):
-        """
-        retrieve the data of the model
-        """
-
-        EOSmodel = "_".join( [
-            fname,
-            EOSname,
-            "beta{:.3e}".format(EOSbeta),
-            "m{:.3e}".format(EOSm),
-            "lambda{:.3e}".format(EOSlambda),
-            tilde
-        ] )
-
-        fullPathModel = os.path.join( fpath_main, EOSname, fpath_fitting, EOSmodel)
-
-        print("\n Will load data for: \n\t {} \n".format(fullPathModel))
-
-        # TODO if file not exists what do
-        data = np.loadtxt(fullPathModel, comments="#", delimiter=" ",
-        usecols=(col_x, col_y))
-
-        min_compactness = 0.09
-        data = data[~(data[:,0]<min_compactness), :]
-
-        return data
-
-    def _plotMarkers_getFits(
-        config, pars, tilde, ax_up, ax_down, ax_in, fit_results = {}
-    ):
-
-        def _get_polyfit_res(xp, yp):
-
-            coef, rest = polyfit(
-                x = xp, y = yp,
-                deg = [ 0, 1, 4 ],
-                w = np.sqrt(yp),
-                full = True
-            )
-
-            #~ calcualte the chi reduce
-            chi_red = rest[0][0]/(len(xp) - 3)
-            p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
-
-            return coef, chi_red, p
-
-        # TODO this choice is arbitrary, it should not be hardcoded
-        # MS2 is soft; SLy is moderate; APR3 is stiff
-        #~ PlaceMarkersForEOS = ["MS2", "SLy", "APR3"]
-
-        plot_alpha = 0.5 # give some transperancy
-        #~ fit_results = {} # to print what we have achieved at the end for the model
-
-        # accumulate data for the model here, and use them to make the fit
-        data_to_fit = np.empty(shape=(0,2))
-
-        # fill the up plot with markers while gathering data for the fit
-        for EOSname in config["eos_name"]:
-
-            data = _get_tildeI_data(
-                config["path_main"], config["path_fitting"],
-                config["base_name"], EOSname, pars[0], pars[1], pars[2],
-                config["x_col"], config["y_col"], tilde
-            )
-
-            ax_up.plot(
-                data[:,0], data[:,1],
-                label = None,
-                markevery = 0.05,
-                markersize = 6,
-                linewidth = 0,
-                marker = map_ms.get(EOSname, None),
-                color = map_c.get(pars[1],None),
-                linestyle = None,
-                alpha = plot_alpha
-            )
-
-            #~ ax_in.plot(
-                #~ data[:,0], data[:,1],
-                #~ label = None,
-                #~ markevery = None,
-                #~ markersize = 6,
-                #~ linewidth = 0,
-                #~ marker = map_ms.get(EOSname, None),
-                #~ color = map_c.get(pars[1],None),
-                #~ linestyle = None,
-                #~ alpha = plot_alpha
-            #~ )
-
-            data_to_fit = np.append(data_to_fit, data, axis=0)
-
-        # get the coef in list, the Chi reduced score, and the polynom itself
-        coef, chi_red, p = _get_polyfit_res(data_to_fit[:,0], data_to_fit[:,1])
-
-        # average over all EOS of all the residuals
-        delta_all = 0
-        n_all = 0
-
-        # average over all EOS of largest residual per EOS
-        n_all_max = 0
-        delta_all_max = 0
-
-        # the largest residual over all EOS
-        delta_max = 0
-
-        # fill the down plot with residiums while gathering data for avreages
-        for EOSname in config["eos_name"]:
-
-            # change the markevery a little bit random
-
-            data = _get_tildeI_data(
-                config["path_main"], config["path_fitting"],
-                config["base_name"], EOSname, pars[0], pars[1], pars[2],
-                config["x_col"], config["y_col"], tilde
-            )
-
-            _data = np.abs( 1 - data[:,1]/p(data[:,0]) )
-
-            delta_all += np.sum(_data)
-            n_all += _data.size
-
-            delta_all_max += np.amax(_data)
-            n_all_max += 1
-
-            delta_max = delta_max if delta_max > np.amax(_data) else np.amax(_data)
-
-            ax_down.plot(
-                data[:,0],
-                _data,
-                label = None,
-                linewidth = 0,
-                markersize = 6,
-                markevery = 0.2,
-                marker = map_ms.get(EOSname, None),
-                color = map_c.get(pars[1] if pars[0] else "GR", None),
-                linestyle = None,
-                alpha = plot_alpha,
-                zorder = 90 if pars[0] == 0 else 10
-            )
-
-        avg_L_1 = delta_all/n_all
-        avg_L_inf = delta_all_max/n_all_max
-        L_inf_worst = delta_max
-
-        fit_results.update({
-            "beta {}, m = {}, lambda = {}".format(pars[0], pars[1], pars[2]):\
-            "a0 = {:.3e}, a1 = {:.3e}, a4 = {:.3e}, chi = {:.3e}, L1 = {:.3e}, Linf = {:.3e}, LinfW = {:.3e}".format(
-                coef[0], coef[1], coef[4], chi_red, avg_L_1, avg_L_inf, L_inf_worst
-            )
-        } )
-
-        #give min and max compactnesses by hand
-        #~ p_x = np.linspace(np.amin(data_to_fit[:,0]), np.amax(data_to_fit[:,0]), 100)
-        # TODO maybe not hardcode the compactneses like that? now 0.09 to 0.35
-        p_x = np.linspace(0.09, 0.35, 100)
-
-        ax_up.plot(
-            p_x,
-            p(p_x),
-            label = None,
-            color = luminosity_color(map_c.get(pars[1] if pars[0] else "GR", None)),
-            linestyle = map_ls.get(pars[2] if pars[0] else "GR", None),
-            zorder = 90 if pars[0] == 0 else 85,
-            linewidth = 2.5
-        )
-
-        ax_in.plot(
-            p_x,
-            p(p_x),
-            label = None,
-            color = luminosity_color(map_c.get(pars[1] if pars[0] else "GR", None)),
-            linestyle = map_ls.get(pars[2] if pars[0] else "GR", None),
-            zorder = 90 if pars[0] == 0 else 85,
-            linewidth = 2.5
-        )
-
-        # beta = 0 means GR, then make the worst and not so worst fit
-        if pars[0] == 0:
-
-            ax_up.fill_between(
-                p_x,
-                p(p_x)*(1 + avg_L_inf),
-                p(p_x)*(1 - avg_L_inf),
-                facecolor=map_c.get("GR", None),
-                alpha= 0.4,
-                zorder = 0
-            )
-
-            ax_in.fill_between(
-                p_x,
-                p(p_x)*(1 + avg_L_inf),
-                p(p_x)*(1 - avg_L_inf),
-                facecolor=map_c.get("GR", None),
-                alpha= 0.4,
-                zorder = 0
-            )
-
-            ax_up.fill_between(
-                p_x,
-                p(p_x)*( 1 + L_inf_worst ),
-                p(p_x)*( 1 - L_inf_worst ),
-                facecolor=map_c.get("GR", None),
-                alpha= 0.3,
-                zorder = 0
-            )
-
-            ax_in.fill_between(
-                p_x,
-                p(p_x)*( 1 + L_inf_worst ),
-                p(p_x)*( 1 - L_inf_worst ),
-                facecolor=map_c.get("GR", None),
-                alpha= 0.3,
-                zorder = 0
-            )
-
-        return fit_results
-
     config = load_YvsX_config(config)
 
-    ax_up, ax_down = _get_ax()
+    ax_up, ax_down = get_uniI_ax()
 
     ax_in = zoomed_inset_axes(ax_up, 3, loc=8)
 
@@ -791,9 +832,164 @@ def plot_tildeI_GR_zoomBox(config):
 
     for pars in itertools.product(config["beta"], config["m"], config["lambda"]):
 
-        FitResults = _plotMarkers_getFits(config, pars, "tildeI", ax_up, ax_down, ax_in)
+        FitResults = plotMarkers_getFits_uniI(config, pars, "tildeI", ax_up, ax_down, ax_in)
 
-    FitResults.update(_plotMarkers_getFits(config, [0,0,0], "tildeI", ax_up, ax_down, ax_in))
+    FitResults.update(plotMarkers_getFits_uniI(config, [0,0,0], "tildeI", ax_up, ax_down, ax_in))
+
+    for k, v in FitResults.items():
+        print("\n\t {} \n\t\t {}".format(k, v))
+
+    handle_EOSnames = [
+        Line2D(
+            [], [],
+            color = "k",
+            marker = map_ms.get( _, None),
+            linewidth = 0,
+            linestyle = None,
+            label = _
+        ) for _ in config["eos_name"]
+    ]
+
+    handle_linestyles = [
+        Line2D(
+            [], [],
+            color = "k",
+            marker = None,
+            linestyle = map_ls.get(_, None),
+            label = (
+                "$\lambda = {}$".format(_)
+                if _ != "GR" else "GR" )
+        ) for _ in [ *config["lambda"], "GR" ]
+    ]
+
+    # colors will be presented as patches
+    handle_colors = [
+        mpatches.Patch(
+            color = map_c.get(_, None),
+            label = (
+                "$m= $ {}".format(convert_NumScientific(_))
+                if _ != "GR" else "GR"
+            )
+        ) for _ in [ *config["m"], "GR" ]
+    ]
+
+    # colors will be presented as solid lines
+    #~ handle_colors = [
+        #~ Line2D(
+            #~ [], [],
+            #~ color = map_c.get(_, None),
+            #~ marker = None,
+            #~ label = (
+                #~ "$\lambda = {}$".format(_)
+                #~ if _ != "GR" else "GR" )
+        #~ ) for _ in [ *config["lambda"], "GR" ]
+    #~ ]
+
+    legend_markers = ax_up.legend(
+        handles = [ *handle_EOSnames ],
+        loc = 2,
+        ncol = 1,
+        frameon = False,
+        markerscale = 0.6,
+        fancybox=True,
+        #~ framealpha = 0.5,
+        handlelength = 4,
+        bbox_to_anchor=(1, 1),
+        #~ borderaxespad=0.1,
+    )
+
+    legend_linestyles = ax_up.legend(
+        handles = [ *handle_linestyles ],
+        loc = 2,
+        ncol = 1,
+        frameon = True,
+        markerscale = 0.6,
+        fancybox=True,
+        framealpha = 0.5,
+        handlelength = 4,
+        title = "Line patterns"
+        #~ bbox_to_anchor=(0.79, 0.5),
+        #~ borderaxespad=0.1
+    )
+
+    #~ depricated way of seting font size of tittle of legend
+    #~ seem not the way any more in matplotlib 3
+    #~ legend_linestyles.set_title('location', prop={"size":10})
+    legend_linestyles.get_title().set_fontsize(10)
+
+    legend_colors = ax_up.legend(
+        handles = [ *handle_colors ],
+        loc = 4,
+        ncol = 1,
+        frameon = True,
+        markerscale = 0.6,
+        fancybox=True,
+        framealpha = 0.5,
+        handlelength = 4,
+        title = "Line colours"
+        #~ bbox_to_anchor=(0.99, 0.22),
+        #~ borderaxespad=0.1
+    )
+
+    legend_colors.get_title().set_fontsize(10)
+
+    ax_up.add_artist(legend_markers)
+
+    ax_up.add_artist( legend_linestyles )
+
+    ax_up.add_artist( legend_colors )
+
+    ax_up.set_xlim(0.09, 0.325)
+    ax_up.set_ylim(0.28, 0.55)
+
+    ax_in.set_xlim(0.255, 0.275)
+    ax_in.set_ylim(0.43, 0.45)
+    ax_in.xaxis.set_visible(False)
+    ax_in.yaxis.set_visible(False)
+    #~ ax_in.xaxis.set_tick_params(labelsize=8)
+    #~ ax_in.yaxis.set_tick_params(labelsize=8)
+    #~ ax_in.tick_params(axis="both",direction="in", pad=-10)
+
+    mark_inset(
+        ax_up, ax_in,
+        loc1=2, loc2=4,
+        fc="black", ec="black",
+        zorder=110
+    )
+
+    ax_down.set_ylim(1e-3, 1.5e0)
+    #~ ax_down.axhline(y=0.1, linewidth=2, color='r', alpha = 0.5)
+
+    plt.savefig(
+        'TildeI_all.eps', format="eps",
+        dpi=600,
+        pad_inches=0,
+        bbox_inches='tight',
+        papertype = "a4",
+        bbox_extra_artists=(legend_markers,),
+    )
+
+    plt.show()
+
+    return
+
+def plot_tildeI_GR(config):
+
+    config = load_YvsX_config(config)
+
+    ax_up, ax_down = get_uniI_ax()
+
+    set_axYvsX_parms(ax_up, x_label = "", y_label = config["y_up_label"])
+    set_axYvsX_parms(ax_down, x_label = config["x_label"], y_label = config["y_down_label"])
+    ax_down.set_yscale("log")
+
+    FitResults = {}
+
+    for pars in itertools.product(config["beta"], config["m"], config["lambda"]):
+
+        FitResults = plotMarkers_getFits_uniI(config, pars, "tildeI", ax_up, ax_down)
+
+    FitResults.update(plotMarkers_getFits_uniI(config, [0,0,0], "tildeI", ax_up, ax_down))
 
     for k, v in FitResults.items():
         print("\n\t {} \n\t\t {}".format(k, v))
@@ -831,8 +1027,8 @@ def plot_tildeI_GR_zoomBox(config):
         ) for _ in [ *config["m"], "GR" ]
     ]
 
+    # colors will be presented as solid lines
     #~ handle_colors = [
-
         #~ Line2D(
             #~ [], [],
             #~ color = map_c.get(_, None),
@@ -841,16 +1037,9 @@ def plot_tildeI_GR_zoomBox(config):
                 #~ "$\lambda = {}$".format(_)
                 #~ if _ != "GR" else "GR" )
         #~ ) for _ in [ *config["lambda"], "GR" ]
-
     #~ ]
 
-    #~ box = ax_up.get_position()
-    #~ ax_up.set_position([box.x0, box.y0, box.width * 0.9, box.height])
-
-    #~ box2 = ax_down.get_position()
-    #~ ax_down.set_position([box2.x0, box2.y0, box2.width * 0.9, box2.height])
-
-    ax_up.add_artist( ax_up.legend(
+    legend_markers = ax_up.legend(
         handles = [ *handle_EOSnames ],
         loc = 2,
         ncol = 2,
@@ -860,283 +1049,73 @@ def plot_tildeI_GR_zoomBox(config):
         framealpha = 0.5,
         handlelength = 4,
         #~ bbox_to_anchor=(1, 1),
-        #~ borderaxespad=0.1
-    ) )
+        #~ borderaxespad=0.1,
+    )
 
-    ax_up.add_artist( ax_up.legend(
-        handles = [ *handle_linestyles ],
-        loc = 7,
-        ncol = 1,
-        frameon = True,
-        markerscale = 0.6,
-        fancybox=True,
-        framealpha = 0.5,
-        handlelength = 4,
-        #~ bbox_to_anchor=(0.79, 0.5),
-        #~ borderaxespad=0.1
-    ) )
+    ax_up.add_artist(legend_markers)
 
-    ax_up.add_artist( ax_up.legend(
-        handles = [ *handle_colors ],
-        loc = 4,
-        ncol = 1,
-        frameon = True,
-        markerscale = 0.6,
-        fancybox=True,
-        framealpha = 0.5,
-        handlelength = 4,
-        #~ bbox_to_anchor=(0.99, 0.22),
-        #~ borderaxespad=0.1
-    ) )
+    if len(handle_linestyles) > 2:
+        legend_linestyles = ax_up.legend(
+            handles = [ *handle_linestyles ],
+            loc = 4,
+            ncol = 1,
+            frameon = True,
+            markerscale = 0.6,
+            fancybox=True,
+            framealpha = 0.5,
+            handlelength = 4,
+            title = r"$m_\varphi = 5\times10^{-3}$"
+            #~ bbox_to_anchor=(0.79, 0.5),
+            #~ borderaxespad=0.1
+        )
+
+        legend_linestyles.get_title().set_fontsize(10)
+
+        ax_up.add_artist( legend_linestyles )
+
+    if len(handle_colors) > 2:
+        legend_colors = ax_up.legend(
+            handles = [ *handle_colors ],
+            loc = 4,
+            ncol = 1,
+            frameon = True,
+            markerscale = 0.6,
+            fancybox=True,
+            framealpha = 0.5,
+            handlelength = 4,
+            title = r"$\lambda = 0.1$"
+            #~ bbox_to_anchor=(0.99, 0.22),
+            #~ borderaxespad=0.1
+        )
+
+        ax_up.add_artist( legend_colors )
+
+        legend_colors.get_title().set_fontsize(10)
 
     ax_up.set_xlim(0.09, 0.325)
     ax_up.set_ylim(0.28, 0.55)
-
-    ax_in.set_xlim(0.255, 0.275)
-    ax_in.set_ylim(0.43, 0.45)
-    ax_in.xaxis.set_visible(False)
-    ax_in.yaxis.set_visible(False)
-    #~ ax_in.xaxis.set_tick_params(labelsize=8)
-    #~ ax_in.yaxis.set_tick_params(labelsize=8)
-    #~ ax_in.tick_params(axis="both",direction="in", pad=-10)
-
-    mark_inset(ax_up, ax_in, loc1=2, loc2=4, fc="black", ec="black", zorder=110)
 
     ax_down.set_ylim(1e-3, 1.5e0)
     #~ ax_down.axhline(y=0.1, linewidth=2, color='r', alpha = 0.5)
 
     plt.savefig(
-        'TildeI_all.eps', format="eps",
+        'TildeI_lambda1e-1.eps', format="eps",
         dpi=600,
         pad_inches=0,
         bbox_inches='tight',
-        papertype = "a4"
+        papertype = "a4",
+        bbox_extra_artists=(legend_markers,)
     )
 
     plt.show()
 
     return
 
-def plot_tildeI_GR(config):
-
-    def _get_ax():
-        """
-        set plot variables and return axes to created figure
-        """
-
-        plt.rc('xtick', labelsize=16)
-        plt.rc('ytick', labelsize=16)
-
-        plt.rc('font', size=15)
-
-        plt.rc('figure', figsize=(7.2,4.8))
-
-        plt.rc('axes', titlesize=16)
-        plt.rc('axes', labelsize=16)
-
-        plt.rc('lines', linewidth=2)
-        plt.rc('lines', markersize=10)
-
-        plt.rc('legend', fontsize=8)
-
-        plt.rc('text', usetex=True)
-        plt.rc('mathtext', fontset="stix")
-
-        #~ plt.rc('font', family='serif')
-        plt.rc('font', family='STIXGeneral')
-
-        fig, (ax_up, ax_down) = plt.subplots(
-            2,1, sharex=True,
-            gridspec_kw=dict(height_ratios=[2, 1])
-        )
-
-        fig.subplots_adjust(hspace=0)
-        fig.set_rasterized(True)
-        fig.set_tight_layout(False)
-
-        return ax_up, ax_down
-
-    def _get_tildeI_data( fpath_main, fpath_fitting, fname, EOSname, EOSbeta,
-    EOSm, EOSlambda, col_x, col_y, tilde ):
-        """
-        retrieve the data of the model
-        """
-
-        EOSmodel = "_".join( [
-            fname,
-            EOSname,
-            "beta{:.3e}".format(EOSbeta),
-            "m{:.3e}".format(EOSm),
-            "lambda{:.3e}".format(EOSlambda),
-            tilde
-        ] )
-
-        fullPathModel = os.path.join( fpath_main, EOSname, fpath_fitting, EOSmodel)
-
-        print("\n Will load data for: \n\t {} \n".format(fullPathModel))
-
-        # TODO if file not exists what do
-        data = np.loadtxt(fullPathModel, comments="#", delimiter=" ",
-        usecols=(col_x, col_y))
-
-        min_compactness = 0.09
-        data = data[~(data[:,0]<min_compactness), :]
-
-        return data
-
-    def _plotMarkers_getFits(
-        config, pars, tilde, ax_up, ax_down, fit_results = {}
-    ):
-
-        def _get_polyfit_res(xp, yp):
-
-            coef, rest = polyfit(
-                x = xp, y = yp,
-                deg = [ 0, 1, 4 ],
-                w = np.sqrt(yp),
-                full = True
-            )
-
-            #~ calcualte the chi reduce
-            chi_red = rest[0][0]/(len(xp) - 3)
-            p = lambda x: coef[0] + coef[1]*x + coef[4]*x**4
-
-            return coef, chi_red, p
-
-        # TODO this choice is arbitrary, it should not be hardcoded
-        # MS2 is soft; SLy is moderate; APR3 is stiff
-        #~ PlaceMarkersForEOS = ["MS2", "SLy", "APR3"]
-
-        plot_alpha = 0.5 # give some transperancy
-        #~ fit_results = {} # to print what we have achieved at the end for the model
-
-        # accumulate data for the model here, and use them to make the fit
-        data_to_fit = np.empty(shape=(0,2))
-
-        # fill the up plot with markers while gathering data for the fit
-        for EOSname in config["eos_name"]:
-
-            data = _get_tildeI_data(
-                config["path_main"], config["path_fitting"],
-                config["base_name"], EOSname, pars[0], pars[1], pars[2],
-                config["x_col"], config["y_col"], tilde
-            )
-
-            ax_up.plot(
-                data[:,0], data[:,1],
-                label = None,
-                markevery = 0.05,
-                markersize = 6,
-                linewidth = 0,
-                marker = map_ms.get(EOSname, None),
-                color = map_c.get(pars[1],None),
-                linestyle = None,
-                alpha = plot_alpha
-            )
-
-            data_to_fit = np.append(data_to_fit, data, axis=0)
-
-        # get the coef in list, the Chi reduced score, and the polynom itself
-        coef, chi_red, p = _get_polyfit_res(data_to_fit[:,0], data_to_fit[:,1])
-
-        # average over all EOS of all the residuals
-        delta_all = 0
-        n_all = 0
-
-        # average over all EOS of largest residual per EOS
-        n_all_max = 0
-        delta_all_max = 0
-
-        # the largest residual over all EOS
-        delta_max = 0
-
-        # fill the down plot with residiums while gathering data for avreages
-        for EOSname in config["eos_name"]:
-
-            # change the markevery a little bit random
-
-            data = _get_tildeI_data(
-                config["path_main"], config["path_fitting"],
-                config["base_name"], EOSname, pars[0], pars[1], pars[2],
-                config["x_col"], config["y_col"], tilde
-            )
-
-            _data = np.abs( 1 - data[:,1]/p(data[:,0]) )
-
-            delta_all += np.sum(_data)
-            n_all += _data.size
-
-            delta_all_max += np.amax(_data)
-            n_all_max += 1
-
-            delta_max = delta_max if delta_max > np.amax(_data) else np.amax(_data)
-
-            ax_down.plot(
-                data[:,0],
-                _data,
-                label = None,
-                linewidth = 0,
-                markersize = 6,
-                markevery = 0.2,
-                marker = map_ms.get(EOSname, None),
-                color = map_c.get(pars[1] if pars[0] else "GR", None),
-                linestyle = None,
-                alpha = plot_alpha,
-                zorder = 90 if pars[0] == 0 else 10
-            )
-
-        avg_L_1 = delta_all/n_all
-        avg_L_inf = delta_all_max/n_all_max
-        L_inf_worst = delta_max
-
-        fit_results.update({
-            "beta {}, m = {}, lambda = {}".format(pars[0], pars[1], pars[2]):\
-            "a0 = {:.3e}, a1 = {:.3e}, a4 = {:.3e}, chi = {:.3e}, L1 = {:.3e}, Linf = {:.3e}, LinfW = {:.3e}".format(
-                coef[0], coef[1], coef[4], chi_red, avg_L_1, avg_L_inf, L_inf_worst
-            )
-        } )
-
-        #give min and max compactnesses by hand
-        #~ p_x = np.linspace(np.amin(data_to_fit[:,0]), np.amax(data_to_fit[:,0]), 100)
-        # TODO maybe not hardcode the compactneses like that? now 0.09 to 0.35
-        p_x = np.linspace(0.09, 0.35, 100)
-
-        ax_up.plot(
-            p_x,
-            p(p_x),
-            label = None,
-            color = luminosity_color(map_c.get(pars[1] if pars[0] else "GR", None)),
-            linestyle = map_ls.get(pars[2] if pars[0] else "GR", None),
-            zorder = 90 if pars[0] == 0 else 85,
-            linewidth = 2.5
-        )
-
-        # beta = 0 means GR, then make the worst and not so worst fit
-        if pars[0] == 0:
-
-            ax_up.fill_between(
-                p_x,
-                p(p_x)*(1 + avg_L_inf),
-                p(p_x)*(1 - avg_L_inf),
-                facecolor=map_c.get("GR", None),
-                alpha= 0.4,
-                zorder = 0
-            )
-
-            ax_up.fill_between(
-                p_x,
-                p(p_x)*( 1 + L_inf_worst ),
-                p(p_x)*( 1 - L_inf_worst ),
-                facecolor=map_c.get("GR", None),
-                alpha= 0.3,
-                zorder = 0
-            )
-
-        return fit_results
+def plot_barI_GR(config):
 
     config = load_YvsX_config(config)
 
-    ax_up, ax_down = _get_ax()
+    ax_up, ax_down = get_uniI_ax()
 
     set_axYvsX_parms(ax_up, x_label = "", y_label = config["y_up_label"])
     set_axYvsX_parms(ax_down, x_label = config["x_label"], y_label = config["y_down_label"])
@@ -1146,9 +1125,9 @@ def plot_tildeI_GR(config):
 
     for pars in itertools.product(config["beta"], config["m"], config["lambda"]):
 
-        FitResults = _plotMarkers_getFits(config, pars, "tildeI", ax_up, ax_down)
+        FitResults = plotMarkers_getFits_uniI(config, pars, "barI", ax_up, ax_down)
 
-    FitResults.update(_plotMarkers_getFits(config, [0,0,0], "tildeI", ax_up, ax_down))
+    FitResults.update(plotMarkers_getFits_uniI(config, [0,0,0], "barI", ax_up, ax_down))
 
     for k, v in FitResults.items():
         print("\n\t {} \n\t\t {}".format(k, v))
@@ -1241,277 +1220,17 @@ def plot_tildeI_GR(config):
     # lets add a legend for marker styles
 
     ax_up.set_xlim(0.09, 0.325)
-    ax_up.set_ylim(0.28, 0.55)
-
-    ax_down.set_ylim(1e-3, 1.5e0)
-    #~ ax_down.axhline(y=0.1, linewidth=2, color='r', alpha = 0.5)
-
-    plt.savefig(
-        'TildeI_all.eps', format="eps",
-        dpi=600,
-        pad_inches=0,
-        bbox_inches='tight',
-        papertype = "a4"
-    )
-
-    plt.show()
-
-    return
-
-def plot_barI_GR(config):
-
-    def _get_ax():
-        """
-        set plot variables and return axes to created figure
-        """
-
-        plt.rc('xtick', labelsize=16)
-        plt.rc('ytick', labelsize=16)
-
-        plt.rc('font', size=15)
-
-        #~ plt.rc('figure', autolayout=True)
-        plt.rc('figure', figsize=(7.2,4.45))
-
-        plt.rc('axes', titlesize=16)
-        plt.rc('axes', labelsize=17)
-
-        plt.rc('lines', linewidth=2)
-        plt.rc('lines', markersize=10)
-
-        plt.rc('legend', fontsize=13)
-
-        plt.rc('text', usetex=True)
-        plt.rc('mathtext', fontset="stix")
-
-        #~ plt.rc('font', family='serif')
-        plt.rc('font', family='STIXGeneral')
-
-        fig, (ax_up, ax_down) = plt.subplots(
-            2,1, sharex=True,
-            gridspec_kw=dict(height_ratios=[2, 1])
-        )
-
-        fig.set_rasterized(True)
-        fig.tight_layout(h_pad=0, w_pad=0)
-        fig.subplots_adjust(hspace=0)
-
-        return ax_up, ax_down
-
-    def _get_barI_data( fpath_main, fpath_fitting, fname, EOSname, EOSbeta,
-    EOSm, EOSlambda, col_x, col_y, tilde ):
-        """
-        retrieve the data of the model
-        """
-
-        EOSmodel = "_".join( [
-            fname,
-            EOSname,
-            "beta{:.3e}".format(EOSbeta),
-            "m{:.3e}".format(EOSm),
-            "lambda{:.3e}".format(EOSlambda),
-            tilde
-        ] )
-
-        fullPathModel = os.path.join( fpath_main, EOSname, fpath_fitting, EOSmodel)
-
-        print("\n Will load data for: \n\t {} \n".format(fullPathModel))
-
-        # TODO if file not exists what do
-        data = np.loadtxt(fullPathModel, comments="#", delimiter=" ",
-        usecols=(col_x, col_y))
-
-        min_compactness = 0.09
-        data = data[~(data[:,0]<min_compactness), :]
-
-        return data
-
-    def _plotMarkers_getFits(
-        config, pars, tilde, ax_up, ax_down, fit_results = {}
-    ):
-
-        def _get_polyfit_res(xp, yp):
-            coef, rest = polyfit(
-                x = xp, y = yp,
-                deg = [ 1, 2, 3, 4 ],
-                #~ w = np.sqrt(yp),
-                full = True
-            )
-
-            #~ calcualte the chi reduce
-            chi_red = rest[0][0]/(len(xp) - 4)
-            p = lambda x: coef[1]*x**-1 + coef[2]*x**-2 + coef[3]*x**-3 + coef[4]*x**-4
-
-            return coef, chi_red, p
-
-        # TODO this choice is arbitrary, it should not be hardcoded
-        # MS2 is soft; SLy is moderate; APR3 is stiff
-        PlaceMarkersForEOS = ["MS2", "SLy", "APR3"]
-
-        tmp = 0.025 # it will serve as random step for markevery
-        plot_alpha = 0.6 # give some transperancy
-        #~ fit_results = {} # to print what we have achieved at the end for the model
-
-        # accumulate data for the model here, and use them to make the fit
-        data_to_fit = np.empty(shape=(0,2))
-
-        # fill the up plot with markers while gathering data for the fit
-        for EOSname in config["eos_name"]:
-
-            # change the markevery a little bit random
-            #~ tmp += 0.0015 * (1 if random() < 0.5 else -1 )
-
-            data = _get_barI_data(
-                config["path_main"], config["path_fitting"],
-                config["base_name"], EOSname, pars[0], pars[1], pars[2],
-                config["x_col"], config["y_col"], tilde
-            )
-
-            if EOSname in PlaceMarkersForEOS and pars[0] == 0:
-                ax_up.plot(
-                    data[:,0], data[:,1],
-                    label = None,
-                    markevery = tmp,
-                    markersize = 6,
-                    linewidth = 0,
-                    marker = map_ms.get(EOSname, None),
-                    color = map_c.get("GR",None),
-                    linestyle = None,
-                    alpha = 1
-                )
-
-            data_to_fit = np.append(data_to_fit, data, axis=0)
-
-        # get the coef in list, the Chi reduced score, and the polynom itself
-        coef, chi_red, p = _get_polyfit_res(data_to_fit[:,0]**-1, data_to_fit[:,1])
-
-        # average over all EOS of all the residuals
-        delta_all = 0
-        n_all = 0
-
-        # average over all EOS of largest residual per EOS
-        n_all_max = 0
-        delta_all_max = 0
-
-        # the largest residual over all EOS
-        delta_max = 0
-
-        tmp = 0.2
-        # fill the down plot with residiums while gathering data for avreages
-        for EOSname in config["eos_name"]:
-
-            tmp += 0.05 * (1 if random() < 0.5 else -1 )
-            if tmp < 0.01:
-                tmp = 0.2
-
-            data = _get_barI_data(
-                config["path_main"], config["path_fitting"],
-                config["base_name"], EOSname, pars[0], pars[1], pars[2],
-                config["x_col"], config["y_col"], tilde
-            )
-
-            _data = np.abs( 1 - data[:,1]/p(data[:,0]) )
-
-            delta_all += np.sum(_data)
-            n_all += _data.size
-
-            delta_all_max += np.amax(_data)
-            n_all_max += 1
-
-            delta_max = delta_max if delta_max > np.amax(_data) else np.amax(_data)
-
-            ax_down.plot(
-                data[:,0],
-                _data,
-                label = None,
-                linewidth = 0,
-                #~ markersize = 5.5,
-                markevery = tmp,
-                marker = map_ms.get(EOSname, None),
-                color = map_c.get(pars[1] if pars[0] else "GR", None),
-                linestyle = None,
-                alpha = plot_alpha,
-                zorder = 90 if pars[0] == 0 else 10
-            )
-
-        avg_L_1 = delta_all/n_all
-        avg_L_inf = delta_all_max/n_all_max
-        L_inf_worst = delta_max
-
-        fit_results.update({
-            "beta {}, m = {}, lambda = {}".format(pars[0], pars[1], pars[2]):\
-            "a1 = {:.3e}, a2 = {:.3e}, a3 = {:.3e}, a4 = {:.3e}, chi = {:.3e}, L1 = {:.3e}, Linf = {:.3e}, LinfW = {:.3e}".format(
-                coef[1], coef[2], coef[3], coef[4], chi_red, avg_L_1, avg_L_inf, L_inf_worst
-            )
-        } )
-
-        #give min and max compactnesses by hand
-        #~ p_x = np.linspace(np.amin(data_to_fit[:,0]), np.amax(data_to_fit[:,0]), 100)
-        # TODO maybe not hardcode the compactneses like that? now 0.09 to 0.35
-        p_x = np.linspace(0.09, 0.35, 100)
-
-        ax_up.plot(
-            p_x,
-            p(p_x),
-            label = None,
-            color = luminosity_color(map_c.get(pars[1] if pars[0] else "GR", None)),
-            linestyle = map_ls.get(pars[2] if pars[0] else "GR", None),
-            zorder = 90 if pars[0] == 0 else 85
-        )
-
-        # beta = 0 means GR, then make the worst and not so worst fit
-        if pars[0] == 0:
-
-            ax_up.fill_between(
-                p_x,
-                p(p_x)*(1 + avg_L_inf),
-                p(p_x)*(1 - avg_L_inf),
-                facecolor=map_c.get("GR", None),
-                alpha= plot_alpha - 0.1,
-                zorder = 0
-            )
-
-            ax_up.fill_between(
-                p_x,
-                p(p_x)*( 1 + L_inf_worst ),
-                p(p_x)*( 1 - L_inf_worst ),
-                facecolor=map_c.get("GR", None),
-                alpha= plot_alpha - 0.2,
-                zorder = 0
-            )
-
-        return fit_results
-
-    config = load_YvsX_config(config)
-
-    ax_up, ax_down = _get_ax()
-
-    set_axYvsX_parms(ax_up, x_label = "", y_label = config["y_up_label"])
-    set_axYvsX_parms(ax_down, x_label = config["x_label"], y_label = config["y_down_label"])
-    ax_down.set_yscale("log")
-
-    FitResults = {}
-
-    for pars in itertools.product(config["beta"], config["m"], config["lambda"]):
-
-        FitResults = _plotMarkers_getFits(config, pars, "barI", ax_up, ax_down)
-
-    FitResults.update(_plotMarkers_getFits(config, [0,0,0], "barI", ax_up, ax_down))
-
-    for k, v in FitResults.items():
-        print("\n\t {} \n\t\t {}".format(k, v))
-
-    ax_up.set_xlim(0.09, 0.325)
-    ax_up.set_ylim(3, 35)
+    ax_up.set_ylim(5, 35)
 
     ax_down.set_ylim(1e-3, 1.5e0)
     #~ ax_down.axhline(y=0.1, linewidth=2, color='r', alpha = 0.5)
 
     plt.savefig(
         'barI_GR.eps', format="eps",
-        #~ bbox_inches='tight',
-        dpi=1200,
-        pad_inches=0
+        dpi=600,
+        pad_inches=0,
+        bbox_inches = "tight",
+        papertype = "a4"
     )
 
     plt.show()
